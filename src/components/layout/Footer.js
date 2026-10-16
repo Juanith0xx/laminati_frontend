@@ -134,7 +134,7 @@ export default function Footer() {
               href="/"
               className="text-sm font-semibold uppercase tracking-[0.36em] text-neutral-950"
             >
-              Laminatiword
+              Laminati 
             </Link>
 
             <p className="mt-4 max-w-sm text-sm leading-6 text-neutral-500">
@@ -276,7 +276,7 @@ export default function Footer() {
 
         <div className="mt-8 flex flex-col gap-3 border-t border-neutral-100 pt-5 text-xs text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © 2026 Laminatiword.
+            © 2026 Laminati.
           </p>
 
           <p>

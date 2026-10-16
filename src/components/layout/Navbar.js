@@ -2412,10 +2412,10 @@ export default function Navbar() {
                               aria-expanded={
                                 mobileProductsOpen
                               }
-                              className={`flex w-full items-center justify-between py-4 text-left text-base font-medium ${
+                              className={`flex w-full items-center justify-between py-4 text-left text-base font-medium !text-neutral-950 ${
                                 active
-                                  ? "text-black"
-                                  : "text-neutral-600"
+                                  ? "font-semibold"
+                                  : ""
                               }`}
                             >
                               <span>
@@ -2621,7 +2621,29 @@ export default function Navbar() {
                                                           brand.collections
                                                             .length >
                                                             0 ? (
-                                                            <div className="mt-2 overflow-hidden rounded-2xl border border-black/[0.07] bg-neutral-50/80">
+                                                            <div
+                                                              className={`mt-2 rounded-2xl border border-black/[0.07] bg-neutral-50/80 ${
+                                                                normalizeCatalogName(
+                                                                  brand?.name
+                                                                ).includes(
+                                                                  "abet"
+                                                                )
+                                                                  ? "max-h-[260px] overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:max-h-none sm:overflow-hidden"
+                                                                  : "overflow-hidden"
+                                                              }`}
+                                                              style={
+                                                                normalizeCatalogName(
+                                                                  brand?.name
+                                                                ).includes(
+                                                                  "abet"
+                                                                )
+                                                                  ? {
+                                                                      WebkitOverflowScrolling:
+                                                                        "touch",
+                                                                    }
+                                                                  : undefined
+                                                              }
+                                                            >
 
                                                               {brand.collections.map(
                                                                 (
@@ -3004,10 +3026,10 @@ export default function Navbar() {
                             item.href
                           }
                           onClick={closeMobileNavigation}
-                          className={`flex items-center justify-between border-b border-black/5 py-4 text-base font-medium ${
+                          className={`flex items-center justify-between border-b border-black/5 py-4 text-base font-medium !text-neutral-950 ${
                             active
-                              ? "text-black"
-                              : "text-neutral-600"
+                              ? "font-semibold"
+                              : ""
                           }`}
                         >
                           <span>
@@ -3058,7 +3080,10 @@ export default function Navbar() {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex min-h-12 items-center justify-center rounded-xl border border-black/10 px-4 text-sm font-medium"
+                      className="flex min-h-12 items-center justify-center rounded-xl border border-black/10 bg-white px-4 text-sm font-medium !text-neutral-950"
+                      style={{
+                        color: "#171717",
+                      }}
                     >
                       Ingresar
                     </Link>
@@ -3074,7 +3099,10 @@ export default function Navbar() {
 
                     }
 
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-black px-4 text-sm font-medium text-white"
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-black px-4 text-sm font-medium !text-white"
+                    style={{
+                      color: "#ffffff",
+                    }}
 
                   >
 
@@ -3132,7 +3160,7 @@ export default function Navbar() {
 
                     </svg>
 
-                    <span>
+                    <span className="!text-white">
 
                       Carrito
 
@@ -3161,7 +3189,10 @@ export default function Navbar() {
                 {!sessionUser && (
                   <Link
                     href="/registro"
-                    className="mt-3 flex min-h-12 items-center justify-between rounded-xl border border-[#8b6d52]/20 bg-[#f7f2ec] px-4 text-sm font-medium text-neutral-800 transition hover:bg-[#f1e9e0]"
+                    className="mt-3 flex min-h-12 items-center justify-between rounded-xl border border-[#8b6d52]/20 bg-[#f7f2ec] px-4 text-sm font-medium !text-neutral-950 transition hover:bg-[#f1e9e0]"
+                    style={{
+                      color: "#171717",
+                    }}
                   >
                     <span>
                       Crear una cuenta
