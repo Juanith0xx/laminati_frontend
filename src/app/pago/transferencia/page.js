@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -226,7 +227,7 @@ function BankDataRow({
 /* =========================================
    PÁGINA
 ========================================= */
-export default function TransferPage() {
+function TransferPageContent() {
   const router =
     useRouter();
 
@@ -1809,5 +1810,29 @@ export default function TransferPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+/* =========================================
+   WRAPPER SUSPENSE
+   Next.js 16 requiere que useSearchParams()
+   esté contenido dentro de un boundary de
+   Suspense durante el prerender/build.
+========================================= */
+export default function TransferPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-white">
+          <div className="mx-auto flex min-h-[60vh] max-w-7xl items-center justify-center px-6">
+            <p className="text-sm text-neutral-500">
+              Cargando información del pago...
+            </p>
+          </div>
+        </main>
+      }
+    >
+      <TransferPageContent />
+    </Suspense>
   );
 }
