@@ -5,6 +5,7 @@ import {
   getProducts,
 } from "@/services/products.service";
 
+export const dynamic = "force-dynamic";
 
 /* =========================================
    HELPERS
