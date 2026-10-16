@@ -31,10 +31,10 @@ import {
 ========================================= */
 
 export const REGISTER_TEXTURE_SKUS = [
-  "668R",   // placa 1
-  "391S",   // placa 2
-  "1210S",  // placa 3
-  "421M",   // placa 4
+  "1239S",   // placa 1
+  "619S",   // placa 2
+  "548C",  // placa 3
+  "F2808PO",   // placa 4
 ];
 
 /*

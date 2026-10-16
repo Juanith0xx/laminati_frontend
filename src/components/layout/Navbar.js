@@ -758,6 +758,22 @@ export default function Navbar() {
 
   };
 
+  /*
+   * Los filtros del catálogo cambian solamente el query string
+   * (/productos?collection=...), por lo que `pathname` sigue
+   * siendo /productos y el efecto que escucha pathname no se
+   * vuelve a ejecutar. Cerramos el menú explícitamente al
+   * seleccionar cualquier enlace del catálogo móvil.
+   */
+  const closeMobileNavigation = () => {
+    setMenuOpen(false);
+    setMobileProductsOpen(false);
+    setMobileProductGroup("laminados");
+    setSearchOpen(false);
+    setProductsOpen(false);
+    setAccountMenuOpen(false);
+  };
+
   const openDesktopProducts = () => {
 
     setProductsOpen(true);
@@ -2534,6 +2550,7 @@ export default function Navbar() {
 
                                               <Link
                                                 href="/productos?category=laminados"
+                                                onClick={closeMobileNavigation}
                                                 className="flex min-h-11 items-center justify-between rounded-xl bg-neutral-950 px-4 text-sm font-semibold !text-white"
                                                 style={{
                                                   color:
@@ -2591,6 +2608,7 @@ export default function Navbar() {
                                                               href={`/productos?brand=${encodeURIComponent(
                                                                 brand.slug
                                                               )}`}
+                                                              onClick={closeMobileNavigation}
                                                               className="text-[10px] font-medium text-neutral-400"
                                                             >
                                                               Ver marca
@@ -2617,6 +2635,7 @@ export default function Navbar() {
                                                                     href={`/productos?collection=${encodeURIComponent(
                                                                       collection.slug
                                                                     )}`}
+                                                                    onClick={closeMobileNavigation}
                                                                     className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black ${
                                                                       index !==
                                                                       brand
@@ -2780,6 +2799,7 @@ export default function Navbar() {
                                                         href={
                                                           link.href
                                                         }
+                                                        onClick={closeMobileNavigation}
                                                         className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black ${
                                                           index !==
                                                           links.length -
@@ -2811,6 +2831,7 @@ export default function Navbar() {
                                                 <div className="mt-2 overflow-hidden rounded-2xl border border-black/[0.07] bg-neutral-50/80">
                                                   <Link
                                                     href="/productos?category=hpl&brand=karikal&application=banos"
+                                                    onClick={closeMobileNavigation}
                                                     className="group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black"
                                                   >
                                                     <span>
@@ -2826,6 +2847,7 @@ export default function Navbar() {
 
                                               <Link
                                                 href="/productos?category=hpl"
+                                                onClick={closeMobileNavigation}
                                                 className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold text-neutral-500"
                                               >
                                                 Ver todos los HPL
@@ -2922,6 +2944,7 @@ export default function Navbar() {
 
                                               <Link
                                                 href="/productos?brand=kisafix"
+                                                onClick={closeMobileNavigation}
                                                 className="group flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-neutral-50/80 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black"
                                               >
                                                 <span>
@@ -2935,6 +2958,7 @@ export default function Navbar() {
 
                                               <Link
                                                 href="/productos?category=adhesivos"
+                                                onClick={closeMobileNavigation}
                                                 className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold text-neutral-500"
                                               >
                                                 Ver todos los adhesivos
@@ -2951,6 +2975,7 @@ export default function Navbar() {
 
                                     <Link
                                       href="/productos"
+                                      onClick={closeMobileNavigation}
                                       className="mt-5 flex min-h-12 items-center justify-center rounded-full bg-black px-4 text-sm font-semibold !text-white"
                                       style={{
                                         color:
@@ -2978,6 +3003,7 @@ export default function Navbar() {
                           href={
                             item.href
                           }
+                          onClick={closeMobileNavigation}
                           className={`flex items-center justify-between border-b border-black/5 py-4 text-base font-medium ${
                             active
                               ? "text-black"
