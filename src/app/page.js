@@ -5,6 +5,10 @@ import OffersSection from "@/components/home/OffersSection";
 import FeaturedProductsSection from "@/components/home/FeaturedProductsSection";
 import LocationSection from "@/components/home/LocationSection";
 
+export const dynamic = "force-dynamic";
+
+
+
 export default function HomePage() {
   return (
     <main>
