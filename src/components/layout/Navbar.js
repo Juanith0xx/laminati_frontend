@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { usePathname } from "next/navigation";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AnimatePresence, motion } from "motion/react";
 
@@ -153,6 +153,16 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [searchOpen, setSearchOpen] = useState(false);
+
+  /* =========================================
+     MENÚ DE ACCESO / REGISTRO
+     Mantiene el aspecto actual del Navbar
+     mientras está cerrado.
+  ========================================= */
+
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+
+  const accountMenuRef = useRef(null);
 
   /* =========================================
      SESIÓN DE USUARIO
@@ -523,6 +533,8 @@ export default function Navbar() {
 
     setProductsOpen(false);
 
+    setAccountMenuOpen(false);
+
     setMobileProductsOpen(
 
       false
@@ -626,6 +638,34 @@ export default function Navbar() {
   }, [pathname]);
 
 
+  /* =========================================
+     CERRAR MENÚ DE CUENTA AL HACER CLICK
+     FUERA DEL POPOVER
+  ========================================= */
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener(
+      "pointerdown",
+      handlePointerDown
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDown
+      );
+    };
+  }, []);
+
   /* =========================================*
 
 *     ESCAPE*
@@ -661,6 +701,8 @@ export default function Navbar() {
           false
 
         );
+
+        setAccountMenuOpen(false);
 
       }
 
@@ -698,6 +740,8 @@ export default function Navbar() {
 
     setProductsOpen(false);
 
+    setAccountMenuOpen(false);
+
   };
 
   const toggleMenu = () => {
@@ -710,6 +754,8 @@ export default function Navbar() {
 
     setProductsOpen(false);
 
+    setAccountMenuOpen(false);
+
   };
 
   const openDesktopProducts = () => {
@@ -717,6 +763,8 @@ export default function Navbar() {
     setProductsOpen(true);
 
     setSearchOpen(false);
+
+    setAccountMenuOpen(false);
 
   };
 
@@ -727,6 +775,8 @@ export default function Navbar() {
     );
 
     setSearchOpen(false);
+
+    setAccountMenuOpen(false);
 
   };
 
@@ -759,11 +809,10 @@ export default function Navbar() {
 
         className="sticky top-0 z-50 border-b border-black/5 bg-white/95 backdrop-blur-xl"
 
-        onMouseLeave={() =>
-
-          setProductsOpen(false)
-
-        }
+        onMouseLeave={() => {
+          setProductsOpen(false);
+          setAccountMenuOpen(false);
+        }}
 
       >
 
@@ -1065,12 +1114,109 @@ export default function Navbar() {
                 </Link>
               )
             ) : (
-              <Link
-                href="/login"
-                className="hidden rounded-full px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-black lg:block"
+              <div
+                ref={accountMenuRef}
+                className="relative hidden lg:block"
               >
-                Ingresar
-              </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccountMenuOpen(
+                      (current) => !current
+                    );
+
+                    setSearchOpen(false);
+                    setProductsOpen(false);
+                  }}
+                  aria-expanded={accountMenuOpen}
+                  aria-haspopup="menu"
+                  className="rounded-full px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-black"
+                >
+                  Ingresar
+                </button>
+
+                <AnimatePresence>
+                  {accountMenuOpen && (
+                    <motion.div
+                      initial={{
+                        opacity: 0,
+                        y: -6,
+                        scale: 0.985,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        scale: 1,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        y: -6,
+                        scale: 0.985,
+                      }}
+                      transition={{
+                        duration: 0.16,
+                        ease: "easeOut",
+                      }}
+                      role="menu"
+                      className="absolute right-0 top-[calc(100%+10px)] z-[80] w-[290px] overflow-hidden rounded-2xl border border-black/[0.08] bg-white p-2 shadow-[0_24px_70px_rgba(0,0,0,0.14)]"
+                    >
+                      <div className="px-3 pb-2 pt-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                          Tu cuenta
+                        </p>
+                      </div>
+
+                      <Link
+                        href="/login"
+                        role="menuitem"
+                        onClick={() =>
+                          setAccountMenuOpen(false)
+                        }
+                        className="group flex items-center justify-between gap-4 rounded-xl px-3 py-3 transition hover:bg-neutral-50"
+                      >
+                        <span>
+                          <span className="block text-sm font-semibold text-neutral-950">
+                            Iniciar sesión
+                          </span>
+
+                          <span className="mt-0.5 block text-[11px] leading-4 text-neutral-500">
+                            Accede a tu cuenta Laminati.
+                          </span>
+                        </span>
+
+                        <span className="text-sm text-neutral-300 transition-transform group-hover:translate-x-0.5 group-hover:text-black">
+                          →
+                        </span>
+                      </Link>
+
+                      <div className="my-1 h-px bg-black/[0.06]" />
+
+                      <Link
+                        href="/registro"
+                        role="menuitem"
+                        onClick={() =>
+                          setAccountMenuOpen(false)
+                        }
+                        className="group flex items-center justify-between gap-4 rounded-xl bg-[#f6f1eb] px-3 py-3 transition hover:bg-[#efe7de]"
+                      >
+                        <span>
+                          <span className="block text-sm font-semibold text-neutral-950">
+                            Crear cuenta
+                          </span>
+
+                          <span className="mt-0.5 block text-[11px] leading-4 text-neutral-500">
+                            Regístrate para comprar y cotizar.
+                          </span>
+                        </span>
+
+                        <span className="text-sm text-[#8b6d52] transition-transform group-hover:translate-x-0.5">
+                          →
+                        </span>
+                      </Link>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
 
             {/* =====================================*
@@ -2985,6 +3131,21 @@ export default function Navbar() {
                   </Link>
 
                 </div>
+
+                {!sessionUser && (
+                  <Link
+                    href="/registro"
+                    className="mt-3 flex min-h-12 items-center justify-between rounded-xl border border-[#8b6d52]/20 bg-[#f7f2ec] px-4 text-sm font-medium text-neutral-800 transition hover:bg-[#f1e9e0]"
+                  >
+                    <span>
+                      Crear una cuenta
+                    </span>
+
+                    <span className="text-[#8b6d52]">
+                      →
+                    </span>
+                  </Link>
+                )}
 
               </div>
 
