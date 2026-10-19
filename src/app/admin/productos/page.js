@@ -133,68 +133,6 @@ function WarningIcon({ className = "" }) {
    HELPERS
 ========================================= */
 
-function getStoredToken() {
-
-  if (
-
-    typeof window ===
-
-    "undefined"
-
-  ) {
-
-    return null;
-
-  }
-
-  const raw =
-
-    localStorage.getItem(
-
-      "token"
-
-    );
-
-  if (
-
-    !raw ||
-
-    raw ===
-
-      "null" ||
-
-    raw ===
-
-      "undefined"
-
-  ) {
-
-    return null;
-
-  }
-
-  return raw
-
-    .replace(
-
-      /^"|"$/g,
-
-      ""
-
-    )
-
-    .replace(
-
-      /^Bearer\s+/i,
-
-      ""
-
-    )
-
-    .trim();
-
-}
-
 function formatPrice(
 
   value
@@ -1555,23 +1493,6 @@ export default function AdminProductsPage() {
         async () => {
 
           try {
-
-            const token =
-
-              getStoredToken();
-
-            if (!token) {
-
-              router.replace(
-
-                "/login"
-
-              );
-
-              return;
-
-            }
-
             const response =
 
               await apiRequest(
@@ -1579,8 +1500,6 @@ export default function AdminProductsPage() {
                 "/auth/me",
 
                 {
-
-                  token,
 
                 }
 
@@ -1689,23 +1608,6 @@ export default function AdminProductsPage() {
           return;
 
         }
-
-        const token =
-
-          getStoredToken();
-
-        if (!token) {
-
-          router.replace(
-
-            "/login"
-
-          );
-
-          return;
-
-        }
-
         try {
 
           setLoading(
@@ -1740,8 +1642,6 @@ export default function AdminProductsPage() {
 
                 {
 
-                  token,
-
                 }
 
               ),
@@ -1751,8 +1651,6 @@ export default function AdminProductsPage() {
                 "/admin/categories",
 
                 {
-
-                  token,
 
                 }
 
@@ -1764,8 +1662,6 @@ export default function AdminProductsPage() {
 
                 {
 
-                  token,
-
                 }
 
               ),
@@ -1775,8 +1671,6 @@ export default function AdminProductsPage() {
                 "/admin/collections",
 
                 {
-
-                  token,
 
                 }
 
@@ -2367,17 +2261,6 @@ export default function AdminProductsPage() {
       const timer =
         window.setTimeout(
           async () => {
-            const token =
-              getStoredToken();
-
-            if (!token) {
-              router.replace(
-                "/login"
-              );
-
-              return;
-            }
-
             setRelbaseLookup(
               (
                 current
@@ -2398,7 +2281,6 @@ export default function AdminProductsPage() {
                     query
                   )}`,
                   {
-                    token,
                   }
                 );
 
@@ -2728,18 +2610,6 @@ export default function AdminProductsPage() {
 
         return [];
       }
-
-      const token =
-        getStoredToken();
-
-      if (!token) {
-        router.replace(
-          "/login"
-        );
-
-        return [];
-      }
-
       try {
         setImagesLoading(
           true
@@ -2753,7 +2623,6 @@ export default function AdminProductsPage() {
           await apiRequest(
             `/admin/products/${productId}/images`,
             {
-              token,
             }
           );
 
@@ -2979,7 +2848,6 @@ export default function AdminProductsPage() {
   const uploadPendingImages =
     async ({
       productId,
-      token,
     }) => {
       if (
         pendingImages.length ===
@@ -3065,7 +2933,6 @@ export default function AdminProductsPage() {
             {
               method:
                 "POST",
-              token,
               body:
                 formData,
             }
@@ -3142,18 +3009,6 @@ export default function AdminProductsPage() {
       ) {
         return;
       }
-
-      const token =
-        getStoredToken();
-
-      if (!token) {
-        router.replace(
-          "/login"
-        );
-
-        return;
-      }
-
       try {
         setImageActionId(
           image.id
@@ -3168,7 +3023,6 @@ export default function AdminProductsPage() {
           {
             method:
               "PATCH",
-            token,
             body: {
               is_primary:
                 true,
@@ -3212,18 +3066,6 @@ export default function AdminProductsPage() {
       ) {
         return;
       }
-
-      const token =
-        getStoredToken();
-
-      if (!token) {
-        router.replace(
-          "/login"
-        );
-
-        return;
-      }
-
       try {
         setImageActionId(
           image.id
@@ -3238,7 +3080,6 @@ export default function AdminProductsPage() {
           {
             method:
               "DELETE",
-            token,
           }
         );
 
@@ -3283,18 +3124,6 @@ export default function AdminProductsPage() {
 
         return [];
       }
-
-      const token =
-        getStoredToken();
-
-      if (!token) {
-        router.replace(
-          "/login"
-        );
-
-        return [];
-      }
-
       try {
         setPromotionsLoading(
           true
@@ -3308,7 +3137,6 @@ export default function AdminProductsPage() {
           await apiRequest(
             `/admin/products/${productId}/promotions`,
             {
-              token,
             }
           );
 
@@ -3701,18 +3529,6 @@ export default function AdminProductsPage() {
       ) {
         return;
       }
-
-      const token =
-        getStoredToken();
-
-      if (!token) {
-        router.replace(
-          "/login"
-        );
-
-        return;
-      }
-
       const basePrice =
         Number(
           promotionProduct
@@ -4011,7 +3827,6 @@ export default function AdminProductsPage() {
                 isEditing
                   ? "PATCH"
                   : "POST",
-              token,
               body:
                 payload,
             }
@@ -4067,18 +3882,6 @@ export default function AdminProductsPage() {
       ) {
         return;
       }
-
-      const token =
-        getStoredToken();
-
-      if (!token) {
-        router.replace(
-          "/login"
-        );
-
-        return;
-      }
-
       try {
         setPromotionActionId(
           promotion.id
@@ -4098,7 +3901,6 @@ export default function AdminProductsPage() {
             {
               method:
                 "PATCH",
-              token,
               body: {
                 is_active:
                   !Boolean(
@@ -4148,18 +3950,6 @@ export default function AdminProductsPage() {
       ) {
         return;
       }
-
-      const token =
-        getStoredToken();
-
-      if (!token) {
-        router.replace(
-          "/login"
-        );
-
-        return;
-      }
-
       try {
         setPromotionActionId(
           promotionDeleteTarget
@@ -4180,7 +3970,6 @@ export default function AdminProductsPage() {
             {
               method:
                 "DELETE",
-              token,
             }
           );
 
@@ -4464,23 +4253,6 @@ export default function AdminProductsPage() {
     ) => {
 
       event.preventDefault();
-
-      const token =
-
-        getStoredToken();
-
-      if (!token) {
-
-        router.replace(
-
-          "/login"
-
-        );
-
-        return;
-
-      }
-
       const sku =
 
         form.sku
@@ -4849,8 +4621,6 @@ export default function AdminProductsPage() {
 
                   : "POST",
 
-              token,
-
               body:
 
                 payload,
@@ -4891,7 +4661,6 @@ export default function AdminProductsPage() {
             await uploadPendingImages({
               productId:
                 savedProductId,
-              token,
             });
         }
 
@@ -5093,23 +4862,6 @@ export default function AdminProductsPage() {
         return;
 
       }
-
-      const token =
-
-        getStoredToken();
-
-      if (!token) {
-
-        router.replace(
-
-          "/login"
-
-        );
-
-        return;
-
-      }
-
       try {
 
         setDeleting(
@@ -5141,8 +4893,6 @@ export default function AdminProductsPage() {
               method:
 
                 "DELETE",
-
-              token,
 
             }
 
@@ -5265,23 +5015,6 @@ export default function AdminProductsPage() {
         return;
 
       }
-
-      const token =
-
-        getStoredToken();
-
-      if (!token) {
-
-        router.replace(
-
-          "/login"
-
-        );
-
-        return;
-
-      }
-
       const previousPublished =
 
         Boolean(
@@ -5365,8 +5098,6 @@ export default function AdminProductsPage() {
               method:
 
                 "PATCH",
-
-              token,
 
               body: {
 
