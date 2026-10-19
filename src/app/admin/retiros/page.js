@@ -37,57 +37,6 @@ function normalizeStatus(
 }
 
 
-function getStoredToken() {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return null;
-  }
-
-  const raw =
-    localStorage.getItem(
-      "token"
-    );
-
-  if (
-    !raw ||
-    raw ===
-      "null" ||
-    raw ===
-      "undefined"
-  ) {
-    return null;
-  }
-
-  return raw
-    .replace(
-      /^"|"$/g,
-      ""
-    )
-    .replace(
-      /^Bearer\s+/i,
-      ""
-    )
-    .trim();
-}
-
-function requireAdminToken(
-  router
-) {
-  const token =
-    getStoredToken();
-
-  if (!token) {
-    router.replace(
-      "/login"
-    );
-
-    return null;
-  }
-
-  return token;
-}
 
 function formatPrice(
   value
@@ -351,21 +300,9 @@ export default function AdminRetirosPage() {
       const validate =
         async () => {
           try {
-            const token =
-              requireAdminToken(
-                router
-              );
-
-            if (!token) {
-              return;
-            }
-
             const response =
               await apiRequest(
-                "/auth/me",
-                {
-                  token,
-                }
+                "/auth/me"
               );
 
             const role =
@@ -402,10 +339,6 @@ export default function AdminRetirosPage() {
               typeof window !==
               "undefined"
             ) {
-              localStorage.removeItem(
-                "token"
-              );
-
               localStorage.removeItem(
                 "user"
               );
@@ -521,21 +454,9 @@ export default function AdminRetirosPage() {
             ""
           );
 
-          const token =
-            requireAdminToken(
-              router
-            );
-
-          if (!token) {
-            return;
-          }
-
           const response =
             await apiRequest(
-              "/payments/admin/bank-transfer-proofs?status=APPROVED&limit=100&offset=0",
-              {
-                token,
-              }
+              "/payments/admin/bank-transfer-proofs?status=APPROVED&limit=100&offset=0"
             );
 
           const proofs =
@@ -602,10 +523,7 @@ export default function AdminRetirosPage() {
                         `/pickups/orders/${encodeURIComponent(
                           proof
                             .order_id
-                        )}`,
-                        {
-                          token,
-                        }
+                        )}`
                       );
 
                     return {
@@ -841,15 +759,6 @@ export default function AdminRetirosPage() {
           ""
         );
 
-        const token =
-          requireAdminToken(
-            router
-          );
-
-        if (!token) {
-          return;
-        }
-
         const response =
           await apiRequest(
             `/pickups/admin/orders/${encodeURIComponent(
@@ -858,7 +767,6 @@ export default function AdminRetirosPage() {
             {
               method:
                 "POST",
-              token,
             }
           );
 
@@ -1029,24 +937,12 @@ export default function AdminRetirosPage() {
           ""
         );
 
-        const authToken =
-          requireAdminToken(
-            router
-          );
-
-        if (!authToken) {
-          return;
-        }
-
         const response =
           await apiRequest(
             "/pickups/scan",
             {
               method:
                 "POST",
-
-              token:
-                authToken,
 
               body: {
                 token,
@@ -1094,20 +990,35 @@ export default function AdminRetirosPage() {
      LOGOUT
   ========================================= */
   const handleLogout =
-    () => {
+    async () => {
       stopScanner();
 
-      localStorage.removeItem(
-        "token"
-      );
+      try {
+        await apiRequest(
+          "/auth/logout",
+          {
+            method:
+              "POST",
+          }
+        );
+      } catch {
+        // La navegación al login debe continuar aunque falle el cierre remoto.
+      }
 
-      localStorage.removeItem(
-        "user"
-      );
+      if (
+        typeof window !==
+        "undefined"
+      ) {
+        localStorage.removeItem(
+          "user"
+        );
+      }
 
       router.replace(
         "/login"
       );
+
+      router.refresh();
     };
 
   if (
