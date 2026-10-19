@@ -241,19 +241,19 @@ export default function HeroLaminateMotion({
   const configs = [
     {
       className:
-        "left-[5%] top-[18%] h-[65%] w-[36%] -rotate-[8deg] z-[4]",
+        "left-[2%] top-[20%] h-[58%] w-[48%] -rotate-[8deg] z-[4] sm:left-[5%] sm:top-[18%] sm:h-[65%] sm:w-[36%]",
     },
     {
       className:
-        "left-[29%] top-[13%] h-[69%] w-[33%] -rotate-[2deg] z-[3]",
+        "left-[25%] top-[15%] h-[62%] w-[46%] -rotate-[2deg] z-[3] sm:left-[29%] sm:top-[13%] sm:h-[69%] sm:w-[33%]",
     },
     {
       className:
-        "left-[52%] top-[17%] h-[63%] w-[31%] rotate-[6deg] z-[2]",
+        "left-[49%] top-[20%] h-[57%] w-[44%] rotate-[6deg] z-[2] sm:left-[52%] sm:top-[17%] sm:h-[63%] sm:w-[31%]",
     },
     {
       className:
-        "right-[0%] top-[24%] h-[57%] w-[28%] rotate-[11deg] z-[1]",
+        "right-[-7%] top-[27%] h-[50%] w-[42%] rotate-[11deg] z-[1] sm:right-[0%] sm:top-[24%] sm:h-[57%] sm:w-[28%]",
     },
   ];
 
