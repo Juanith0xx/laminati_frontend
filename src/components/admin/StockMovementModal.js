@@ -26,7 +26,6 @@ export default function StockMovementModal({ product, onClose, onSuccess }) {
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [requestId, setRequestId] = useState(() => makeRequestId());
-  const token = () => typeof window === "undefined" ? null : (localStorage.getItem("token") || "").replace(/^"|"$/g, "").replace(/^Bearer\s+/i, "").trim();
 
   useEffect(() => {
     let active = true;
@@ -34,7 +33,7 @@ export default function StockMovementModal({ product, onClose, onSuccess }) {
       try {
         setLoading(true);
         setError("");
-        const response = await apiRequest(`/admin/products/${product.id}/inventory`, { token: token() });
+        const response = await apiRequest(`/admin/products/${product.id}/inventory`);
         if (!active) return;
         const rows = (response.inventory || []).filter((row) => row.relbase_warehouse_id != null);
         setWarehouses(rows);
@@ -54,7 +53,7 @@ export default function StockMovementModal({ product, onClose, onSuccess }) {
     setError("");
     setPreview(null);
     try {
-      const data = await apiRequest(`/admin/products/${product.id}/stock-movements/preview?warehouse_id=${encodeURIComponent(warehouseId)}`, { token: token() });
+      const data = await apiRequest(`/admin/products/${product.id}/stock-movements/preview?warehouse_id=${encodeURIComponent(warehouseId)}`);
       setPreview(data);
 
       const relbaseStock =
@@ -150,7 +149,7 @@ export default function StockMovementModal({ product, onClose, onSuccess }) {
     setError("");
     try {
       const response = await apiRequest(`/admin/products/${product.id}/stock-movements`, {
-        method: "POST", token: token(), body: {
+        method: "POST", body: {
           request_id: requestId,
           warehouse_id: Number(warehouseId),
           operation,
@@ -174,7 +173,7 @@ export default function StockMovementModal({ product, onClose, onSuccess }) {
     setSubmitting(true);
     setError("");
     try {
-      const response = await apiRequest(`/admin/products/${product.id}/stock-movements/${encodeURIComponent(result.request_id)}`, { token: token() });
+      const response = await apiRequest(`/admin/products/${product.id}/stock-movements/${encodeURIComponent(result.request_id)}`);
       setResult(response.movement);
       if (response.movement?.status === "SUCCEEDED") onSuccess?.();
     } catch (e) { setError(e?.message || "No fue posible consultar el estado. Revísalo en la base de datos y en Relbase."); }

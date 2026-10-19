@@ -560,24 +560,6 @@ export async function getQuotationPdfBlob(
     process.env
       .NEXT_PUBLIC_API_URL;
 
-  const token =
-    typeof window !==
-    "undefined"
-      ? String(
-          localStorage.getItem(
-            "token"
-          ) || ""
-        )
-          .replace(
-            /^"|"$/g,
-            ""
-          )
-          .replace(
-            /^Bearer\s+/i,
-            ""
-          )
-          .trim()
-      : "";
 
   const response =
     await fetch(
@@ -590,13 +572,7 @@ export async function getQuotationPdfBlob(
         cache:
           "no-store",
 
-        headers:
-          token
-            ? {
-                Authorization:
-                  `Bearer ${token}`,
-              }
-            : {},
+        credentials: "include",
       }
     );
 

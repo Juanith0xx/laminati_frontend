@@ -168,15 +168,20 @@ export const saveAuthSession = (response) => {
     return;
   }
 
-  if (!response?.token || !response?.user) {
+  if (!response?.user) {
     throw new Error(
       "Respuesta de autenticación inválida"
     );
   }
 
-  window.localStorage.setItem(
-    AUTH_TOKEN_KEY,
-    response.token
+  /*
+   * El JWT ya no se persiste en Web Storage.
+   * El backend establece la sesión en cookie HttpOnly.
+   * Removemos cualquier token legacy que haya quedado
+   * de una versión anterior del frontend.
+   */
+  window.localStorage.removeItem(
+    AUTH_TOKEN_KEY
   );
 
   window.localStorage.setItem(
@@ -232,6 +237,16 @@ export const clearAuthSession = () => {
     return;
   }
 
+  /*
+   * Cierre remoto de la cookie HttpOnly. keepalive evita
+   * perder la petición si la navegación ocurre enseguida.
+   */
+  void apiRequest("/auth/logout", {
+    method: "POST",
+    keepalive: true,
+  }).catch(() => null);
+
+  // Limpieza de compatibilidad con sesiones antiguas.
   window.localStorage.removeItem(
     AUTH_TOKEN_KEY
   );

@@ -562,17 +562,12 @@ export default function Navbar() {
   useEffect(() => {
     const syncSession = () => {
       try {
-        const token =
-          window.localStorage.getItem(
-            "token"
-          );
-
         const storedUser =
           window.localStorage.getItem(
             "user"
           );
 
-        if (!token || !storedUser) {
+        if (!storedUser) {
           setSessionUser(null);
           return;
         }

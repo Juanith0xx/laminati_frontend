@@ -2,32 +2,13 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL;
 
 /* =========================================
-   OBTENER TOKEN LOCAL
-========================================= */
-function getStoredToken() {
-  if (typeof window === "undefined") {
-    return null;
-  }
+   API REQUEST — SESIÓN HTTPONLY
 
-  const storedToken =
-    localStorage.getItem("token");
-
-  if (
-    !storedToken ||
-    storedToken === "null" ||
-    storedToken === "undefined"
-  ) {
-    return null;
-  }
-
-  return storedToken
-    .replace(/^"|"$/g, "")
-    .replace(/^Bearer\s+/i, "")
-    .trim();
-}
-
-/* =========================================
-   API REQUEST
+   - La sesión principal viaja en una cookie HttpOnly.
+   - credentials: "include" permite enviarla a Railway.
+   - token se conserva SOLO como compatibilidad temporal
+     para llamadas legacy explícitas; nunca se lee desde
+     localStorage.
 ========================================= */
 export async function apiRequest(
   endpoint,
@@ -38,27 +19,26 @@ export async function apiRequest(
     headers = {},
     cache = "no-store",
     signal,
+    credentials = "include",
+    keepalive = false,
   } = {}
 ) {
   const isFormData =
     typeof FormData !== "undefined" &&
     body instanceof FormData;
 
-  const authToken =
-    token || getStoredToken();
+  const explicitToken =
+    String(token || "")
+      .replace(/^Bearer\s+/i, "")
+      .replace(/^"|"$/g, "")
+      .trim();
 
   const requestHeaders = {
     ...(body && !isFormData
-      ? {
-          "Content-Type":
-            "application/json",
-        }
+      ? { "Content-Type": "application/json" }
       : {}),
-    ...(authToken
-      ? {
-          Authorization:
-            `Bearer ${authToken}`,
-        }
+    ...(explicitToken
+      ? { Authorization: `Bearer ${explicitToken}` }
       : {}),
     ...headers,
   };
@@ -69,8 +49,10 @@ export async function apiRequest(
       method,
       cache,
       signal,
+      credentials,
+      keepalive,
       headers: requestHeaders,
-      ...(body
+      ...(body !== undefined
         ? {
             body: isFormData
               ? body

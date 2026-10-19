@@ -4,25 +4,6 @@ import {
   apiRequest,
 } from "@/services/api";
 
-const getToken = () =>
-  typeof window !==
-  "undefined"
-    ? String(
-        localStorage.getItem(
-          "token"
-        ) || ""
-      )
-        .replace(
-          /^"|"$/g,
-          ""
-        )
-        .replace(
-          /^Bearer\s+/i,
-          ""
-        )
-        .trim()
-    : "";
-
 export async function listTaxDocuments({
   type = "",
   status = "",
@@ -226,8 +207,6 @@ export async function getTaxDocumentPdfSource(
     process.env
       .NEXT_PUBLIC_API_URL;
 
-  const token =
-    getToken();
 
   const response =
     await fetch(
@@ -237,13 +216,7 @@ export async function getTaxDocumentPdfSource(
       {
         method: "GET",
         cache: "no-store",
-        headers:
-          token
-            ? {
-                Authorization:
-                  `Bearer ${token}`,
-              }
-            : {},
+        credentials: "include",
       }
     );
 

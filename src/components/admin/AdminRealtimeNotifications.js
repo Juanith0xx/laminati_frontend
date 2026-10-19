@@ -31,40 +31,6 @@ const TOAST_DURATION_MS =
 const MAX_TOASTS =
   4;
 
-function getStoredToken() {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return null;
-  }
-
-  const value =
-    localStorage.getItem(
-      "token"
-    );
-
-  if (
-    !value ||
-    value === "null" ||
-    value ===
-      "undefined"
-  ) {
-    return null;
-  }
-
-  return String(value)
-    .replace(
-      /^"|"$/g,
-      ""
-    )
-    .replace(
-      /^Bearer\s+/i,
-      ""
-    )
-    .trim();
-}
-
 function getSocketUrl() {
   const raw =
     String(
@@ -351,14 +317,10 @@ export default function AdminRealtimeNotifications() {
     );
 
   useEffect(() => {
-    const token =
-      getStoredToken();
-
     const socketUrl =
       getSocketUrl();
 
     if (
-      !token ||
       !socketUrl
     ) {
       return undefined;
@@ -368,10 +330,6 @@ export default function AdminRealtimeNotifications() {
       io(
         socketUrl,
         {
-          auth: {
-            token,
-          },
-
           withCredentials:
             true,
 
