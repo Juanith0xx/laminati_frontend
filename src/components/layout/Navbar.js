@@ -14,7 +14,12 @@ import ProductSearch from "./ProductSearch";
 
 import {
   AUTH_CHANGED_EVENT,
+  getStoredUser,
 } from "@/services/auth.service";
+
+import {
+  apiRequest,
+} from "@/services/api";
 
 import AdminNotificationCenter from "@/components/admin/AdminNotificationCenter";
 
@@ -190,20 +195,16 @@ export default function Navbar() {
     .toUpperCase();
 
   const accountHref =
-    sessionRole === "ADMIN"
-      ? "/admin"
-      : sessionRole === "VENDEDOR"
-        ? "/admin/dashboard"
-        : "/mi-cuenta";
+    ["ADMIN", "VENDEDOR"].includes(sessionRole)
+      ? "/admin/perfil"
+      : "/mi-cuenta";
 
   const accountAriaLabel =
-    sessionRole === "ADMIN"
-      ? "Ir al panel de administración"
-      : sessionRole === "VENDEDOR"
-        ? "Ir al panel de ventas"
-        : sessionRole === "USUARIO_EMPRESA"
-          ? "Ir a mi empresa"
-          : "Ir a mi cuenta";
+    ["ADMIN", "VENDEDOR"].includes(sessionRole)
+      ? "Ir a mi perfil del backoffice"
+      : sessionRole === "USUARIO_EMPRESA"
+        ? "Ir a mi empresa"
+        : "Ir a mi cuenta";
 
   /* =========================================
      MENÚ DE PRODUCTOS
@@ -557,81 +558,127 @@ export default function Navbar() {
 
   /* =========================================
      SINCRONIZAR SESIÓN
+     La autenticación real se valida en backend
+     mediante cookie HttpOnly.
   ========================================= */
 
   useEffect(() => {
-    const syncSession = () => {
+    let active = true;
+
+    const isSupportedRole = (role) =>
+      [
+        "ADMIN",
+        "VENDEDOR",
+        "CLIENTE",
+        "USUARIO_EMPRESA",
+      ].includes(
+        String(role || "")
+          .trim()
+          .toUpperCase()
+      );
+
+    const syncSession = async () => {
+      const cachedUser =
+        getStoredUser();
+
+      if (
+        active &&
+        cachedUser &&
+        isSupportedRole(
+          cachedUser.role
+        )
+      ) {
+        setSessionUser(
+          cachedUser
+        );
+      }
+
       try {
-        const storedUser =
-          window.localStorage.getItem(
-            "user"
+        const response =
+          await apiRequest(
+            "/auth/me"
           );
 
-        if (!storedUser) {
-          setSessionUser(null);
+        if (!active) {
           return;
         }
 
-        const parsedUser =
-          JSON.parse(
-            storedUser
-          );
-
-        const role = String(
-          parsedUser?.role ||
-            ""
-        )
-          .trim()
-          .toUpperCase();
+        const currentUser =
+          response?.user ||
+          null;
 
         if (
-          role === "ADMIN" ||
-          role === "VENDEDOR" ||
-          role === "CLIENTE" ||
-          role === "USUARIO_EMPRESA"
+          currentUser &&
+          isSupportedRole(
+            currentUser.role
+          )
         ) {
           setSessionUser(
-            parsedUser
+            currentUser
           );
           return;
         }
 
         setSessionUser(null);
       } catch (error) {
-        console.error(
-          "Error leyendo sesión del usuario:",
-          error
-        );
+        if (!active) {
+          return;
+        }
 
-        setSessionUser(null);
+        if (
+          error?.status === 401 ||
+          error?.status === 403
+        ) {
+          setSessionUser(null);
+
+          if (
+            typeof window !==
+            "undefined"
+          ) {
+            window.localStorage.removeItem(
+              "user"
+            );
+          }
+
+          return;
+        }
+
+        if (!cachedUser) {
+          setSessionUser(null);
+        }
       }
     };
 
     syncSession();
 
+    const handleSessionChange = () => {
+      syncSession();
+    };
+
     window.addEventListener(
       "storage",
-      syncSession
+      handleSessionChange
     );
 
     window.addEventListener(
       AUTH_CHANGED_EVENT,
-      syncSession
+      handleSessionChange
     );
 
     return () => {
+      active = false;
+
       window.removeEventListener(
         "storage",
-        syncSession
+        handleSessionChange
       );
 
       window.removeEventListener(
         AUTH_CHANGED_EVENT,
-        syncSession
+        handleSessionChange
       );
     };
   }, [pathname]);
-
 
   /* =========================================
      CERRAR MENÚ DE CUENTA AL HACER CLICK
