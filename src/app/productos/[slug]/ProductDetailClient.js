@@ -1418,6 +1418,29 @@ product.name
 
 /* =========================================*
 
+*     PROCEDENCIA SEGÚN MARCA*
+
+*  ========================================= */
+
+const isKarikal =
+
+String(
+product?.brand_slug ||
+""
+)
+.trim()
+.toLowerCase() ===
+"karikal" ||
+String(
+product?.brand ||
+""
+)
+.trim()
+.toLowerCase() ===
+"karikal";
+
+/* =========================================*
+
 *     DESCRIPCIÓN*
 
 *  ========================================= */
@@ -3795,6 +3818,22 @@ Procedencia
 
 </span>
 
+{isKarikal ? (
+
+<img
+
+src="/images/origins/made-in-argentina.webp"
+
+alt="Procedencia Argentina - Made in Argentina"
+
+className="h-auto w-[132px] object-contain"
+
+loading="eager"
+
+/>
+
+) : (
+
 <img
 
 src="/images/origins/made-in-italy.png"
@@ -3806,6 +3845,8 @@ className="h-auto w-[112px] object-contain"
 loading="eager"
 
 />
+
+)}
 
 </div>
 

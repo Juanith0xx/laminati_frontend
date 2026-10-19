@@ -1771,14 +1771,24 @@ export default function Navbar() {
                                                 false
                                               )
                                             }
-                                            className="group relative flex min-h-11 items-center overflow-hidden rounded-lg px-3 py-2 text-sm"
+                                            className="group relative flex min-h-11 w-full min-w-0 items-center overflow-hidden rounded-lg px-3 py-2 text-sm"
                                           >
                                             <span
                                               className="absolute inset-0 origin-left scale-x-0 bg-black transition-transform duration-700 ease-out group-hover:scale-x-100"
                                               aria-hidden="true"
                                             />
 
-                                            <span className="relative z-10 min-w-0 truncate text-neutral-600 transition-colors duration-300 group-hover:text-white">
+                                            <span
+                                              title={collection.name}
+                                              className={`relative z-10 block min-w-0 max-w-full truncate leading-5 tracking-[-0.01em] text-neutral-600 transition-colors duration-300 group-hover:text-white ${
+                                                String(
+                                                  collection.name ||
+                                                    ""
+                                                ).length > 24
+                                                  ? "text-[12px] xl:text-[13px]"
+                                                  : "text-sm"
+                                              }`}
+                                            >
                                               {
                                                 collection.name
                                               }
@@ -2412,10 +2422,10 @@ export default function Navbar() {
                               aria-expanded={
                                 mobileProductsOpen
                               }
-                              className={`flex w-full items-center justify-between py-4 text-left text-base font-medium !text-neutral-950 ${
+                              className={`flex w-full items-center justify-between py-4 text-left text-base font-medium ${
                                 active
-                                  ? "font-semibold"
-                                  : ""
+                                  ? "text-black"
+                                  : "text-neutral-600"
                               }`}
                             >
                               <span>
@@ -2609,7 +2619,7 @@ export default function Navbar() {
                                                                 brand.slug
                                                               )}`}
                                                               onClick={closeMobileNavigation}
-                                                              className="text-[10px] font-medium text-neutral-400"
+                                                              className="text-[10px] font-medium !text-neutral-400"
                                                             >
                                                               Ver marca
                                                             </Link>
@@ -2628,7 +2638,7 @@ export default function Navbar() {
                                                                 ).includes(
                                                                   "abet"
                                                                 )
-                                                                  ? "max-h-[260px] overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:max-h-none sm:overflow-hidden"
+                                                                  ? "max-h-[260px] overflow-x-hidden overflow-y-auto overscroll-contain sm:max-h-none sm:overflow-hidden"
                                                                   : "overflow-hidden"
                                                               }`}
                                                               style={
@@ -2658,7 +2668,7 @@ export default function Navbar() {
                                                                       collection.slug
                                                                     )}`}
                                                                     onClick={closeMobileNavigation}
-                                                                    className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black ${
+                                                                    className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black ${
                                                                       index !==
                                                                       brand
                                                                         .collections
@@ -2822,7 +2832,7 @@ export default function Navbar() {
                                                           link.href
                                                         }
                                                         onClick={closeMobileNavigation}
-                                                        className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black ${
+                                                        className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black ${
                                                           index !==
                                                           links.length -
                                                             1
@@ -2854,7 +2864,7 @@ export default function Navbar() {
                                                   <Link
                                                     href="/productos?category=hpl&brand=karikal&application=banos"
                                                     onClick={closeMobileNavigation}
-                                                    className="group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black"
+                                                    className="group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black"
                                                   >
                                                     <span>
                                                       Paneles Fenólicos / Baños
@@ -2870,7 +2880,7 @@ export default function Navbar() {
                                               <Link
                                                 href="/productos?category=hpl"
                                                 onClick={closeMobileNavigation}
-                                                className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold text-neutral-500"
+                                                className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold !text-neutral-500"
                                               >
                                                 Ver todos los HPL
                                                 <span>
@@ -2967,7 +2977,7 @@ export default function Navbar() {
                                               <Link
                                                 href="/productos?brand=kisafix"
                                                 onClick={closeMobileNavigation}
-                                                className="group flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-neutral-50/80 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white hover:text-black"
+                                                className="group flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-neutral-50/80 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black"
                                               >
                                                 <span>
                                                   Kisafix
@@ -2981,7 +2991,7 @@ export default function Navbar() {
                                               <Link
                                                 href="/productos?category=adhesivos"
                                                 onClick={closeMobileNavigation}
-                                                className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold text-neutral-500"
+                                                className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold !text-neutral-500"
                                               >
                                                 Ver todos los adhesivos
                                                 <span>
@@ -3026,10 +3036,10 @@ export default function Navbar() {
                             item.href
                           }
                           onClick={closeMobileNavigation}
-                          className={`flex items-center justify-between border-b border-black/5 py-4 text-base font-medium !text-neutral-950 ${
+                          className={`flex items-center justify-between border-b border-black/5 py-4 text-base font-medium ${
                             active
-                              ? "font-semibold"
-                              : ""
+                              ? "!text-black"
+                              : "!text-neutral-600"
                           }`}
                         >
                           <span>
@@ -3080,10 +3090,7 @@ export default function Navbar() {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex min-h-12 items-center justify-center rounded-xl border border-black/10 bg-white px-4 text-sm font-medium !text-neutral-950"
-                      style={{
-                        color: "#171717",
-                      }}
+                      className="flex min-h-12 items-center justify-center rounded-xl border border-black/10 px-4 text-sm font-medium !text-neutral-950"
                     >
                       Ingresar
                     </Link>
@@ -3100,13 +3107,12 @@ export default function Navbar() {
                     }
 
                     className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-black px-4 text-sm font-medium !text-white"
-                    style={{
-                      color: "#ffffff",
-                    }}
 
                   >
 
                     <svg
+
+                      className="!text-white"
 
                       width="18"
 
@@ -3189,10 +3195,7 @@ export default function Navbar() {
                 {!sessionUser && (
                   <Link
                     href="/registro"
-                    className="mt-3 flex min-h-12 items-center justify-between rounded-xl border border-[#8b6d52]/20 bg-[#f7f2ec] px-4 text-sm font-medium !text-neutral-950 transition hover:bg-[#f1e9e0]"
-                    style={{
-                      color: "#171717",
-                    }}
+                    className="mt-3 flex min-h-12 items-center justify-between rounded-xl border border-[#8b6d52]/20 bg-[#f7f2ec] px-4 text-sm font-medium !text-neutral-800 transition hover:bg-[#f1e9e0]"
                   >
                     <span>
                       Crear una cuenta
