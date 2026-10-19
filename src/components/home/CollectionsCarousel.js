@@ -765,6 +765,74 @@ export default function CollectionsCarousel({
       ]
     );
 
+  const handleViewportScroll =
+    useCallback(
+      () => {
+        const viewport =
+          viewportRef.current;
+
+        if (!viewport) {
+          return;
+        }
+
+        const currentLeft =
+          viewport.scrollLeft;
+
+        let closestIndex =
+          0;
+
+        let closestDistance =
+          Number.POSITIVE_INFINITY;
+
+        itemRefs.current.forEach(
+          (
+            item,
+            index
+          ) => {
+            if (!item) {
+              return;
+            }
+
+            const distance =
+              Math.abs(
+                item.offsetLeft -
+                  currentLeft
+              );
+
+            if (
+              distance <
+              closestDistance
+            ) {
+              closestDistance =
+                distance;
+
+              closestIndex =
+                index;
+            }
+          }
+        );
+
+        const safeIndex =
+          Math.min(
+            closestIndex,
+            maxStartIndex
+          );
+
+        setActiveIndex(
+          (
+            currentIndex
+          ) =>
+            currentIndex ===
+            safeIndex
+              ? currentIndex
+              : safeIndex
+        );
+      },
+      [
+        maxStartIndex,
+      ]
+    );
+
   useEffect(
     () => {
       const updateVisibleCount =
@@ -914,9 +982,22 @@ export default function CollectionsCarousel({
         ref={
           viewportRef
         }
+        onScroll={
+          handleViewportScroll
+        }
         className="
           scrollbar-none
-          overflow-x-hidden
+
+          overflow-x-auto
+          overscroll-x-contain
+
+          snap-x
+          snap-mandatory
+
+          touch-pan-x
+
+          sm:overflow-x-hidden
+          sm:snap-none
         "
       >
 
@@ -953,6 +1034,8 @@ export default function CollectionsCarousel({
                     w-[84%]
                     shrink-0
 
+                    snap-start
+
                     overflow-hidden
 
                     rounded-[2rem]
@@ -975,14 +1058,12 @@ export default function CollectionsCarousel({
                     hover:
                     shadow-[0_24px_56px_rgba(0,0,0,0.26)]
 
-                    sm:
-                    aspect-[3/4]
+                    sm:aspect-[3/4]
 
-                    sm:
-                    w-[47%]
+                    sm:w-[47%]
+                    sm:snap-none
 
-                    lg:
-                    w-[calc(25%_-_18px)]
+                    lg:w-[calc(25%_-_18px)]
 
                     opacity-100
                     scale-100
