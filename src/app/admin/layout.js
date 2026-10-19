@@ -1,6 +1,7 @@
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminRealtimeNotifications from "@/components/admin/AdminRealtimeNotifications";
 import AdminAccessGuard from "@/components/admin/AdminAccessGuard";
+import AdminSessionManager from "@/components/admin/AdminSessionManager";
 
 export default function AdminLayout({
   children,
@@ -11,6 +12,8 @@ export default function AdminLayout({
         <AdminSidebar />
 
         <AdminRealtimeNotifications />
+
+        <AdminSessionManager />
 
         <main className="lg:pl-[280px]">
           {children}

@@ -13,7 +13,7 @@ import {
   clearAuthSession,
 } from "@/services/auth.service";
 
-const WARNING_TIME_MS = 60 * 1000;
+const WARNING_TIME_MS = 5 * 60 * 1000;
 const FORCE_MODAL_TIME_MS = 15 * 1000;
 const DISMISS_TIME_MS = 10 * 1000;
 const SESSION_SYNC_INTERVAL_MS = 60 * 1000;
@@ -53,6 +53,8 @@ export default function AdminSessionManager() {
     useState(false);
   const [extensionError, setExtensionError] =
     useState("");
+  const [renewalDurationLabel, setRenewalDurationLabel] =
+    useState("2 horas");
 
   const logoutStartedRef = useRef(false);
   const dismissedUntilRef = useRef(0);
@@ -104,6 +106,14 @@ export default function AdminSessionManager() {
       setClockOffsetMs(nextClockOffset);
       setExpiresAt(nextExpiresAt);
       setRemainingMs(nextRemaining);
+
+      if (
+        response?.renewal_duration_label
+      ) {
+        setRenewalDurationLabel(
+          response.renewal_duration_label
+        );
+      }
 
       if (nextRemaining > WARNING_TIME_MS) {
         dismissedUntilRef.current = 0;
@@ -439,7 +449,11 @@ export default function AdminSessionManager() {
             id="admin-session-description"
             className="mx-auto mt-4 max-w-[390px] text-sm leading-6 text-neutral-600"
           >
-            Tu sesión del backoffice está por expirar por seguridad. Si deseas continuar trabajando, confirma para extender tu sesión por 2 horas más.
+            Tu sesión del backoffice está por expirar por seguridad. Si deseas continuar trabajando, confirma para extender tu sesión por{" "}
+            <strong className="font-semibold text-neutral-800">
+              {renewalDurationLabel}
+            </strong>{" "}
+            más.
           </p>
         </div>
 
