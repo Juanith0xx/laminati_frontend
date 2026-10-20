@@ -73,41 +73,23 @@ function formatFileSize(value) {
   ).toFixed(2)} MB`;
 }
 
-function getStoredToken() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  return String(
-    localStorage.getItem("token") || ""
-  )
-    .replace(/^"|"$/g, "")
-    .replace(/^Bearer\s+/i, "")
-    .trim();
-}
-
-function getStoredRole() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  try {
-    const rawUser =
-      localStorage.getItem("user");
-
-    if (!rawUser) {
-      return "";
-    }
-
-    const user =
-      JSON.parse(rawUser);
-
-    return normalize(
-      user?.role
+async function authenticatedFetch(
+  endpoint,
+  options = {}
+) {
+  if (!API_URL) {
+    throw new Error(
+      "NEXT_PUBLIC_API_URL no se encuentra configurado."
     );
-  } catch {
-    return "";
   }
+
+  return fetch(
+    `${API_URL}${endpoint}`,
+    {
+      ...options,
+      credentials: "include",
+    }
+  );
 }
 
 function normalize(value) {
@@ -927,10 +909,46 @@ export default function AdminPaymentsDocumentsPage() {
     useState(false);
 
   useEffect(() => {
-    setCurrentRole(
-      getStoredRole()
-    );
-  }, []);
+    let active = true;
+
+    const loadCurrentRole =
+      async () => {
+        try {
+          const response =
+            await apiRequest(
+              "/auth/me"
+            );
+
+          if (active) {
+            setCurrentRole(
+              normalize(
+                response?.user?.role
+              )
+            );
+          }
+        } catch (roleError) {
+          console.error(
+            "Error obteniendo rol de la sesión:",
+            roleError
+          );
+
+          if (
+            roleError?.status === 401 ||
+            roleError?.status === 403
+          ) {
+            router.replace(
+              "/login"
+            );
+          }
+        }
+      };
+
+    void loadCurrentRole();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const loadData = useCallback(
     ({ silent = false } = {}) => {
@@ -1028,7 +1046,7 @@ export default function AdminPaymentsDocumentsPage() {
           });
         }
       },
-      5000
+      30000
     );
 
     return () =>
@@ -1279,24 +1297,16 @@ export default function AdminPaymentsDocumentsPage() {
           );
         }
 
-        const token =
-          getStoredToken();
-
         const response =
-          await fetch(
-            `${API_URL}/admin/integrations/relbase/dtes/${encodeURIComponent(
+          await authenticatedFetch(
+            `/admin/integrations/relbase/dtes/${encodeURIComponent(
               row.tax_document_id
             )}/pdf?format=${encodeURIComponent(
               format
             )}`,
             {
+              method: "GET",
               cache: "no-store",
-              headers: token
-                ? {
-                    Authorization:
-                      `Bearer ${token}`,
-                  }
-                : {},
             }
           );
 
@@ -1626,23 +1636,16 @@ export default function AdminPaymentsDocumentsPage() {
       setProofLoadingId(proof.id);
       setError("");
 
-      const token =
-        getStoredToken();
-
-      const response = await fetch(
-        `${API_URL}/payments/admin/bank-transfer-proofs/${encodeURIComponent(
-          proof.id
-        )}/file`,
-        {
-          cache: "no-store",
-          headers: token
-            ? {
-                Authorization:
-                  `Bearer ${token}`,
-              }
-            : {},
-        }
-      );
+      const response =
+        await authenticatedFetch(
+          `/payments/admin/bank-transfer-proofs/${encodeURIComponent(
+            proof.id
+          )}/file`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
       if (!response.ok) {
         const data = await response
