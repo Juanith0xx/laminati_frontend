@@ -188,6 +188,11 @@ export default function Navbar() {
       sessionUser
     );
 
+  const userAvatarUrl = String(
+    sessionUser?.avatar_url ||
+      ""
+  ).trim();
+
   const sessionRole = String(
     sessionUser?.role || ""
   )
@@ -1149,8 +1154,16 @@ export default function Navbar() {
                   aria-label={accountAriaLabel}
                   className="hidden max-w-[190px] items-center gap-2 rounded-full border border-black/10 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-black lg:flex"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black text-[9px] font-semibold uppercase tracking-[0.06em] text-white">
-                    {userInitials}
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-[9px] font-semibold uppercase tracking-[0.06em] text-white">
+                    {userAvatarUrl ? (
+                      <img
+                        src={userAvatarUrl}
+                        alt={userDisplayName || "Foto de perfil"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      userInitials
+                    )}
                   </span>
 
                   <span className="truncate">
@@ -1161,14 +1174,22 @@ export default function Navbar() {
                 <Link
                   href={accountHref}
                   aria-label={accountAriaLabel}
-                  className="hidden h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white transition hover:bg-neutral-100 lg:flex"
+                  className="hidden h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-black/10 bg-white transition hover:bg-neutral-100 lg:flex"
                 >
-                  <span
-                    className="text-xs font-semibold uppercase leading-none tracking-[0.06em]"
-                    style={{ color: "#171717" }}
-                  >
-                    {userInitials}
-                  </span>
+                  {userAvatarUrl ? (
+                    <img
+                      src={userAvatarUrl}
+                      alt={userDisplayName || "Foto de perfil"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className="text-xs font-semibold uppercase leading-none tracking-[0.06em]"
+                      style={{ color: "#171717" }}
+                    >
+                      {userInitials}
+                    </span>
+                  )}
                 </Link>
               )
             ) : (
@@ -3109,7 +3130,7 @@ export default function Navbar() {
                       className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 transition hover:bg-neutral-50"
                     >
                       <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold uppercase leading-none tracking-[0.06em] ${
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold uppercase leading-none tracking-[0.06em] ${
                           sessionRole === "VENDEDOR"
                             ? "bg-black text-white"
                             : "border border-black/10 bg-white"
@@ -3120,7 +3141,15 @@ export default function Navbar() {
                             : { color: "#171717" }
                         }
                       >
-                        {userInitials}
+                        {userAvatarUrl ? (
+                          <img
+                            src={userAvatarUrl}
+                            alt={userDisplayName || "Foto de perfil"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          userInitials
+                        )}
                       </span>
 
                       {sessionRole === "VENDEDOR" ? (

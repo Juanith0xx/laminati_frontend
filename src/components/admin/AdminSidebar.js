@@ -151,6 +151,28 @@ function IconQuotations({
   );
 }
 
+function IconTaxDocuments({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 3h9l3 3v15H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+      <path d="M14 3v4h4" />
+      <path d="M8 11h8M8 15h5" />
+      <path d="M16 14.5v4M14.5 16.5h3" />
+    </svg>
+  );
+}
+
 function IconQr({
   className = "",
 }) {
@@ -382,6 +404,14 @@ const NAVIGATION = [
           "/admin/pagos",
         icon:
           IconPayments,
+      },
+      {
+        label:
+          "Documentos tributarios",
+        href:
+          "/admin/documentos-tributarios",
+        icon:
+          IconTaxDocuments,
       },
     ],
   },

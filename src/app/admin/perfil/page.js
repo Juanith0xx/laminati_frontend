@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -583,6 +584,8 @@ export default function AdminProfilePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const avatarInputRef = useRef(null);
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -721,6 +724,142 @@ export default function AdminProfilePage() {
     }
   };
 
+  const handleAvatarSelect = async (event) => {
+    const file =
+      event.target.files?.[0] ||
+      null;
+
+    if (!file) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+
+    const allowedTypes =
+      new Set([
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+      ]);
+
+    if (!allowedTypes.has(file.type)) {
+      setError(
+        "La foto de perfil debe ser JPG, JPEG, PNG o WEBP."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      setError(
+        "La foto de perfil no puede superar los 3 MB."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "avatar",
+      file
+    );
+
+    setAvatarSaving(true);
+
+    try {
+      const response =
+        await apiRequest(
+          "/auth/me/avatar",
+          {
+            method: "PATCH",
+            body: formData,
+          }
+        );
+
+      const updatedUser =
+        response?.user;
+
+      if (!updatedUser) {
+        throw new Error(
+          "El servidor no devolvió el perfil actualizado."
+        );
+      }
+
+      setUser(updatedUser);
+      updateStoredUser(
+        updatedUser
+      );
+
+      setSuccess(
+        "Tu foto de perfil se actualizó correctamente."
+      );
+    } catch (requestError) {
+      setError(
+        requestError?.message ||
+          "No fue posible actualizar la foto de perfil."
+      );
+    } finally {
+      setAvatarSaving(false);
+
+      if (
+        avatarInputRef.current
+      ) {
+        avatarInputRef.current.value =
+          "";
+      }
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!user?.avatar_url) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setAvatarSaving(true);
+
+    try {
+      const response =
+        await apiRequest(
+          "/auth/me/avatar",
+          {
+            method: "DELETE",
+          }
+        );
+
+      const updatedUser =
+        response?.user;
+
+      if (!updatedUser) {
+        throw new Error(
+          "El servidor no devolvió el perfil actualizado."
+        );
+      }
+
+      setUser(updatedUser);
+      updateStoredUser(
+        updatedUser
+      );
+
+      setSuccess(
+        "Tu foto de perfil se eliminó correctamente."
+      );
+    } catch (requestError) {
+      setError(
+        requestError?.message ||
+          "No fue posible eliminar la foto de perfil."
+      );
+    } finally {
+      setAvatarSaving(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await apiRequest("/auth/logout", {
@@ -786,9 +925,60 @@ export default function AdminProfilePage() {
               />
 
               <div className="flex flex-col items-center px-2 pb-5 pt-7 text-center">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#f0ede7] text-3xl font-semibold tracking-[-0.04em] text-black sm:h-28 sm:w-28 sm:text-4xl">
-                  {initials}
+                <div className="relative h-24 w-24 overflow-hidden rounded-full bg-[#f0ede7] ring-4 ring-white shadow-sm sm:h-28 sm:w-28">
+                  {user?.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={`Foto de perfil de ${fullName}`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-semibold tracking-[-0.04em] text-black sm:text-4xl">
+                      {initials}
+                    </div>
+                  )}
                 </div>
+
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  onChange={handleAvatarSelect}
+                  disabled={avatarSaving}
+                  className="sr-only"
+                />
+
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      avatarInputRef.current?.click()
+                    }
+                    disabled={avatarSaving}
+                    className="inline-flex h-9 items-center justify-center rounded-full bg-black px-4 text-xs font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {avatarSaving
+                      ? "Procesando..."
+                      : user?.avatar_url
+                        ? "Cambiar foto"
+                        : "Subir foto"}
+                  </button>
+
+                  {user?.avatar_url ? (
+                    <button
+                      type="button"
+                      onClick={handleDeleteAvatar}
+                      disabled={avatarSaving}
+                      className="inline-flex h-9 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Eliminar foto
+                    </button>
+                  ) : null}
+                </div>
+
+                <p className="mt-2 text-[11px] text-neutral-400">
+                  JPG, PNG o WEBP · máximo 3 MB
+                </p>
 
                 <h2 className="mt-4 text-xl font-semibold tracking-[-0.03em] text-black">
                   {fullName}
