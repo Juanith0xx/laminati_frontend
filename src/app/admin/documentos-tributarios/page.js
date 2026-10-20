@@ -44,6 +44,18 @@ function dateTime(value) {
   }).format(date);
 }
 
+function dateInputLabel(value, emptyLabel) {
+  if (!value) return emptyLabel;
+
+  const [year, month, day] = String(value).split("-");
+
+  if (!year || !month || !day) {
+    return emptyLabel;
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
 function documentLabel(value) {
   if (value === "FACTURA") {
     return "Factura";
@@ -108,6 +120,24 @@ function Icon({ name, className = "h-4 w-4" }) {
       <svg {...common}>
         <circle cx="11" cy="11" r="7" />
         <path d="m20 20-3.5-3.5" />
+      </svg>
+    );
+  }
+
+  if (name === "calendar") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M16 3v4M8 3v4M3 10h18" />
+      </svg>
+    );
+  }
+
+  if (name === "refresh") {
+    return (
+      <svg {...common}>
+        <path d="M20 11a8 8 0 1 0 1 4" />
+        <path d="M20 4v7h-7" />
       </svg>
     );
   }
@@ -651,106 +681,157 @@ export default function TaxDocumentsHistoryPage() {
               />
             </section>
 
-            <section className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-sm">
-              <div className="grid gap-3 border-b border-neutral-100 p-4 xl:grid-cols-[minmax(280px,1fr)_170px_170px_150px_150px]">
-                <label className="relative block">
-                  <Icon
-                    name="search"
-                    className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
-                  />
-                  <input
-                    value={query}
-                    onChange={(event) =>
-                      setQuery(event.target.value)
-                    }
-                    placeholder="Buscar folio, cliente, RUT u orden..."
-                    className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-11 pr-4 text-sm outline-none transition focus:border-black"
-                  />
+            <section className="rounded-[26px] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="grid gap-4 xl:grid-cols-[minmax(280px,1.4fr)_160px_160px_minmax(280px,1fr)_150px] xl:items-end">
+                <label className="block">
+                  <span className="mb-2 block text-[11px] font-semibold text-neutral-700">
+                    Buscar documentos
+                  </span>
+                  <span className="relative block">
+                    <Icon
+                      name="search"
+                      className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+                    />
+                    <input
+                      value={query}
+                      onChange={(event) =>
+                        setQuery(event.target.value)
+                      }
+                      placeholder="Buscar folio, cliente, RUT u orden..."
+                      className="h-12 w-full rounded-2xl border border-neutral-200 bg-white pl-11 pr-4 text-sm text-neutral-900 shadow-[0_1px_2px_rgba(0,0,0,0.03)] outline-none transition placeholder:text-neutral-400 hover:border-neutral-300 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/5"
+                    />
+                  </span>
                 </label>
 
-                <select
-                  value={sourceSystem}
-                  onChange={(event) => {
-                    setSourceSystem(
-                      event.target.value
-                    );
-                    setPage(1);
-                    setSelectedId(null);
-                  }}
-                  className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-black"
-                >
-                  <option value="ALL">
-                    Todos los orígenes
-                  </option>
-                  <option value="LAMINATIWORD">
-                    Laminatiword
-                  </option>
-                  <option value="RELBASE">
-                    Relbase
-                  </option>
-                </select>
+                <label className="block">
+                  <span className="mb-2 block text-[11px] font-semibold text-neutral-700">
+                    Origen
+                  </span>
+                  <select
+                    value={sourceSystem}
+                    onChange={(event) => {
+                      setSourceSystem(
+                        event.target.value
+                      );
+                      setPage(1);
+                      setSelectedId(null);
+                    }}
+                    className="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-800 outline-none transition hover:border-neutral-300 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/5"
+                  >
+                    <option value="ALL">
+                      Todos los orígenes
+                    </option>
+                    <option value="LAMINATIWORD">
+                      Laminatiword
+                    </option>
+                    <option value="RELBASE">
+                      Relbase
+                    </option>
+                  </select>
+                </label>
 
-                <select
-                  value={siiStatus}
-                  onChange={(event) => {
-                    setSiiStatus(
-                      event.target.value
-                    );
-                    setPage(1);
-                    setSelectedId(null);
-                  }}
-                  className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-black"
-                >
-                  <option value="ALL">
+                <label className="block">
+                  <span className="mb-2 block text-[11px] font-semibold text-neutral-700">
                     Estado SII
-                  </option>
-                  <option value="accepted">
-                    Aceptado
-                  </option>
-                  <option value="cancel">
-                    Anulado
-                  </option>
-                  <option value="rejected">
-                    Rechazado
-                  </option>
-                </select>
+                  </span>
+                  <select
+                    value={siiStatus}
+                    onChange={(event) => {
+                      setSiiStatus(
+                        event.target.value
+                      );
+                      setPage(1);
+                      setSelectedId(null);
+                    }}
+                    className="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-800 outline-none transition hover:border-neutral-300 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/5"
+                  >
+                    <option value="ALL">
+                      Todos los estados
+                    </option>
+                    <option value="accepted">
+                      Aceptado
+                    </option>
+                    <option value="cancel">
+                      Anulado
+                    </option>
+                    <option value="rejected">
+                      Rechazado
+                    </option>
+                  </select>
+                </label>
 
-                <input
-                  type="date"
-                  value={from}
-                  onChange={(event) => {
-                    setFrom(event.target.value);
-                    setPage(1);
-                    setSelectedId(null);
-                  }}
-                  aria-label="Fecha desde"
-                  className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-700 outline-none focus:border-black"
-                />
+                <div className="block">
+                  <span className="mb-2 block text-[11px] font-semibold text-neutral-700">
+                    Rango de fechas
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="relative flex h-12 cursor-pointer items-center rounded-2xl border border-neutral-200 bg-white pl-10 pr-3 text-sm text-neutral-700 transition hover:border-neutral-300 focus-within:border-neutral-950 focus-within:ring-2 focus-within:ring-neutral-950/5">
+                      <Icon
+                        name="calendar"
+                        className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+                      />
+                      <span
+                        className={from ? "text-neutral-800" : "text-neutral-400"}
+                      >
+                        {dateInputLabel(from, "Desde")}
+                      </span>
+                      <input
+                        type="date"
+                        value={from}
+                        onChange={(event) => {
+                          setFrom(event.target.value);
+                          setPage(1);
+                          setSelectedId(null);
+                        }}
+                        aria-label="Fecha desde"
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      />
+                    </label>
 
-                <input
-                  type="date"
-                  value={to}
-                  onChange={(event) => {
-                    setTo(event.target.value);
-                    setPage(1);
-                    setSelectedId(null);
-                  }}
-                  aria-label="Fecha hasta"
-                  className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-700 outline-none focus:border-black"
-                />
-              </div>
+                    <label className="relative flex h-12 cursor-pointer items-center rounded-2xl border border-neutral-200 bg-white pl-10 pr-3 text-sm text-neutral-700 transition hover:border-neutral-300 focus-within:border-neutral-950 focus-within:ring-2 focus-within:ring-neutral-950/5">
+                      <Icon
+                        name="calendar"
+                        className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+                      />
+                      <span
+                        className={to ? "text-neutral-800" : "text-neutral-400"}
+                      >
+                        {dateInputLabel(to, "Hasta")}
+                      </span>
+                      <input
+                        type="date"
+                        value={to}
+                        onChange={(event) => {
+                          setTo(event.target.value);
+                          setPage(1);
+                          setSelectedId(null);
+                        }}
+                        aria-label="Fecha hasta"
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      />
+                    </label>
+                  </div>
+                </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3">
-                <p className="text-xs text-neutral-400">
-                  {integer(pagination.total)} documentos encontrados
-                </p>
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="text-xs font-semibold text-neutral-600 transition hover:text-black"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-700 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition hover:border-neutral-950 hover:text-neutral-950 focus:outline-none focus:ring-2 focus:ring-neutral-950/5"
                 >
+                  <Icon
+                    name="refresh"
+                    className="h-4 w-4"
+                  />
                   Limpiar filtros
                 </button>
+              </div>
+            </section>
+
+            <section className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3 sm:px-5">
+                <p className="text-xs text-neutral-400">
+                  {integer(pagination.total)} documentos encontrados
+                </p>
               </div>
 
               {error ? (
