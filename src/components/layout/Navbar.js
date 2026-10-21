@@ -200,16 +200,27 @@ export default function Navbar() {
     .toUpperCase();
 
   const accountHref =
-    ["ADMIN", "VENDEDOR"].includes(sessionRole)
-      ? "/admin/perfil"
-      : "/mi-cuenta";
+    sessionRole ===
+    "GERENCIA_ITALIA"
+      ? "/gerencia/perfil"
+      : ["ADMIN", "VENDEDOR"].includes(
+          sessionRole
+        )
+        ? "/admin/perfil"
+        : "/mi-cuenta";
 
   const accountAriaLabel =
-    ["ADMIN", "VENDEDOR"].includes(sessionRole)
-      ? "Ir a mi perfil del backoffice"
-      : sessionRole === "USUARIO_EMPRESA"
-        ? "Ir a mi empresa"
-        : "Ir a mi cuenta";
+    sessionRole ===
+    "GERENCIA_ITALIA"
+      ? "Ir a mi perfil de Gerencia"
+      : ["ADMIN", "VENDEDOR"].includes(
+          sessionRole
+        )
+        ? "Ir a mi perfil del backoffice"
+        : sessionRole ===
+            "USUARIO_EMPRESA"
+          ? "Ir a mi empresa"
+          : "Ir a mi cuenta";
 
   /* =========================================
      MENÚ DE PRODUCTOS
@@ -574,6 +585,7 @@ export default function Navbar() {
       [
         "ADMIN",
         "VENDEDOR",
+        "GERENCIA_ITALIA",
         "CLIENTE",
         "USUARIO_EMPRESA",
       ].includes(

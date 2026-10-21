@@ -807,6 +807,10 @@ const EMPTY_FORM = {
 
     "",
 
+  italy_price_usd:
+
+    "",
+
   tax_rate:
 
     "19",
@@ -925,6 +929,11 @@ function productToForm(
     base_price:
       valueToFormString(
         product?.base_price
+      ),
+
+    italy_price_usd:
+      valueToFormString(
+        product?.italy_price_usd
       ),
 
     tax_rate:
@@ -4339,6 +4348,48 @@ export default function AdminProductsPage() {
 
       }
 
+      const italyPriceUsd =
+
+        toOptionalNumber(
+
+          form
+
+            .italy_price_usd
+
+        );
+
+      if (
+
+        form
+
+          .italy_price_usd !==
+
+          "" &&
+
+        (
+
+          italyPriceUsd ===
+
+            null ||
+
+          italyPriceUsd <
+
+            0
+
+        )
+
+      ) {
+
+        setFormError(
+
+          "El Precio Italia (USD) no es válido."
+
+        );
+
+        return;
+
+      }
+
       const sortOrder =
 
         Number.parseInt(
@@ -4462,6 +4513,10 @@ export default function AdminProductsPage() {
               .base_price
 
           ),
+
+        italy_price_usd:
+
+          italyPriceUsd,
 
         tax_rate:
 
@@ -7770,7 +7825,7 @@ export default function AdminProductsPage() {
 
                   </p>
 
-                  <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
                     <label>
 
@@ -7824,6 +7879,54 @@ export default function AdminProductsPage() {
 
                       <FieldLabel>
 
+                        Precio Italia (USD)
+
+                      </FieldLabel>
+
+                      <Input
+
+                        type="number"
+
+                        min="0"
+
+                        step="0.01"
+
+                        value={
+
+                          form.italy_price_usd
+
+                        }
+
+                        onChange={(
+
+                          event
+
+                        ) =>
+
+                          setField(
+
+                            "italy_price_usd",
+
+                            event
+
+                              .target
+
+                              .value
+
+                          )
+
+                        }
+
+                        placeholder="Ej. 32.50"
+
+                      />
+
+                    </label>
+
+                    <label>
+
+                      <FieldLabel>
+
                         IVA %
 
                       </FieldLabel>
@@ -7868,7 +7971,7 @@ export default function AdminProductsPage() {
 
                     </label>
 
-                    <label className="sm:col-span-2">
+                    <label className="sm:col-span-2 lg:col-span-3">
 
                       <FieldLabel>
 
@@ -7914,7 +8017,7 @@ export default function AdminProductsPage() {
 
                     </label>
 
-                    <label className="sm:col-span-2">
+                    <label className="sm:col-span-2 lg:col-span-3">
 
                       <FieldLabel>
 

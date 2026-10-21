@@ -178,6 +178,30 @@ export default function EditQuotationPage() {
   const [validUntil, setValidUntil] =
     useState("");
 
+  const [
+    editQuotationType,
+    setEditQuotationType,
+  ] = useState("STANDARD");
+
+  const [
+    projectName,
+    setProjectName,
+  ] = useState("");
+
+  const [
+    projectReference,
+    setProjectReference,
+  ] = useState("");
+
+  const [
+    visibleToItaly,
+    setVisibleToItaly,
+  ] = useState(false);
+
+  const isConvertingToProject =
+    editQuotationType ===
+    "PROJECT";
+
   const [query, setQuery] =
     useState("");
   const [products, setProducts] =
@@ -270,6 +294,34 @@ export default function EditQuotationPage() {
         }
 
         setQuotation(current);
+
+        setEditQuotationType(
+          String(
+            current.quotation_type ||
+              "STANDARD"
+          )
+            .trim()
+            .toUpperCase() ===
+            "PROJECT"
+            ? "PROJECT"
+            : "STANDARD"
+        );
+
+        setProjectName(
+          current.project_name ||
+            ""
+        );
+
+        setProjectReference(
+          current.project_reference ||
+            ""
+        );
+
+        setVisibleToItaly(
+          current.visible_to_italy ===
+            true
+        );
+
         setDocumentType(
           current.intended_document_type ||
             "BOLETA"
@@ -813,6 +865,19 @@ export default function EditQuotationPage() {
       return;
     }
 
+    if (
+      isConvertingToProject &&
+      !String(
+        projectName ||
+          ""
+      ).trim()
+    ) {
+      setError(
+        "Ingresa el nombre del proyecto antes de convertir la cotización."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
       setError("");
@@ -881,6 +946,33 @@ export default function EditQuotationPage() {
                 notes || ""
               ).trim() ||
               null,
+
+            quotation_type:
+              isConvertingToProject
+                ? "PROJECT"
+                : "STANDARD",
+
+            project_name:
+              isConvertingToProject
+                ? String(
+                    projectName ||
+                      ""
+                  ).trim()
+                : null,
+
+            project_reference:
+              isConvertingToProject
+                ? String(
+                    projectReference ||
+                      ""
+                  ).trim() ||
+                  null
+                : null,
+
+            visible_to_italy:
+              isConvertingToProject &&
+              visibleToItaly ===
+                true,
           }
         );
 
@@ -889,7 +981,9 @@ export default function EditQuotationPage() {
           ?.quotation || null;
 
       setMessage(
-        "Cotización actualizada correctamente."
+        isConvertingToProject
+          ? "Cotización convertida a Proyecto correctamente."
+          : "Cotización actualizada correctamente."
       );
 
       if (updated) {
@@ -998,6 +1092,190 @@ export default function EditQuotationPage() {
             {message}
           </div>
         )}
+
+        <section className="mt-6 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-950">
+                Tipo de cotización
+              </h2>
+
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-neutral-500">
+                Puedes mantener esta cotización como Comercial o convertirla a Proyecto. La conversión se realiza únicamente al guardar.
+              </p>
+            </div>
+
+            {isConvertingToProject ? (
+              <span className="inline-flex w-fit rounded-full bg-neutral-900 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-white">
+                Proyecto
+              </span>
+            ) : (
+              <span className="inline-flex w-fit rounded-full bg-neutral-100 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-600">
+                Comercial
+              </span>
+            )}
+          </div>
+
+          <div className="mt-5 grid rounded-2xl bg-neutral-100 p-1 sm:max-w-xl sm:grid-cols-2">
+            <button
+              type="button"
+              disabled={
+                !canEdit
+              }
+              onClick={() => {
+                setEditQuotationType(
+                  "STANDARD"
+                );
+
+                setVisibleToItaly(
+                  false
+                );
+
+                setError(
+                  ""
+                );
+              }}
+              className={`h-11 rounded-xl text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                !isConvertingToProject
+                  ? "bg-white text-black shadow-sm"
+                  : "text-neutral-500 hover:text-black"
+              }`}
+            >
+              Comercial
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                !canEdit
+              }
+              onClick={() => {
+                setEditQuotationType(
+                  "PROJECT"
+                );
+
+                setError(
+                  ""
+                );
+              }}
+              className={`h-11 rounded-xl text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                isConvertingToProject
+                  ? "bg-black text-white shadow-sm"
+                  : "text-neutral-500 hover:text-black"
+              }`}
+            >
+              Convertir a Proyecto
+            </button>
+          </div>
+
+          {isConvertingToProject ? (
+            <div className="mt-5 rounded-2xl border border-black/10 bg-neutral-50 p-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Nombre del proyecto *">
+                  <input
+                    type="text"
+                    maxLength={255}
+                    value={
+                      projectName
+                    }
+                    disabled={
+                      !canEdit
+                    }
+                    onChange={(
+                      event
+                    ) => {
+                      setProjectName(
+                        event.target.value
+                      );
+
+                      setError(
+                        ""
+                      );
+                    }}
+                    placeholder="Ej. Hotel Milano"
+                    className={`${inputClass} disabled:bg-neutral-100 disabled:text-neutral-400`}
+                  />
+                </Field>
+
+                <Field label="Referencia del proyecto (opcional)">
+                  <input
+                    type="text"
+                    maxLength={255}
+                    value={
+                      projectReference
+                    }
+                    disabled={
+                      !canEdit
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setProjectReference(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Ej. PROY-2026-041"
+                    className={`${inputClass} disabled:bg-neutral-100 disabled:text-neutral-400`}
+                  />
+                </Field>
+              </div>
+
+              <label
+                className={`mt-4 flex items-start gap-3 rounded-2xl border border-black/10 bg-white p-4 ${
+                  canEdit
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-60"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    visibleToItaly
+                  }
+                  disabled={
+                    !canEdit
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setVisibleToItaly(
+                      event.target.checked
+                    )
+                  }
+                  className="mt-0.5 h-4 w-4 rounded border-neutral-300 accent-black"
+                />
+
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-neutral-950">
+                    Mostrar esta cotización a Gerencia Italia
+                  </span>
+
+                  <span className="mt-1 block text-[11px] leading-4 text-neutral-500">
+                    Gerencia Italia verá únicamente los productos ABET LAMINATI, las cantidades y la valorización con Precio Italia (USD).
+                  </span>
+
+                  {visibleToItaly ? (
+                    <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                      Visible para Gerencia Italia
+                    </span>
+                  ) : null}
+                </span>
+              </label>
+
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-[11px] leading-5 text-amber-800">
+                  Al guardar, esta cotización dejará de ser STANDARD y pasará a PROJECT conservando el mismo número de cotización. Los productos actuales serán migrados a líneas de proyecto.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 rounded-2xl border border-dashed border-black/10 bg-neutral-50 px-4 py-4">
+              <p className="text-xs leading-5 text-neutral-500">
+                Una cotización Comercial no puede mostrarse a Gerencia Italia. Para habilitar esa opción, conviértela primero a Proyecto.
+              </p>
+            </div>
+          )}
+        </section>
 
         <div className="mt-6 flex flex-col gap-5">
           <section className="order-2 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
@@ -1792,7 +2070,9 @@ export default function EditQuotationPage() {
               >
                 {saving
                   ? "Guardando..."
-                  : "Guardar cambios"}
+                  : isConvertingToProject
+                    ? "Guardar y convertir a Proyecto"
+                    : "Guardar cambios"}
               </button>
             </section>
           </aside>

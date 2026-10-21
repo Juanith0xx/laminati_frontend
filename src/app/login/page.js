@@ -82,11 +82,21 @@ export default function LoginPage() {
             ).get("redirect")
           : null;
 
+      const normalizedRole = String(
+        response.user.role || ""
+      )
+        .trim()
+        .toUpperCase();
+
       const destination =
-        resolvePostLoginDestination({
-          role: response.user.role,
-          redirect,
-        });
+        normalizedRole ===
+        "GERENCIA_ITALIA"
+          ? "/gerencia"
+          : resolvePostLoginDestination({
+              role:
+                response.user.role,
+              redirect,
+            });
 
       router.replace(destination);
       router.refresh();

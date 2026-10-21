@@ -1852,6 +1852,31 @@ function ShowroomContent() {
     setOperationDiscountValue,
   ] = useState("");
   const [validDays, setValidDays] = useState(7);
+
+  const [
+    quotationType,
+    setQuotationType,
+  ] = useState("STANDARD");
+
+  const [
+    projectName,
+    setProjectName,
+  ] = useState("");
+
+  const [
+    projectReference,
+    setProjectReference,
+  ] = useState("");
+
+  const [
+    visibleToItaly,
+    setVisibleToItaly,
+  ] = useState(false);
+
+  const isProjectQuotation =
+    quotationType ===
+    "PROJECT";
+
   const [quotationSaving, setQuotationSaving] = useState(false);
   const [quotationResult, setQuotationResult] = useState(null);
   const [closingMode, setClosingMode] = useState(() =>
@@ -3114,7 +3139,12 @@ function ShowroomContent() {
       getCartUnitPrice(item, true) !== getCatalogUnitPrice(item)
     )
   );
-  const quotationBlocked = hasQuotationGlobalDiscount || hasQuotationManualLines;
+  const quotationBlocked =
+    hasQuotationGlobalDiscount ||
+    (
+      !isProjectQuotation &&
+      hasQuotationManualLines
+    );
 
   const handleSaveQuotation = async () => {
     if (!quotationMode || quotationSaving || submitting) return;
@@ -3131,12 +3161,26 @@ function ShowroomContent() {
     }
 
     if (
+      !isProjectQuotation &&
       cart.some((item) =>
         isManualServiceItem(item)
       )
     ) {
       setSaleError(
-        "Los servicios manuales están habilitados para venta Showroom. Para cotizaciones de proyecto usa las líneas de servicio del módulo de Cotizaciones."
+        "Las líneas manuales sólo pueden incluirse cuando la cotización está definida como Proyecto."
+      );
+      return;
+    }
+
+    if (
+      isProjectQuotation &&
+      !String(
+        projectName ||
+          ""
+      ).trim()
+    ) {
+      setSaleError(
+        "Ingresa el nombre del proyecto antes de generar la cotización."
       );
       return;
     }
@@ -3238,34 +3282,198 @@ function ShowroomContent() {
       setSaleError("");
       setQuotationResult(null);
 
-      const response = await createQuotation({
-        document_type: documentType,
+      const commonQuotationPayload = {
+        document_type:
+          documentType,
+
         customer: {
-          name: customer.name,
-          rut: rutValidation.formatted,
-          email: customer.email,
-          phone: customer.phone,
-          address: customer.address,
+          name:
+            customer.name,
+          rut:
+            rutValidation.formatted,
+          email:
+            customer.email,
+          phone:
+            customer.phone,
+          address:
+            customer.address,
         },
+
         billing: {
           ...billing,
-          rut: rutValidation.formatted,
+          rut:
+            rutValidation.formatted,
         },
-        items: cart.map((item) => ({
-          product_id: item.id,
-          quantity: Number(item.quantity),
-          ...(isFexShippingItem(item)
-            ? {
-                unit_price_override:
-                  Number(
-                    item.unit_price_override
-                  ),
-              }
-            : {}),
-        })),
-        valid_days: Number(validDays),
-        notes: notes.trim() || null,
-      });
+
+        valid_days:
+          Number(
+            validDays
+          ),
+
+        notes:
+          notes.trim() ||
+          null,
+      };
+
+      const quotationPayload =
+        isProjectQuotation
+          ? {
+              ...commonQuotationPayload,
+
+              quotation_type:
+                "PROJECT",
+
+              project_name:
+                String(
+                  projectName ||
+                    ""
+                ).trim(),
+
+              project_reference:
+                String(
+                  projectReference ||
+                    ""
+                ).trim() ||
+                null,
+
+              visible_to_italy:
+                visibleToItaly ===
+                true,
+
+              lines:
+                cart.map(
+                  (
+                    item,
+                    index
+                  ) => {
+                    const quantity =
+                      Number(
+                        item.quantity
+                      );
+
+                    const unitPriceGross =
+                      getCartUnitPrice(
+                        item,
+                        true
+                      );
+
+                    const lineTotalGross =
+                      getCartLineTotal(
+                        item,
+                        true,
+                        true
+                      );
+
+                    const isServiceLine =
+                      isFexShippingItem(
+                        item
+                      ) ||
+                      isManualServiceItem(
+                        item
+                      );
+
+                    return {
+                      line_type:
+                        isServiceLine
+                          ? "SERVICE"
+                          : "PRODUCT",
+
+                      product_id:
+                        isServiceLine
+                          ? null
+                          : item.id,
+
+                      description:
+                        String(
+                          item.name ||
+                            item.service_name ||
+                            item.sku ||
+                            `Línea ${index + 1}`
+                        ).trim(),
+
+                      code:
+                        item.sku ||
+                        item.reference_code ||
+                        null,
+
+                      finish:
+                        item.finish ||
+                        null,
+
+                      thickness_mm:
+                        item.thickness_mm ??
+                        null,
+
+                      quantity,
+
+                      unit:
+                        "UN",
+
+                      unit_price_gross:
+                        Number(
+                          unitPriceGross
+                        ),
+
+                      line_total_gross:
+                        Number(
+                          lineTotalGross
+                        ),
+
+                      tax_rate:
+                        Number(
+                          item.tax_rate ??
+                            MANUAL_SERVICE_TAX_RATE
+                        ),
+
+                      pricing_mode:
+                        "UNIT",
+
+                      sort_order:
+                        index,
+                    };
+                  }
+                ),
+            }
+          : {
+              ...commonQuotationPayload,
+
+              quotation_type:
+                "STANDARD",
+
+              visible_to_italy:
+                false,
+
+              items:
+                cart.map(
+                  (
+                    item
+                  ) => ({
+                    product_id:
+                      item.id,
+
+                    quantity:
+                      Number(
+                        item.quantity
+                      ),
+
+                    ...(isFexShippingItem(
+                      item
+                    )
+                      ? {
+                          unit_price_override:
+                            Number(
+                              item.unit_price_override
+                            ),
+                        }
+                      : {}),
+                  })
+                ),
+            };
+
+      const response =
+        await createQuotation(
+          quotationPayload
+        );
 
       setQuotationResult(response?.data || null);
     } catch (error) {
@@ -6251,6 +6459,154 @@ function ShowroomContent() {
                     <p className="mt-1 text-[11px] leading-4 text-neutral-500">
                       Define las condiciones de vigencia y agrega una nota si corresponde.
                     </p>
+                  </div>
+
+                  <div className="mt-4">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                      Tipo de cotización
+                    </p>
+
+                    <div className="grid rounded-2xl bg-neutral-100 p-1 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuotationType(
+                            "STANDARD"
+                          );
+                          setVisibleToItaly(
+                            false
+                          );
+                          setSaleError(
+                            ""
+                          );
+                        }}
+                        className={`h-11 rounded-xl text-sm font-semibold transition ${
+                          !isProjectQuotation
+                            ? "bg-white text-black shadow-sm"
+                            : "text-neutral-500 hover:text-black"
+                        }`}
+                      >
+                        Comercial
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuotationType(
+                            "PROJECT"
+                          );
+                          setSaleError(
+                            ""
+                          );
+                        }}
+                        className={`h-11 rounded-xl text-sm font-semibold transition ${
+                          isProjectQuotation
+                            ? "bg-black text-white shadow-sm"
+                            : "text-neutral-500 hover:text-black"
+                        }`}
+                      >
+                        Proyecto
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-black/10 bg-neutral-50 p-4">
+                    {isProjectQuotation ? (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field label="Nombre del proyecto *">
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={
+                              projectName
+                            }
+                            onChange={(
+                              event
+                            ) => {
+                              setProjectName(
+                                event.target.value
+                              );
+                              setSaleError(
+                                ""
+                              );
+                            }}
+                            placeholder="Ej. Hotel Milano"
+                            className="h-11 w-full rounded-xl border border-black/10 bg-white px-3.5 text-sm outline-none transition focus:border-black"
+                          />
+                        </Field>
+
+                        <Field label="Referencia del proyecto (opcional)">
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={
+                              projectReference
+                            }
+                            onChange={(
+                              event
+                            ) =>
+                              setProjectReference(
+                                event.target.value
+                              )
+                            }
+                            placeholder="Ej. PROY-2026-041"
+                            className="h-11 w-full rounded-xl border border-black/10 bg-white px-3.5 text-sm outline-none transition focus:border-black"
+                          />
+                        </Field>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-black/10 bg-white px-4 py-3">
+                        <p className="text-xs font-medium text-neutral-600">
+                          Selecciona <strong>Proyecto</strong> para ingresar el nombre del proyecto y habilitar su visibilidad para Gerencia Italia.
+                        </p>
+                      </div>
+                    )}
+
+                    <label
+                      className={`mt-4 flex items-start gap-3 rounded-2xl border p-4 transition ${
+                        isProjectQuotation
+                          ? "cursor-pointer border-black/10 bg-white"
+                          : "cursor-not-allowed border-black/5 bg-neutral-100 opacity-60"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          isProjectQuotation &&
+                          visibleToItaly
+                        }
+                        disabled={
+                          !isProjectQuotation
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setVisibleToItaly(
+                            event.target.checked
+                          )
+                        }
+                        className="mt-0.5 h-4 w-4 rounded border-neutral-300 accent-black disabled:cursor-not-allowed"
+                      />
+
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-neutral-950">
+                          Mostrar esta cotización a Gerencia Italia
+                        </span>
+
+                        <span className="mt-1 block text-[11px] leading-4 text-neutral-500">
+                          {isProjectQuotation
+                            ? "Gerencia Italia verá únicamente los laminados ABET LAMINATI, sus cantidades y la valorización con Precio Italia (USD)."
+                            : "Disponible únicamente para cotizaciones de tipo Proyecto."}
+                        </span>
+
+                        {isProjectQuotation &&
+                        visibleToItaly ? (
+                          <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                            Visible para Gerencia Italia
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
                   </div>
 
                   <div className="mt-4 grid gap-4 sm:grid-cols-[220px_1fr]">
