@@ -5,8 +5,11 @@ import {
 import ProjectDetail from "./ProjectDetail";
 
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+const API_URL = (
+  process.env.API_SERVER_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  ""
+).replace(/\/$/, "");
 
 
 async function loadProject(
@@ -14,9 +17,12 @@ async function loadProject(
 ) {
   if (
     !API_URL ||
-    !slug
+    !slug ||
+    !/^https?:\/\//i.test(API_URL)
   ) {
-    return null;
+    throw new Error(
+      "API_SERVER_URL no está configurada con una URL absoluta"
+    );
   }
 
   const response =
