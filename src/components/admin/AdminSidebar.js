@@ -70,6 +70,26 @@ function IconProducts({
   );
 }
 
+function IconProjects({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H10l2 2h5.5A2.5 2.5 0 0 1 20 8.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6.5Z" />
+      <path d="M8 11h8M8 15h5" />
+    </svg>
+  );
+}
+
 function IconPayments({
   className = "",
 }) {
@@ -426,6 +446,14 @@ const NAVIGATION = [
           "/admin/productos",
         icon:
           IconProducts,
+      },
+      {
+        label:
+          "Proyectos",
+        href:
+          "/admin/proyectos",
+        icon:
+          IconProjects,
       },
     ],
   },
