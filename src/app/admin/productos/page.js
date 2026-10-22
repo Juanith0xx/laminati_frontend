@@ -5943,8 +5943,8 @@ export default function AdminProductsPage() {
                                       getProductPromotionCount(
                                         product
                                       ) === 1
-                                        ? "oferta vigente"
-                                        : "ofertas vigentes"
+                                        ? "oferta"
+                                        : "ofertas"
                                     }`
                                   : `Crear oferta para ${product.name}`
                               }
@@ -5958,8 +5958,8 @@ export default function AdminProductsPage() {
                                       getProductPromotionCount(
                                         product
                                       ) === 1
-                                        ? "vigente"
-                                        : "vigentes"
+                                        ? "oferta"
+                                        : "ofertas"
                                     }`
                                   : "Crear oferta"
                               }
