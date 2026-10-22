@@ -14,7 +14,7 @@ import {
 import {
   createProjectQuotation,
   findRelbaseCustomerByRut,
-  getPosProducts,
+  getProjectQuotationProducts,
   getQuotation,
   searchRelbaseCustomers,
   updateProjectQuotation,
@@ -441,6 +441,147 @@ function RutStatusIcon({
 }
 
 
+/* =========================================
+   OPCIONES COMERCIALES MEG
+   Fuente: Abet Laminati (formatos actuales MEG).
+   Se mantienen sólo como metadata de cotización:
+   no afectan inventario ni catálogo POS.
+========================================= */
+const MEG_PROJECT_FORMATS = Object.freeze([
+  {
+    value: "130x305 cm",
+    label: "130 × 305 cm",
+    width_cm: 130,
+    height_cm: 305,
+  },
+  {
+    value: "130x420 cm",
+    label: "130 × 420 cm",
+    width_cm: 130,
+    height_cm: 420,
+  },
+  {
+    value: "161x420 cm",
+    label: "161 × 420 cm",
+    width_cm: 161,
+    height_cm: 420,
+  },
+]);
+
+const MEG_PROJECT_THICKNESSES = Object.freeze([
+  6,
+  8,
+  10,
+  12,
+]);
+
+/* =========================================
+   OPCIONES COMERCIALES LABGRADE
+   LAB-* corresponde a Labgrade estándar.
+   LABP-* (Labgrade Plus) se mantiene separado
+   porque posee una matriz de formato distinta.
+========================================= */
+const LAB_PROJECT_FORMATS = Object.freeze([
+  {
+    value: "130x305 cm",
+    label: "130 × 305 cm",
+    width_cm: 130,
+    height_cm: 305,
+  },
+  {
+    value: "161x366 cm",
+    label: "161 × 366 cm",
+    width_cm: 161,
+    height_cm: 366,
+  },
+  {
+    value: "161x420 cm",
+    label: "161 × 420 cm",
+    width_cm: 161,
+    height_cm: 420,
+  },
+  {
+    value: "186x420 cm",
+    label: "186 × 420 cm",
+    width_cm: 186,
+    height_cm: 420,
+  },
+]);
+
+const LAB_PROJECT_THICKNESSES = Object.freeze([
+  6,
+  8,
+  10,
+  12,
+  13,
+  16,
+]);
+
+function isMegProduct(value) {
+  return String(
+    value?.sku ||
+      value?.code ||
+      ""
+  )
+    .trim()
+    .toUpperCase()
+    .startsWith("MEG-");
+}
+
+function isLabProduct(value) {
+  return String(
+    value?.sku ||
+      value?.code ||
+      ""
+  )
+    .trim()
+    .toUpperCase()
+    .startsWith("LAB-");
+}
+
+function getLineFormatOptions(line) {
+  if (
+    Array.isArray(
+      line?.catalog_formats
+    ) &&
+    line.catalog_formats.length > 0
+  ) {
+    return line.catalog_formats;
+  }
+
+  if (isMegProduct(line)) {
+    return MEG_PROJECT_FORMATS;
+  }
+
+  if (isLabProduct(line)) {
+    return LAB_PROJECT_FORMATS;
+  }
+
+  return [];
+}
+
+function getLineThicknessOptions(line) {
+  if (
+    Array.isArray(
+      line?.catalog_thicknesses
+    ) &&
+    line.catalog_thicknesses.length > 0
+  ) {
+    return line.catalog_thicknesses;
+  }
+
+  if (isMegProduct(line)) {
+    return MEG_PROJECT_THICKNESSES;
+  }
+
+  if (isLabProduct(line)) {
+    return LAB_PROJECT_THICKNESSES;
+  }
+
+  return [];
+}
+
+
 function createEmptyLine(
   lineType = "PRODUCT",
   sortOrder = 0
@@ -504,6 +645,13 @@ function createEmptyLine(
       "OTHER"
         ? "TOTAL"
         : "UNIT",
+
+    // Metadata UI; no se envía al backend de cotización.
+    catalog_formats:
+      [],
+
+    catalog_thicknesses:
+      [],
 
     sort_order:
       sortOrder,
@@ -780,6 +928,12 @@ export default function ProjectQuotationEditor({
   ] =
     useState(null);
 
+  const [
+    visibleToItaly,
+    setVisibleToItaly,
+  ] =
+    useState(false);
+
 
   const [
     projectName,
@@ -911,6 +1065,12 @@ export default function ProjectQuotationEditor({
 
             setQuotation(
               current
+            );
+
+            setVisibleToItaly(
+              current
+                .visible_to_italy ===
+                true
             );
 
             setDocumentType(
@@ -1711,7 +1871,7 @@ export default function ProjectQuotationEditor({
               setCatalogError("");
 
               const response =
-                await getPosProducts({
+                await getProjectQuotationProducts({
                   q:
                     catalogQuery,
                   limit:
@@ -1827,6 +1987,67 @@ export default function ProjectQuotationEditor({
     };
 
 
+  const updateLineFormat =
+    (
+      localId,
+      formatValue
+    ) => {
+      setLines(
+        (current) =>
+          current.map(
+            (line) => {
+              if (
+                line.local_id !==
+                localId
+              ) {
+                return line;
+              }
+
+              const options =
+                getLineFormatOptions(
+                  line
+                );
+
+              const selected =
+                options.find(
+                  (option) =>
+                    option.value ===
+                    formatValue
+                );
+
+              if (!selected) {
+                return recalculateLine(
+                  {
+                    ...line,
+                    format_label:
+                      "",
+                    width_cm:
+                      "",
+                    height_cm:
+                      "",
+                  },
+                  "width_cm"
+                );
+              }
+
+              return recalculateLine(
+                {
+                  ...line,
+                  format_label:
+                    selected.value,
+                  width_cm:
+                    selected.width_cm,
+                  height_cm:
+                    selected.height_cm,
+                },
+                "width_cm"
+              );
+            }
+          )
+      );
+    };
+
+
   const removeLine =
     (
       localId
@@ -1879,7 +2100,22 @@ export default function ProjectQuotationEditor({
     (
       product
     ) => {
+      const megProduct =
+        isMegProduct(
+          product
+        );
+
+      const labProduct =
+        isLabProduct(
+          product
+        );
+
+      const selectableFormatProduct =
+        megProduct ||
+        labProduct;
+
       const widthCm =
+        !selectableFormatProduct &&
         product
           ?.width_mm
           ? Number(
@@ -1890,6 +2126,7 @@ export default function ProjectQuotationEditor({
           : "";
 
       const heightCm =
+        !selectableFormatProduct &&
         product
           ?.height_mm
           ? Number(
@@ -1929,9 +2166,11 @@ export default function ProjectQuotationEditor({
           "",
 
         thickness_mm:
-          product
-            .thickness_mm ||
-          "",
+          selectableFormatProduct
+            ? ""
+            : product
+                .thickness_mm ||
+              "",
 
         width_cm:
           widthCm,
@@ -1944,6 +2183,20 @@ export default function ProjectQuotationEditor({
           heightCm
             ? `${widthCm}x${heightCm} cm`
             : "",
+
+        catalog_formats:
+          megProduct
+            ? MEG_PROJECT_FORMATS
+            : labProduct
+              ? LAB_PROJECT_FORMATS
+              : [],
+
+        catalog_thicknesses:
+          megProduct
+            ? MEG_PROJECT_THICKNESSES
+            : labProduct
+              ? LAB_PROJECT_THICKNESSES
+              : [],
 
         unit_price_gross:
           basePrice,
@@ -2249,6 +2502,11 @@ export default function ProjectQuotationEditor({
             ""
           ).trim() ||
           null,
+
+        visible_to_italy:
+          Boolean(
+            visibleToItaly
+          ),
 
         notes:
           String(
@@ -3184,6 +3442,47 @@ export default function ProjectQuotationEditor({
               </Field>
             </div>
           )}
+
+          <div className="mt-5 rounded-2xl border border-black/5 bg-neutral-50 p-4 sm:p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                  Visibilidad internacional
+                </p>
+                <p className="mt-1 text-sm font-semibold text-neutral-950">
+                  Mostrar a Gerencia Italia
+                </p>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-neutral-500">
+                  Al activarlo, esta cotización de proyecto podrá ser consultada por el perfil Gerencia Italia.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={visibleToItaly}
+                onClick={() =>
+                  setVisibleToItaly(
+                    (current) =>
+                      !current
+                  )
+                }
+                className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition ${
+                  visibleToItaly
+                    ? "border-emerald-500 bg-emerald-500"
+                    : "border-black/10 bg-neutral-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
+                    visibleToItaly
+                      ? "translate-x-7"
+                      : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
         </section>
 
         <section className="mt-5 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
@@ -3415,20 +3714,50 @@ export default function ProjectQuotationEditor({
                       </Field>
 
                       <Field label="Espesor mm">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={line.thickness_mm}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "thickness_mm",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
+                        {getLineThicknessOptions(
+                          line
+                        ).length > 0 ? (
+                          <select
+                            value={line.thickness_mm || ""}
+                            onChange={(event) =>
+                              updateLine(
+                                line.local_id,
+                                "thickness_mm",
+                                event.target.value
+                              )
+                            }
+                            className={inputClass}
+                          >
+                            <option value="">
+                              Seleccionar espesor
+                            </option>
+                            {getLineThicknessOptions(
+                              line
+                            ).map((thickness) => (
+                              <option
+                                key={thickness}
+                                value={thickness}
+                              >
+                                {thickness} mm
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={line.thickness_mm}
+                            onChange={(event) =>
+                              updateLine(
+                                line.local_id,
+                                "thickness_mm",
+                                event.target.value
+                              )
+                            }
+                            className={inputClass}
+                          />
+                        )}
                       </Field>
 
                       <Field label="Cantidad">
@@ -3462,19 +3791,57 @@ export default function ProjectQuotationEditor({
                         />
                       </Field>
 
-                      <Field label="Formato">
-                        <input
-                          value={line.format_label || ""}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "format_label",
-                              event.target.value
-                            )
-                          }
-                          placeholder="130x305 cm"
-                          className={inputClass}
-                        />
+                      <Field
+                        label="Formato"
+                        hint={
+                          getLineFormatOptions(
+                            line
+                          ).length > 0
+                            ? "Al seleccionar un formato se completan Ancho y Alto automáticamente."
+                            : undefined
+                        }
+                      >
+                        {getLineFormatOptions(
+                          line
+                        ).length > 0 ? (
+                          <select
+                            value={line.format_label || ""}
+                            onChange={(event) =>
+                              updateLineFormat(
+                                line.local_id,
+                                event.target.value
+                              )
+                            }
+                            className={inputClass}
+                          >
+                            <option value="">
+                              Seleccionar formato
+                            </option>
+                            {getLineFormatOptions(
+                              line
+                            ).map((format) => (
+                              <option
+                                key={format.value}
+                                value={format.value}
+                              >
+                                {format.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            value={line.format_label || ""}
+                            onChange={(event) =>
+                              updateLine(
+                                line.local_id,
+                                "format_label",
+                                event.target.value
+                              )
+                            }
+                            placeholder="130x305 cm"
+                            className={inputClass}
+                          />
+                        )}
                       </Field>
 
                       <Field label="Ancho cm">

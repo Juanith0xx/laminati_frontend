@@ -143,6 +143,42 @@ export async function getPosProducts({
 }
 
 /* =========================================
+   PRODUCTOS PARA COTIZACIÓN PROJECT
+   - No depende de stock POS.
+   - Permite productos a pedido como MEG.
+========================================= */
+
+export async function getProjectQuotationProducts({
+  q = "",
+  limit = 20,
+  signal,
+} = {}) {
+  const params = new URLSearchParams();
+
+  const normalizedQuery =
+    String(q || "").trim();
+
+  if (normalizedQuery) {
+    params.set(
+      "q",
+      normalizedQuery
+    );
+  }
+
+  params.set(
+    "limit",
+    String(limit)
+  );
+
+  return apiRequest(
+    `/admin/pos/project-products?${params.toString()}`,
+    {
+      signal,
+    }
+  );
+}
+
+/* =========================================
    CLIENTES LAMINATIWORD
 
    La condición comercial pertenece a
