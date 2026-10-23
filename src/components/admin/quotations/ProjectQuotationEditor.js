@@ -1,106 +1,110 @@
 "use client";
 
-import Link from "next/link";
 import {
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
+
 import {
   useRouter,
 } from "next/navigation";
 
 import {
   createProjectQuotation,
-  findRelbaseCustomerByRut,
   getProjectQuotationProducts,
   getQuotation,
   searchRelbaseCustomers,
   updateProjectQuotation,
 } from "@/services/showroom.service";
 
-import {
-  getChileanRutValidation,
-} from "@/utils/rut";
+const INPUT =
+  "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100";
 
+const LABEL =
+  "mb-1.5 block text-[11px] font-semibold text-neutral-600";
 
-const moneyFormatter =
-  new Intl.NumberFormat(
-    "es-CL",
-    {
-      style: "currency",
-      currency: "CLP",
-      maximumFractionDigits: 0,
-    }
-  );
+const ABET_BRAND =
+  "ABET LAMINATI";
 
+const EMPTY_CUSTOMER = {
+  relbase_customer_id: "",
+  rut: "",
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  legal_name: "",
+  trade_name: "",
+  business_activity: "",
+  billing_email: "",
+  billing_phone: "",
+  address_line: "",
+  commune: "",
+  city: "",
+  region: "",
+  country: "Chile",
+};
 
-function money(
+const emptyLine = (
+  lineType = "PRODUCT"
+) => ({
+  local_id:
+    `${Date.now()}-${Math.random()}`,
+  line_type:
+    lineType,
+  product_id:
+    null,
+  description:
+    "",
+  code:
+    "",
+  brand:
+    lineType === "PRODUCT"
+      ? ""
+      : null,
+  collection:
+    lineType === "PRODUCT"
+      ? ""
+      : null,
+  italy_price_usd:
+    "",
+  finish:
+    "",
+  thickness_mm:
+    "",
+  quantity:
+    "1",
+  unit:
+    "UN",
+  format_label:
+    "",
+  width_cm:
+    "",
+  height_cm:
+    "",
+  pricing_mode:
+    "UNIT",
+  price_m2_gross:
+    "",
+  unit_price_gross:
+    "",
+  line_total_gross:
+    "",
+  tax_rate:
+    "19",
+});
+
+const clean = (
   value
-) {
-  const number =
-    Number(value || 0);
+) =>
+  String(
+    value ?? ""
+  ).trim();
 
-  return moneyFormatter.format(
-    Number.isFinite(
-      number
-    )
-      ? number
-      : 0
-  );
-}
-
-
-function dateInputValue(
+const numberOrNull = (
   value
-) {
-  if (!value) {
-    return "";
-  }
-
-  const raw =
-    String(value);
-
-  const match =
-    raw.match(
-      /^(\d{4}-\d{2}-\d{2})/
-    );
-
-  if (match) {
-    return match[1];
-  }
-
-  const date =
-    new Date(value);
-
-  return Number.isNaN(
-    date.getTime()
-  )
-    ? ""
-    : date
-        .toISOString()
-        .slice(0, 10);
-}
-
-
-function numberValue(
-  value
-) {
-  const number =
-    Number(value);
-
-  return Number.isFinite(
-    number
-  )
-    ? number
-    : 0;
-}
-
-
-function optionalNumber(
-  value
-) {
+) => {
   if (
     value === "" ||
     value === null ||
@@ -117,685 +121,969 @@ function optionalNumber(
   )
     ? number
     : null;
-}
+};
 
-
-function isValidEmail(
+const money = (
   value
-) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-    String(
-      value || ""
-    ).trim()
+) =>
+  new Intl.NumberFormat(
+    "es-CL",
+    {
+      style:
+        "currency",
+      currency:
+        "CLP",
+      maximumFractionDigits:
+        0,
+    }
+  ).format(
+    Number(value || 0)
+  );
+
+const usd = (
+  value
+) =>
+  new Intl.NumberFormat(
+    "es-CL",
+    {
+      style:
+        "currency",
+      currency:
+        "USD",
+      minimumFractionDigits:
+        2,
+      maximumFractionDigits:
+        4,
+    }
+  ).format(
+    Number(value || 0)
+  );
+
+const extractProducts = (
+  response
+) => {
+  if (
+    Array.isArray(
+      response?.products
+    )
+  ) {
+    return response.products;
+  }
+
+  if (
+    Array.isArray(
+      response?.data?.products
+    )
+  ) {
+    return response.data.products;
+  }
+
+  if (
+    Array.isArray(
+      response?.data
+    )
+  ) {
+    return response.data;
+  }
+
+  return [];
+};
+
+const extractCustomers = (
+  response
+) => {
+  if (
+    Array.isArray(
+      response?.customers
+    )
+  ) {
+    return response.customers;
+  }
+
+  if (
+    Array.isArray(
+      response?.data?.customers
+    )
+  ) {
+    return response.data.customers;
+  }
+
+  if (
+    Array.isArray(
+      response?.data
+    )
+  ) {
+    return response.data;
+  }
+
+  return [];
+};
+
+const mapCustomer = (
+  source = {}
+) => {
+  const relbaseId =
+    source.relbase_customer_id ??
+    source.customer_id ??
+    source.id ??
+    "";
+
+  const name =
+    source.name ??
+    source.customer_name ??
+    source.legal_name ??
+    source.business_name ??
+    "";
+
+  const email =
+    source.email ??
+    source.email_commercial ??
+    source.billing_email ??
+    "";
+
+  const phone =
+    source.phone ??
+    source.mobile ??
+    source.billing_phone ??
+    "";
+
+  const address =
+    source.address ??
+    source.address_line ??
+    source.street ??
+    "";
+
+  return {
+    relbase_customer_id:
+      clean(
+        relbaseId
+      ),
+    rut:
+      clean(
+        source.rut
+      ),
+    name:
+      clean(
+        name
+      ),
+    email:
+      clean(
+        email
+      ),
+    phone:
+      clean(
+        phone
+      ),
+    address:
+      clean(
+        address
+      ),
+    legal_name:
+      clean(
+        source.legal_name ??
+        source.business_name ??
+        name
+      ),
+    trade_name:
+      clean(
+        source.trade_name ??
+        source.name_fantasy
+      ),
+    business_activity:
+      clean(
+        source.business_activity ??
+        source.activity ??
+        source.giro
+      ),
+    billing_email:
+      clean(
+        source.billing_email ??
+        email
+      ),
+    billing_phone:
+      clean(
+        source.billing_phone ??
+        phone
+      ),
+    address_line:
+      clean(
+        source.address_line ??
+        address
+      ),
+    commune:
+      clean(
+        source.commune ??
+        source.comuna
+      ),
+    city:
+      clean(
+        source.city ??
+        source.ciudad
+      ),
+    region:
+      clean(
+        source.region
+      ),
+    country:
+      clean(
+        source.country ??
+        "Chile"
+      ) ||
+      "Chile",
+  };
+};
+
+const mapProductToLine = (
+  product
+) => ({
+  ...emptyLine(
+    "PRODUCT"
+  ),
+  product_id:
+    product?.id ||
+    product?.product_id ||
+    null,
+  description:
+    clean(
+      product?.name
+    ),
+  code:
+    clean(
+      product?.internal_code ||
+      product?.sku
+    ),
+  brand:
+    clean(
+      product?.brand
+    ),
+  collection:
+    clean(
+      product?.collection
+    ),
+  finish:
+    clean(
+      product?.finish
+    ),
+  thickness_mm:
+    product?.thickness_mm ??
+    "",
+  width_cm:
+    product?.width_mm !==
+      undefined &&
+    product?.width_mm !==
+      null
+      ? String(
+          Number(
+            product.width_mm
+          ) /
+            10
+        )
+      : "",
+  height_cm:
+    product?.height_mm !==
+      undefined &&
+    product?.height_mm !==
+      null
+      ? String(
+          Number(
+            product.height_mm
+          ) /
+            10
+        )
+      : "",
+  format_label:
+    product?.width_mm &&
+    product?.height_mm
+      ? `${Number(
+          product.width_mm
+        ) /
+          10} × ${Number(
+          product.height_mm
+        ) /
+          10} cm`
+      : "",
+  unit_price_gross:
+    product?.base_price ??
+    "",
+  italy_price_usd:
+    product?.italy_price_usd ??
+    product?.price_usd ??
+    "",
+});
+
+const mapExistingLine = (
+  line
+) => ({
+  local_id:
+    line.id ||
+    `${Date.now()}-${Math.random()}`,
+  line_type:
+    line.line_type ||
+    "PRODUCT",
+  product_id:
+    line.product_id ||
+    null,
+  description:
+    line.description ||
+    "",
+  code:
+    line.code ||
+    "",
+  brand:
+    line.brand ||
+    "",
+  collection:
+    line.collection ||
+    "",
+  italy_price_usd:
+    line.italy_price_usd ??
+    "",
+  finish:
+    line.finish ||
+    "",
+  thickness_mm:
+    line.thickness_mm ??
+    "",
+  quantity:
+    line.quantity ??
+    "1",
+  unit:
+    line.unit ||
+    "UN",
+  format_label:
+    line.format_label ||
+    "",
+  width_cm:
+    line.width_cm ??
+    "",
+  height_cm:
+    line.height_cm ??
+    "",
+  pricing_mode:
+    line.pricing_mode ||
+    "UNIT",
+  price_m2_gross:
+    line.price_m2_gross ??
+    "",
+  unit_price_gross:
+    line.unit_price_gross ??
+    "",
+  line_total_gross:
+    line.line_total_gross ??
+    "",
+  tax_rate:
+    line.tax_rate ??
+    "19",
+});
+
+const calculateLineTotal = (
+  line
+) => {
+  const quantity =
+    Number(
+      line.quantity ||
+        0
+    );
+
+  if (
+    line.pricing_mode ===
+    "TOTAL"
+  ) {
+    return Number(
+      line.line_total_gross ||
+        0
+    );
+  }
+
+  if (
+    line.pricing_mode ===
+    "AREA"
+  ) {
+    const width =
+      Number(
+        line.width_cm ||
+          0
+      );
+
+    const height =
+      Number(
+        line.height_cm ||
+          0
+      );
+
+    const m2 =
+      Number(
+        line.price_m2_gross ||
+          0
+      );
+
+    return (
+      quantity *
+      (width / 100) *
+      (height / 100) *
+      m2
+    );
+  }
+
+  return (
+    quantity *
+    Number(
+      line.unit_price_gross ||
+        0
+    )
+  );
+};
+
+function Section({
+  title,
+  eyebrow,
+  children,
+  action,
+}) {
+  return (
+    <section className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          {eyebrow ? (
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+              {eyebrow}
+            </p>
+          ) : null}
+
+          <h2 className="mt-1 text-lg font-semibold text-neutral-950">
+            {title}
+          </h2>
+        </div>
+
+        {action}
+      </div>
+
+      {children}
+    </section>
   );
 }
-
 
 function Field({
   label,
   children,
-  hint = "",
+  hint,
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-neutral-600">
+      <span className={LABEL}>
         {label}
       </span>
+
       {children}
-      {hint && (
-        <span className="mt-1 block text-[10px] leading-4 text-neutral-400">
+
+      {hint ? (
+        <span className="mt-1 block text-[11px] leading-4 text-neutral-400">
           {hint}
         </span>
-      )}
+      ) : null}
     </label>
   );
 }
 
+function LineEditor({
+  line,
+  index,
+  onChange,
+  onRemove,
+}) {
+  const isProduct =
+    line.line_type ===
+    "PRODUCT";
 
-const inputClass =
-  "h-11 w-full rounded-xl border border-black/10 bg-white px-3.5 text-sm text-neutral-900 outline-none transition focus:border-black";
+  const total =
+    calculateLineTotal(
+      line
+    );
 
+  const update =
+    (
+      key,
+      value
+    ) => {
+      onChange({
+        ...line,
+        [key]:
+          value,
+      });
+    };
 
+  return (
+    <article className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
+            {index + 1}
+          </span>
 
-function firstText(
-  ...values
-) {
-  for (
-    const value
-    of values
-  ) {
-    if (
-      value ===
-        undefined ||
-      value ===
-        null
-    ) {
-      continue;
-    }
+          <select
+            className="rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm font-medium"
+            value={
+              line.line_type
+            }
+            onChange={(
+              event
+            ) => {
+              const type =
+                event.target
+                  .value;
 
-    if (
-      typeof value ===
-      "object"
-    ) {
-      continue;
-    }
+              onChange({
+                ...emptyLine(
+                  type
+                ),
+                local_id:
+                  line.local_id,
+              });
+            }}
+          >
+            <option value="PRODUCT">
+              Producto
+            </option>
+            <option value="SERVICE">
+              Servicio
+            </option>
+            <option value="OTHER">
+              Otro
+            </option>
+          </select>
 
-    const text =
-      String(
-        value
-      ).trim();
+          {line.product_id ? (
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+              Catálogo
+            </span>
+          ) : isProduct ? (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+              Manual
+            </span>
+          ) : null}
+        </div>
 
-    if (
-      text
-    ) {
-      return text;
-    }
-  }
+        <button
+          type="button"
+          className="text-sm font-medium text-red-400 hover:text-red-600"
+          onClick={
+            onRemove
+          }
+        >
+          Quitar
+        </button>
+      </div>
 
-  return "";
-}
-
-
-function firstEmail(
-  ...values
-) {
-  for (
-    const value
-    of values
-  ) {
-    if (
-      Array.isArray(
-        value
-      )
-    ) {
-      const email =
-        value
-          .map(
-            (
-              item
+      <div className="grid gap-4 lg:grid-cols-4">
+        <Field
+          label={
+            isProduct
+              ? "Producto"
+              : "Descripción"
+          }
+        >
+          <input
+            className={`${INPUT} lg:col-span-2`}
+            value={
+              line.description
+            }
+            onChange={(
+              event
             ) =>
-              String(
-                item ||
-                  ""
-              ).trim()
-          )
-          .find(
-            Boolean
-          );
+              update(
+                "description",
+                event.target
+                  .value
+              )
+            }
+            placeholder={
+              isProduct
+                ? "Nombre del producto"
+                : "Descripción del concepto"
+            }
+          />
+        </Field>
 
-      if (
-        email
-      ) {
-        return email;
-      }
+        {isProduct ? (
+          <>
+            <Field label="Código">
+              <input
+                className={INPUT}
+                value={
+                  line.code
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "code",
+                    event.target
+                      .value
+                  )
+                }
+                placeholder="Ej. 668R"
+              />
+            </Field>
 
-      continue;
-    }
+            <Field label="Marca">
+              <input
+                className={INPUT}
+                list={`brands-${line.local_id}`}
+                value={
+                  line.brand
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "brand",
+                    event.target
+                      .value
+                  )
+                }
+                placeholder="ABET LAMINATI"
+              />
 
-    const email =
-      firstText(
-        value
-      );
+              <datalist
+                id={`brands-${line.local_id}`}
+              >
+                <option value="ABET LAMINATI" />
+                <option value="KARIKAL" />
+              </datalist>
+            </Field>
 
-    if (
-      email
-    ) {
-      return email;
-    }
-  }
+            <Field label="Colección">
+              <input
+                className={INPUT}
+                value={
+                  line.collection
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "collection",
+                    event.target
+                      .value
+                  )
+                }
+                placeholder="Ej. Colours / Italia"
+              />
+            </Field>
 
-  return "";
-}
+            <Field label="Acabado">
+              <input
+                className={INPUT}
+                value={
+                  line.finish
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "finish",
+                    event.target
+                      .value
+                  )
+                }
+              />
+            </Field>
 
+            <Field label="Espesor mm">
+              <input
+                className={INPUT}
+                type="number"
+                step="0.01"
+                min="0"
+                value={
+                  line.thickness_mm
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "thickness_mm",
+                    event.target
+                      .value
+                  )
+                }
+              />
+            </Field>
+          </>
+        ) : null}
 
-function nestedName(
-  value
-) {
-  if (
-    !value ||
-    typeof value !==
-      "object"
-  ) {
-    return "";
-  }
+        <Field label="Cantidad">
+          <input
+            className={INPUT}
+            type="number"
+            min="0.001"
+            step="0.001"
+            value={
+              line.quantity
+            }
+            onChange={(
+              event
+            ) =>
+              update(
+                "quantity",
+                event.target
+                  .value
+              )
+            }
+          />
+        </Field>
 
-  return firstText(
-    value.name,
-    value.label,
-    value.description
+        <Field label="Unidad">
+          <input
+            className={INPUT}
+            value={
+              line.unit
+            }
+            onChange={(
+              event
+            ) =>
+              update(
+                "unit",
+                event.target
+                  .value
+              )
+            }
+          />
+        </Field>
+
+        {isProduct ? (
+          <>
+            <Field label="Formato">
+              <input
+                className={INPUT}
+                value={
+                  line.format_label
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "format_label",
+                    event.target
+                      .value
+                  )
+                }
+                placeholder="Ej. 130 × 305 cm"
+              />
+            </Field>
+
+            <Field label="Ancho cm">
+              <input
+                className={INPUT}
+                type="number"
+                step="0.01"
+                min="0"
+                value={
+                  line.width_cm
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "width_cm",
+                    event.target
+                      .value
+                  )
+                }
+              />
+            </Field>
+
+            <Field label="Alto cm">
+              <input
+                className={INPUT}
+                type="number"
+                step="0.01"
+                min="0"
+                value={
+                  line.height_cm
+                }
+                onChange={(
+                  event
+                ) =>
+                  update(
+                    "height_cm",
+                    event.target
+                      .value
+                  )
+                }
+              />
+            </Field>
+          </>
+        ) : null}
+
+        <Field label="Modo de precio">
+          <select
+            className={INPUT}
+            value={
+              line.pricing_mode
+            }
+            onChange={(
+              event
+            ) =>
+              update(
+                "pricing_mode",
+                event.target
+                  .value
+              )
+            }
+          >
+            <option value="UNIT">
+              Unitario
+            </option>
+
+            {isProduct ? (
+              <option value="AREA">
+                Por m²
+              </option>
+            ) : null}
+
+            <option value="TOTAL">
+              Total manual
+            </option>
+          </select>
+        </Field>
+
+        {line.pricing_mode ===
+        "AREA" ? (
+          <Field label="Valor m²">
+            <input
+              className={INPUT}
+              type="number"
+              step="1"
+              min="0"
+              value={
+                line.price_m2_gross
+              }
+              onChange={(
+                event
+              ) =>
+                update(
+                  "price_m2_gross",
+                  event.target
+                    .value
+                )
+              }
+            />
+          </Field>
+        ) : null}
+
+        {line.pricing_mode ===
+        "UNIT" ? (
+          <Field label="Valor unitario">
+            <input
+              className={INPUT}
+              type="number"
+              step="1"
+              min="0"
+              value={
+                line.unit_price_gross
+              }
+              onChange={(
+                event
+              ) =>
+                update(
+                  "unit_price_gross",
+                  event.target
+                    .value
+                )
+              }
+            />
+          </Field>
+        ) : null}
+
+        {line.pricing_mode ===
+        "TOTAL" ? (
+          <Field label="Total manual">
+            <input
+              className={INPUT}
+              type="number"
+              step="1"
+              min="0"
+              value={
+                line.line_total_gross
+              }
+              onChange={(
+                event
+              ) =>
+                update(
+                  "line_total_gross",
+                  event.target
+                    .value
+                )
+              }
+            />
+          </Field>
+        ) : null}
+
+        {isProduct ? (
+          <Field
+            label="Precio Italia USD"
+            hint={
+              line.product_id
+                ? "Opcional. Si queda vacío, el backend usa el Precio Italia activo del catálogo."
+                : "Opcional. Para productos manuales se guarda como snapshot privado de esta cotización."
+            }
+          >
+            <input
+              className={INPUT}
+              type="number"
+              step="0.0001"
+              min="0"
+              value={
+                line.italy_price_usd
+              }
+              onChange={(
+                event
+              ) =>
+                update(
+                  "italy_price_usd",
+                  event.target
+                    .value
+                )
+              }
+              placeholder="Ej. 32.5000"
+            />
+          </Field>
+        ) : null}
+
+        <Field label="Total línea">
+          <div className="flex min-h-[42px] items-center rounded-xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-900">
+            {money(
+              total
+            )}
+          </div>
+        </Field>
+      </div>
+
+      {isProduct &&
+      clean(
+        line.brand
+      ).toUpperCase() ===
+        ABET_BRAND &&
+      line.italy_price_usd ? (
+        <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          Valor Italia de esta línea:{" "}
+          <strong>
+            {usd(
+              Number(
+                line.italy_price_usd
+              ) *
+                Number(
+                  line.quantity ||
+                    0
+                )
+            )}
+          </strong>
+        </div>
+      ) : null}
+    </article>
   );
 }
-
-
-function mapRelbaseCustomer(
-  relbaseCustomer,
-  formattedRut
-) {
-  const item =
-    relbaseCustomer ||
-    {};
-
-  return {
-    id:
-      firstText(
-        item.id,
-        item.customer_id,
-        item.client_id,
-        item.relbase_customer_id
-      ),
-
-    rut:
-      formattedRut ||
-      firstText(
-        item.rut
-      ),
-
-    name:
-      firstText(
-        item.name,
-        item.legal_name,
-        item.name_fantasy
-      ),
-
-    trade_name:
-      firstText(
-        item.name_fantasy,
-        item.trade_name
-      ),
-
-    business_activity:
-      firstText(
-        item.business_activity,
-        item.giro
-      ),
-
-    email:
-      firstEmail(
-        item.email,
-        item.email_commercial,
-        item.email_payment
-      ),
-
-    phone:
-      firstText(
-        item.mobile,
-        item.phone,
-        item.phone_payment
-      ),
-
-    address:
-      firstText(
-        item.address,
-        item.address_line,
-        item.full_address
-      ),
-
-    commune:
-      firstText(
-        item.commune_name,
-        nestedName(
-          item.commune
-        ),
-        typeof item.commune ===
-          "string"
-          ? item.commune
-          : ""
-      ),
-
-    city:
-      firstText(
-        item.city_name,
-        nestedName(
-          item.city
-        ),
-        typeof item.city ===
-          "string"
-          ? item.city
-          : ""
-      ),
-
-    region:
-      firstText(
-        item.region_name,
-        nestedName(
-          item.region
-        ),
-        typeof item.region ===
-          "string"
-          ? item.region
-          : ""
-      ),
-
-    type:
-      firstText(
-        item.type_customer,
-        item.customer_type,
-        item.type
-      ).toLowerCase(),
-  };
-}
-
-
-function RutStatusIcon({
-  status,
-}) {
-  if (
-    status ===
-    "CHECKING"
-  ) {
-    return (
-      <span
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50"
-        title="Buscando cliente en Relbase"
-      >
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
-      </span>
-    );
-  }
-
-  if (
-    status ===
-    "FOUND"
-  ) {
-    return (
-      <span
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white"
-        title="Cliente encontrado en Relbase"
-      >
-        ✓
-      </span>
-    );
-  }
-
-  if (
-    status ===
-    "NOT_FOUND"
-  ) {
-    return (
-      <span
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700"
-        title="Cliente no encontrado en Relbase"
-      >
-        !
-      </span>
-    );
-  }
-
-  if (
-    status ===
-      "INVALID" ||
-    status ===
-      "ERROR"
-  ) {
-    return (
-      <span
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-600"
-        title="RUT inválido o no verificable"
-      >
-        ×
-      </span>
-    );
-  }
-
-  return null;
-}
-
-
-/* =========================================
-   OPCIONES COMERCIALES MEG
-   Fuente: Abet Laminati (formatos actuales MEG).
-   Se mantienen sólo como metadata de cotización:
-   no afectan inventario ni catálogo POS.
-========================================= */
-const MEG_PROJECT_FORMATS = Object.freeze([
-  {
-    value: "130x305 cm",
-    label: "130 × 305 cm",
-    width_cm: 130,
-    height_cm: 305,
-  },
-  {
-    value: "130x420 cm",
-    label: "130 × 420 cm",
-    width_cm: 130,
-    height_cm: 420,
-  },
-  {
-    value: "161x420 cm",
-    label: "161 × 420 cm",
-    width_cm: 161,
-    height_cm: 420,
-  },
-]);
-
-const MEG_PROJECT_THICKNESSES = Object.freeze([
-  6,
-  8,
-  10,
-  12,
-]);
-
-/* =========================================
-   OPCIONES COMERCIALES LABGRADE
-   LAB-* corresponde a Labgrade estándar.
-   LABP-* (Labgrade Plus) se mantiene separado
-   porque posee una matriz de formato distinta.
-========================================= */
-const LAB_PROJECT_FORMATS = Object.freeze([
-  {
-    value: "130x305 cm",
-    label: "130 × 305 cm",
-    width_cm: 130,
-    height_cm: 305,
-  },
-  {
-    value: "161x366 cm",
-    label: "161 × 366 cm",
-    width_cm: 161,
-    height_cm: 366,
-  },
-  {
-    value: "161x420 cm",
-    label: "161 × 420 cm",
-    width_cm: 161,
-    height_cm: 420,
-  },
-  {
-    value: "186x420 cm",
-    label: "186 × 420 cm",
-    width_cm: 186,
-    height_cm: 420,
-  },
-]);
-
-const LAB_PROJECT_THICKNESSES = Object.freeze([
-  6,
-  8,
-  10,
-  12,
-  13,
-  16,
-]);
-
-function isMegProduct(value) {
-  return String(
-    value?.sku ||
-      value?.code ||
-      ""
-  )
-    .trim()
-    .toUpperCase()
-    .startsWith("MEG-");
-}
-
-function isLabProduct(value) {
-  return String(
-    value?.sku ||
-      value?.code ||
-      ""
-  )
-    .trim()
-    .toUpperCase()
-    .startsWith("LAB-");
-}
-
-function getLineFormatOptions(line) {
-  if (
-    Array.isArray(
-      line?.catalog_formats
-    ) &&
-    line.catalog_formats.length > 0
-  ) {
-    return line.catalog_formats;
-  }
-
-  if (isMegProduct(line)) {
-    return MEG_PROJECT_FORMATS;
-  }
-
-  if (isLabProduct(line)) {
-    return LAB_PROJECT_FORMATS;
-  }
-
-  return [];
-}
-
-function getLineThicknessOptions(line) {
-  if (
-    Array.isArray(
-      line?.catalog_thicknesses
-    ) &&
-    line.catalog_thicknesses.length > 0
-  ) {
-    return line.catalog_thicknesses;
-  }
-
-  if (isMegProduct(line)) {
-    return MEG_PROJECT_THICKNESSES;
-  }
-
-  if (isLabProduct(line)) {
-    return LAB_PROJECT_THICKNESSES;
-  }
-
-  return [];
-}
-
-
-function createEmptyLine(
-  lineType = "PRODUCT",
-  sortOrder = 0
-) {
-  return {
-    local_id:
-      `${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}`,
-
-    line_type:
-      lineType,
-
-    product_id:
-      null,
-
-    description:
-      "",
-
-    code:
-      "",
-
-    finish:
-      "",
-
-    thickness_mm:
-      "",
-
-    quantity:
-      1,
-
-    unit:
-      lineType ===
-      "SERVICE"
-        ? "m2"
-        : "UN",
-
-    format_label:
-      "",
-
-    width_cm:
-      "",
-
-    height_cm:
-      "",
-
-    price_m2_gross:
-      "",
-
-    unit_price_gross:
-      "",
-
-    line_total_gross:
-      "",
-
-    tax_rate:
-      19,
-
-    pricing_mode:
-      lineType ===
-      "OTHER"
-        ? "TOTAL"
-        : "UNIT",
-
-    // Metadata UI; no se envía al backend de cotización.
-    catalog_formats:
-      [],
-
-    catalog_thicknesses:
-      [],
-
-    sort_order:
-      sortOrder,
-  };
-}
-
-
-function normalizeLoadedLine(
-  line,
-  index
-) {
-  return {
-    ...createEmptyLine(
-      line?.line_type ||
-        "PRODUCT",
-      index
-    ),
-
-    ...line,
-
-    local_id:
-      line?.id ||
-      `${Date.now()}-${index}`,
-
-    thickness_mm:
-      line?.thickness_mm ??
-      "",
-
-    quantity:
-      line?.quantity ??
-      1,
-
-    width_cm:
-      line?.width_cm ??
-      "",
-
-    height_cm:
-      line?.height_cm ??
-      "",
-
-    price_m2_gross:
-      line?.price_m2_gross ??
-      "",
-
-    unit_price_gross:
-      line?.unit_price_gross ??
-      "",
-
-    line_total_gross:
-      line?.line_total_gross ??
-      "",
-
-    tax_rate:
-      line?.tax_rate ??
-      19,
-  };
-}
-
-
-function recalculateLine(
-  line,
-  changedField
-) {
-  const next = {
-    ...line,
-  };
-
-  if (
-    next.pricing_mode ===
-      "AREA" &&
-    [
-      "pricing_mode",
-      "width_cm",
-      "height_cm",
-      "price_m2_gross",
-    ].includes(
-      changedField
-    )
-  ) {
-    const width =
-      numberValue(
-        next.width_cm
-      );
-
-    const height =
-      numberValue(
-        next.height_cm
-      );
-
-    const priceM2 =
-      numberValue(
-        next
-          .price_m2_gross
-      );
-
-    if (
-      width > 0 &&
-      height > 0 &&
-      priceM2 >= 0
-    ) {
-      next.unit_price_gross =
-        Math.round(
-          (
-            width /
-            100
-          ) *
-            (
-              height /
-              100
-            ) *
-            priceM2
-        );
-    }
-  }
-
-  if (
-    next.pricing_mode !==
-      "TOTAL" &&
-    [
-      "pricing_mode",
-      "quantity",
-      "unit_price_gross",
-      "width_cm",
-      "height_cm",
-      "price_m2_gross",
-    ].includes(
-      changedField
-    )
-  ) {
-    next.line_total_gross =
-      Math.round(
-        numberValue(
-          next.quantity
-        ) *
-          numberValue(
-            next
-              .unit_price_gross
-          )
-      );
-  }
-
-  return next;
-}
-
 
 export default function ProjectQuotationEditor({
   quotationId = null,
@@ -803,214 +1091,209 @@ export default function ProjectQuotationEditor({
   const router =
     useRouter();
 
-  const isEdit =
+  const editing =
     Boolean(
       quotationId
     );
 
   const [
-    loading,
-    setLoading,
-  ] =
-    useState(
-      isEdit
-    );
-
-  const [
-    saving,
-    setSaving,
-  ] =
-    useState(false);
-
-  const [
-    error,
-    setError,
-  ] =
-    useState("");
-
-  const [
-    message,
-    setMessage,
-  ] =
-    useState("");
-
-  const [
-    documentType,
-    setDocumentType,
-  ] =
-    useState(
-      "FACTURA"
-    );
-
-  const [
-    customer,
-    setCustomer,
-  ] =
-    useState({
-      name: "",
-      rut: "",
-      email: "",
-      phone: "",
-      address: "",
-    });
-
-  const [
-    billing,
-    setBilling,
-  ] =
-    useState({
-      rut: "",
-      legal_name: "",
-      trade_name: "",
-      business_activity: "",
-      billing_email: "",
-      phone: "",
-      address_line: "",
-      commune: "",
-      city: "",
-      region: "",
-      country: "Chile",
-      relbase_customer_id: null,
-    });
-
-
-  const rutLookupRequestRef =
-    useRef(0);
-
-  const [
-    rutLookup,
-    setRutLookup,
-  ] =
-    useState({
-      status:
-        "IDLE",
-      searchedRut:
-        null,
-      customer:
-        null,
-      message:
-        "",
-    });
-
-  const [
-    customerSearch,
-    setCustomerSearch,
-  ] =
-    useState("");
-
-  const [
-    customerSearchResults,
-    setCustomerSearchResults,
-  ] =
-    useState([]);
-
-  const [
-    customerSearchLoading,
-    setCustomerSearchLoading,
-  ] =
-    useState(false);
-
-  const [
-    customerSearchError,
-    setCustomerSearchError,
-  ] =
-    useState("");
-
-  const [
-    customerSearchOpen,
-    setCustomerSearchOpen,
-  ] =
-    useState(false);
-
-  const [
-    selectedRelbaseCustomer,
-    setSelectedRelbaseCustomer,
-  ] =
-    useState(null);
-
-  const [
-    visibleToItaly,
-    setVisibleToItaly,
-  ] =
-    useState(false);
-
-
-  const [
     projectName,
     setProjectName,
-  ] =
-    useState("");
+  ] = useState(
+    ""
+  );
 
   const [
     projectReference,
     setProjectReference,
-  ] =
-    useState("");
+  ] = useState(
+    ""
+  );
+
+  const [
+    documentType,
+    setDocumentType,
+  ] = useState(
+    "BOLETA"
+  );
 
   const [
     validDays,
     setValidDays,
-  ] =
-    useState(7);
+  ] = useState(
+    "7"
+  );
 
   const [
     validUntil,
     setValidUntil,
-  ] =
-    useState("");
+  ] = useState(
+    ""
+  );
+
+  const [
+    visibleToItaly,
+    setVisibleToItaly,
+  ] = useState(
+    false
+  );
 
   const [
     notes,
     setNotes,
-  ] =
-    useState("");
+  ] = useState(
+    ""
+  );
 
   const [
-    quotation,
-    setQuotation,
-  ] =
-    useState(null);
+    customer,
+    setCustomer,
+  ] = useState(
+    EMPTY_CUSTOMER
+  );
+
+  const [
+    customerSearch,
+    setCustomerSearch,
+  ] = useState(
+    ""
+  );
+
+  const [
+    customerResults,
+    setCustomerResults,
+  ] = useState(
+    []
+  );
+
+  const [
+    customerLoading,
+    setCustomerLoading,
+  ] = useState(
+    false
+  );
+
+  const [
+    productSearch,
+    setProductSearch,
+  ] = useState(
+    ""
+  );
+
+  const [
+    productResults,
+    setProductResults,
+  ] = useState(
+    []
+  );
+
+  const [
+    productLoading,
+    setProductLoading,
+  ] = useState(
+    false
+  );
 
   const [
     lines,
     setLines,
-  ] =
-    useState([
-      createEmptyLine(
-        "PRODUCT",
-        0
-      ),
-    ]);
+  ] = useState([
+    emptyLine(
+      "PRODUCT"
+    ),
+  ]);
 
   const [
-    catalogQuery,
-    setCatalogQuery,
-  ] =
-    useState("");
+    saving,
+    setSaving,
+  ] = useState(
+    false
+  );
 
   const [
-    products,
-    setProducts,
-  ] =
-    useState([]);
+    loading,
+    setLoading,
+  ] = useState(
+    editing
+  );
 
   const [
-    catalogLoading,
-    setCatalogLoading,
-  ] =
-    useState(false);
+    error,
+    setError,
+  ] = useState(
+    ""
+  );
 
-  const [
-    catalogError,
-    setCatalogError,
-  ] =
-    useState("");
+  const grossTotal =
+    useMemo(
+      () =>
+        lines.reduce(
+          (
+            total,
+            line
+          ) =>
+            total +
+            calculateLineTotal(
+              line
+            ),
+          0
+        ),
+      [
+        lines,
+      ]
+    );
 
+  const italyTotal =
+    useMemo(
+      () =>
+        lines.reduce(
+          (
+            total,
+            line
+          ) => {
+            if (
+              line.line_type !==
+                "PRODUCT" ||
+              clean(
+                line.brand
+              ).toUpperCase() !==
+                ABET_BRAND
+            ) {
+              return total;
+            }
+
+            const price =
+              numberOrNull(
+                line.italy_price_usd
+              );
+
+            if (
+              price ===
+              null
+            ) {
+              return total;
+            }
+
+            return (
+              total +
+              price *
+                Number(
+                  line.quantity ||
+                    0
+                )
+            );
+          },
+          0
+        ),
+      [
+        lines,
+      ]
+    );
 
   useEffect(
     () => {
       if (
-        !isEdit
+        !editing
       ) {
         return;
       }
@@ -1024,12 +1307,19 @@ export default function ProjectQuotationEditor({
             setLoading(
               true
             );
-            setError("");
 
             const response =
               await getQuotation(
                 quotationId
               );
+
+            const data =
+              response?.data ||
+              {};
+
+            const quote =
+              data.quotation ||
+              {};
 
             if (
               !active
@@ -1037,208 +1327,119 @@ export default function ProjectQuotationEditor({
               return;
             }
 
-            const data =
-              response?.data ||
-              null;
-
-            const current =
-              data?.quotation ||
-              null;
-
-            if (
-              !current
-            ) {
-              throw new Error(
-                "Cotización no encontrada."
-              );
-            }
-
-            if (
-              current
-                .quotation_type !==
-              "PROJECT"
-            ) {
-              throw new Error(
-                "Esta cotización no es de proyecto."
-              );
-            }
-
-            setQuotation(
-              current
-            );
-
-            setVisibleToItaly(
-              current
-                .visible_to_italy ===
-                true
-            );
-
-            setDocumentType(
-              current
-                .intended_document_type ||
-                "FACTURA"
-            );
-
-            setCustomer({
-              name:
-                current
-                  .customer_name ||
-                current
-                  .legal_name ||
-                "",
-              rut:
-                current.rut ||
-                "",
-              email:
-                current.email ||
-                "",
-              phone:
-                current.phone ||
-                "",
-              address:
-                current
-                  .address_line ||
-                "",
-            });
-
-            setBilling({
-              rut:
-                current.rut ||
-                "",
-              legal_name:
-                current
-                  .legal_name ||
-                current
-                  .customer_name ||
-                "",
-              trade_name:
-                current
-                  .trade_name ||
-                "",
-              business_activity:
-                current
-                  .business_activity ||
-                "",
-              billing_email:
-                current.email ||
-                "",
-              phone:
-                current.phone ||
-                "",
-              address_line:
-                current
-                  .address_line ||
-                "",
-              commune:
-                current
-                  .commune ||
-                "",
-              city:
-                current.city ||
-                "",
-              region:
-                current
-                  .region ||
-                "",
-              country:
-                current
-                  .country ||
-                "Chile",
-              relbase_customer_id:
-                current
-                  .relbase_customer_id ||
-                null,
-            });
-
-            const loadedRut =
-              getChileanRutValidation(
-                current.rut ||
-                ""
-              );
-
-            setRutLookup(
-              current
-                .relbase_customer_id &&
-              loadedRut.valid
-                ? {
-                    status:
-                      "FOUND",
-                    searchedRut:
-                      loadedRut.cleaned,
-                    customer:
-                      null,
-                    message:
-                      "Cliente vinculado a Relbase en esta cotización.",
-                  }
-                : {
-                    status:
-                      "IDLE",
-                    searchedRut:
-                      null,
-                    customer:
-                      null,
-                    message:
-                      "",
-                  }
-            );
-
             setProjectName(
-              current
-                .project_name ||
+              quote.project_name ||
                 ""
             );
 
             setProjectReference(
-              current
-                .project_reference ||
+              quote.project_reference ||
                 ""
             );
 
+            setDocumentType(
+              quote.intended_document_type ||
+                "BOLETA"
+            );
+
             setValidUntil(
-              dateInputValue(
-                current
-                  .valid_until
+              String(
+                quote.valid_until ||
+                  ""
+              ).slice(
+                0,
+                10
+              )
+            );
+
+            setVisibleToItaly(
+              Boolean(
+                quote.visible_to_italy
               )
             );
 
             setNotes(
-              current.notes ||
+              quote.notes ||
                 ""
             );
 
-            const loadedLines =
+            setCustomer({
+              relbase_customer_id:
+                quote.relbase_customer_id ||
+                "",
+              rut:
+                quote.rut ||
+                "",
+              name:
+                quote.customer_name ||
+                "",
+              email:
+                quote.email ||
+                "",
+              phone:
+                quote.phone ||
+                "",
+              address:
+                quote.address_line ||
+                "",
+              legal_name:
+                quote.legal_name ||
+                quote.customer_name ||
+                "",
+              trade_name:
+                quote.trade_name ||
+                "",
+              business_activity:
+                quote.business_activity ||
+                "",
+              billing_email:
+                quote.email ||
+                "",
+              billing_phone:
+                quote.phone ||
+                "",
+              address_line:
+                quote.address_line ||
+                "",
+              commune:
+                quote.commune ||
+                "",
+              city:
+                quote.city ||
+                "",
+              region:
+                quote.region ||
+                "",
+              country:
+                quote.country ||
+                "Chile",
+            });
+
+            const existingLines =
               Array.isArray(
-                data
-                  ?.project_lines
+                data.project_lines
               )
-                ? data
-                    .project_lines
-                    .map(
-                      normalizeLoadedLine
-                    )
+                ? data.project_lines
                 : [];
 
             setLines(
-              loadedLines.length
-                ? loadedLines
+              existingLines.length
+                ? existingLines.map(
+                    mapExistingLine
+                  )
                 : [
-                    createEmptyLine(
-                      "PRODUCT",
-                      0
+                    emptyLine(
+                      "PRODUCT"
                     ),
                   ]
             );
           } catch (
-            err
+            loadError
           ) {
-            if (
-              active
-            ) {
-              setError(
-                err?.message ||
-                  "No fue posible cargar la cotización de proyecto."
-              );
-            }
+            setError(
+              loadError?.message ||
+                "No fue posible cargar la cotización."
+            );
           } finally {
             if (
               active
@@ -1258,535 +1459,80 @@ export default function ProjectQuotationEditor({
       };
     },
     [
-      isEdit,
+      editing,
       quotationId,
     ]
   );
 
-
-
-  const resetRutLookup =
-    () => {
-      rutLookupRequestRef
-        .current +=
-        1;
-
-      setRutLookup({
-        status:
-          "IDLE",
-        searchedRut:
-          null,
-        customer:
-          null,
-        message:
-          "",
-      });
-    };
-
-
-  const handleRutChange =
-    (
-      value
-    ) => {
-      resetRutLookup();
-
-      setSelectedRelbaseCustomer(
-        null
-      );
-
-      const nextValue =
-        String(
-          value ||
-            ""
-        )
-          .toUpperCase()
-          .replace(
-            /[^0-9K.-]/g,
-            ""
-          );
-
-      setCustomer(
-        (
-          current
-        ) => ({
-          ...current,
-          rut:
-            nextValue,
-        })
-      );
-
-      setBilling(
-        (
-          current
-        ) => ({
-          ...current,
-          rut:
-            nextValue,
-          relbase_customer_id:
-            null,
-        })
-      );
-    };
-
-
-  const applyRelbaseCustomer =
-    (
-      relbaseCustomer,
-      formattedRut
-    ) => {
-      const mapped =
-        mapRelbaseCustomer(
-          relbaseCustomer,
-          formattedRut
-        );
-
-      setCustomer(
-        (
-          current
-        ) => ({
-          ...current,
-          rut:
-            formattedRut,
-          name:
-            mapped.name ||
-            current.name,
-          email:
-            mapped.email ||
-            current.email,
-          phone:
-            mapped.phone ||
-            current.phone,
-          address:
-            mapped.address ||
-            current.address,
-        })
-      );
-
-      setBilling(
-        (
-          current
-        ) => ({
-          ...current,
-          rut:
-            formattedRut,
-          legal_name:
-            mapped.name ||
-            current
-              .legal_name,
-          trade_name:
-            mapped
-              .trade_name ||
-            current
-              .trade_name,
-          business_activity:
-            mapped
-              .business_activity ||
-            current
-              .business_activity,
-          billing_email:
-            mapped.email ||
-            current
-              .billing_email,
-          phone:
-            mapped.phone ||
-            current.phone,
-          address_line:
-            mapped.address ||
-            current
-              .address_line,
-          commune:
-            mapped.commune ||
-            current.commune,
-          city:
-            mapped.city ||
-            current.city,
-          region:
-            mapped.region ||
-            current.region,
-          country:
-            current.country ||
-            "Chile",
-          relbase_customer_id:
-            mapped.id ||
-            null,
-        })
-      );
-    };
-
-
-  const validateAndLookupRut =
-    async (
-      rawRut
-    ) => {
-      const validation =
-        getChileanRutValidation(
-          rawRut
-        );
-
-      const requestId =
-        rutLookupRequestRef
-          .current +
-        1;
-
-      rutLookupRequestRef
-        .current =
-        requestId;
-
-      if (
-        !validation.cleaned
-      ) {
-        setRutLookup({
-          status:
-            "IDLE",
-          searchedRut:
-            null,
-          customer:
-            null,
-          message:
-            "",
-        });
-
-        return;
-      }
-
-      setCustomer(
-        (
-          current
-        ) => ({
-          ...current,
-          rut:
-            validation
-              .formatted,
-        })
-      );
-
-      setBilling(
-        (
-          current
-        ) => ({
-          ...current,
-          rut:
-            validation
-              .formatted,
-          relbase_customer_id:
-            null,
-        })
-      );
-
-      if (
-        !validation.valid
-      ) {
-        setRutLookup({
-          status:
-            "INVALID",
-          searchedRut:
-            validation
-              .cleaned,
-          customer:
-            null,
-          message:
-            "El RUT ingresado no es válido.",
-        });
-
-        return;
-      }
-
-      setRutLookup({
-        status:
-          "CHECKING",
-        searchedRut:
-          validation
-            .cleaned,
-        customer:
-          null,
-        message:
-          "Buscando cliente en Relbase...",
-      });
-
-      try {
-        const response =
-          await findRelbaseCustomerByRut(
-            validation
-              .formatted
-          );
-
-        if (
-          rutLookupRequestRef
-            .current !==
-          requestId
-        ) {
-          return;
-        }
-
-        if (
-          response
-            ?.found ===
-          true
-        ) {
-          const relbaseCustomer =
-            response
-              ?.customer ||
-            null;
-
-          const mappedCustomer =
-            mapRelbaseCustomer(
-              relbaseCustomer,
-              validation
-                .formatted
-            );
-
-          if (
-            documentType ===
-              "FACTURA" &&
-            mappedCustomer
-              .type &&
-            mappedCustomer
-              .type !==
-              "company"
-          ) {
-            setRutLookup({
-              status:
-                "ERROR",
-              searchedRut:
-                validation
-                  .cleaned,
-              customer:
-                relbaseCustomer,
-              message:
-                "El RUT existe en Relbase, pero corresponde a una persona y no puede utilizarse para Factura.",
-            });
-
-            return;
-          }
-
-          applyRelbaseCustomer(
-            relbaseCustomer,
-            validation
-              .formatted
-          );
-
-          setRutLookup({
-            status:
-              "FOUND",
-            searchedRut:
-              validation
-                .cleaned,
-            customer:
-              relbaseCustomer,
-            message:
-              "Cliente encontrado en Relbase. Datos cargados automáticamente.",
-          });
-
-          return;
-        }
-
-        setRutLookup({
-          status:
-            "NOT_FOUND",
-          searchedRut:
-            validation
-              .cleaned,
-          customer:
-            null,
-          message:
-            "RUT válido, pero el cliente no existe actualmente en Relbase.",
-        });
-      } catch (
-        err
-      ) {
-        if (
-          rutLookupRequestRef
-            .current !==
-          requestId
-        ) {
-          return;
-        }
-
-        const code =
-          String(
-            err?.code ||
-              ""
-          ).toUpperCase();
-
-        if (
-          code ===
-          "INVALID_RUT"
-        ) {
-          setRutLookup({
-            status:
-              "INVALID",
-            searchedRut:
-              validation
-                .cleaned,
-            customer:
-              null,
-            message:
-              err?.message ||
-              "El RUT ingresado no es válido.",
-          });
-
-          return;
-        }
-
-        setRutLookup({
-          status:
-            "ERROR",
-          searchedRut:
-            validation
-              .cleaned,
-          customer:
-            null,
-          message:
-            err?.message ||
-            "No fue posible consultar el cliente en Relbase.",
-        });
-      }
-    };
-
-
-  const handleRutBlur =
-    async (
-      event
-    ) => {
-      await validateAndLookupRut(
-        event
-          ?.target
-          ?.value ??
-        (
-          documentType ===
-          "FACTURA"
-            ? billing.rut
-            : customer.rut
-        )
-      );
-    };
-
-
   useEffect(
     () => {
-      const normalizedQuery =
-        String(
-          customerSearch ||
-            ""
-        ).trim();
+      const query =
+        clean(
+          customerSearch
+        );
 
       if (
-        normalizedQuery
-          .length <
+        query.length <
         2
       ) {
-        setCustomerSearchResults(
+        setCustomerResults(
           []
         );
-        setCustomerSearchError(
-          ""
-        );
-        setCustomerSearchLoading(
-          false
-        );
-        setCustomerSearchOpen(
-          false
-        );
 
-        return undefined;
+        return;
       }
 
       const controller =
         new AbortController();
 
-      const timeout =
+      const timer =
         window.setTimeout(
           async () => {
             try {
-              setCustomerSearchLoading(
+              setCustomerLoading(
                 true
-              );
-              setCustomerSearchError(
-                ""
               );
 
               const response =
                 await searchRelbaseCustomers({
                   q:
-                    normalizedQuery,
+                    query,
                   limit:
-                    10,
+                    8,
                   signal:
-                    controller
-                      .signal,
+                    controller.signal,
                 });
 
-              if (
-                controller
-                  .signal
-                  .aborted
-              ) {
-                return;
-              }
-
-              const customers =
-                Array.isArray(
+              setCustomerResults(
+                extractCustomers(
                   response
-                    ?.customers
                 )
-                  ? response
-                      .customers
-                  : Array.isArray(
-                      response
-                        ?.data
-                        ?.customers
-                    )
-                    ? response
-                        .data
-                        .customers
-                    : [];
-
-              setCustomerSearchResults(
-                customers
-              );
-              setCustomerSearchOpen(
-                true
               );
             } catch (
-              err
+              searchError
             ) {
               if (
-                err?.name ===
+                searchError?.name !==
                 "AbortError"
               ) {
-                return;
-              }
-
-              setCustomerSearchResults(
-                []
-              );
-              setCustomerSearchOpen(
-                true
-              );
-              setCustomerSearchError(
-                err?.message ||
-                "No fue posible buscar clientes en Relbase."
-              );
-            } finally {
-              if (
-                !controller
-                  .signal
-                  .aborted
-              ) {
-                setCustomerSearchLoading(
-                  false
+                console.error(
+                  searchError
                 );
               }
+            } finally {
+              setCustomerLoading(
+                false
+              );
             }
           },
           300
         );
 
       return () => {
-        window.clearTimeout(
-          timeout
-        );
         controller.abort();
+        window.clearTimeout(
+          timer
+        );
       };
     },
     [
@@ -1794,636 +1540,523 @@ export default function ProjectQuotationEditor({
     ]
   );
 
-
-  const handleSelectRelbaseCustomer =
-    async (
-      relbaseCustomer
-    ) => {
-      const mapped =
-        mapRelbaseCustomer(
-          relbaseCustomer
-        );
-
-      const rut =
-        String(
-          mapped.rut ||
-            ""
-        ).trim();
-
-      if (
-        !rut
-      ) {
-        setCustomerSearchError(
-          "El cliente seleccionado no posee un RUT utilizable."
-        );
-
-        return;
-      }
-
-      if (
-        documentType ===
-          "FACTURA" &&
-        mapped.type &&
-        mapped.type !==
-          "company"
-      ) {
-        setCustomerSearchError(
-          "Para Factura debes seleccionar un cliente empresa."
-        );
-
-        return;
-      }
-
-      setSelectedRelbaseCustomer(
-        relbaseCustomer
-      );
-      setCustomerSearch(
-        ""
-      );
-      setCustomerSearchResults(
-        []
-      );
-      setCustomerSearchOpen(
-        false
-      );
-      setCustomerSearchError(
-        ""
-      );
-
-      await validateAndLookupRut(
-        rut
-      );
-    };
-
-
   useEffect(
     () => {
+      const query =
+        clean(
+          productSearch
+        );
+
+      if (
+        query.length <
+        2
+      ) {
+        setProductResults(
+          []
+        );
+
+        return;
+      }
+
       const controller =
         new AbortController();
 
-      const timeout =
+      const timer =
         window.setTimeout(
           async () => {
             try {
-              setCatalogLoading(
+              setProductLoading(
                 true
               );
-              setCatalogError("");
 
               const response =
                 await getProjectQuotationProducts({
                   q:
-                    catalogQuery,
+                    query,
                   limit:
-                    20,
+                    12,
                   signal:
-                    controller
-                      .signal,
+                    controller.signal,
                 });
 
-              setProducts(
-                response
-                  ?.products ||
-                  []
+              setProductResults(
+                extractProducts(
+                  response
+                )
               );
             } catch (
-              err
+              searchError
             ) {
               if (
-                err?.name !==
+                searchError?.name !==
                 "AbortError"
               ) {
-                setCatalogError(
-                  err?.message ||
-                    "No fue posible cargar el catálogo."
+                console.error(
+                  searchError
                 );
               }
             } finally {
-              if (
-                !controller
-                  .signal
-                  .aborted
-              ) {
-                setCatalogLoading(
-                  false
-                );
-              }
+              setProductLoading(
+                false
+              );
             }
           },
-          250
+          300
         );
 
       return () => {
-        window.clearTimeout(
-          timeout
-        );
         controller.abort();
+        window.clearTimeout(
+          timer
+        );
       };
     },
     [
-      catalogQuery,
+      productSearch,
     ]
   );
 
+  const selectCustomer =
+    (
+      selected
+    ) => {
+      setCustomer(
+        mapCustomer(
+          selected
+        )
+      );
 
-  const total =
-    useMemo(
-      () =>
-        lines.reduce(
-          (
-            sum,
-            line
-          ) =>
-            sum +
-            numberValue(
-              line
-                .line_total_gross
-            ),
-          0
-        ),
-      [
-        lines,
-      ]
-    );
+      setCustomerSearch(
+        ""
+      );
 
+      setCustomerResults(
+        []
+      );
+    };
+
+  const updateCustomer =
+    (
+      key,
+      value
+    ) =>
+      setCustomer(
+        (
+          current
+        ) => ({
+          ...current,
+          [key]:
+            value,
+        })
+      );
+
+  const addCatalogProduct =
+    (
+      product
+    ) => {
+      setLines(
+        (
+          current
+        ) => [
+          ...current,
+          mapProductToLine(
+            product
+          ),
+        ]
+      );
+
+      setProductSearch(
+        ""
+      );
+
+      setProductResults(
+        []
+      );
+    };
+
+  const addLine =
+    (
+      type
+    ) =>
+      setLines(
+        (
+          current
+        ) => [
+          ...current,
+          emptyLine(
+            type
+          ),
+        ]
+      );
 
   const updateLine =
     (
-      localId,
-      field,
-      value
-    ) => {
+      index,
+      next
+    ) =>
       setLines(
         (
           current
         ) =>
           current.map(
             (
-              line
-            ) => {
-              if (
-                line.local_id !==
-                localId
-              ) {
-                return line;
-              }
-
-              const next =
-                recalculateLine(
-                  {
-                    ...line,
-                    [
-                      field
-                    ]:
-                      value,
-                  },
-                  field
-                );
-
-              return next;
-            }
+              line,
+              lineIndex
+            ) =>
+              lineIndex ===
+              index
+                ? next
+                : line
           )
       );
-    };
-
-
-  const updateLineFormat =
-    (
-      localId,
-      formatValue
-    ) => {
-      setLines(
-        (current) =>
-          current.map(
-            (line) => {
-              if (
-                line.local_id !==
-                localId
-              ) {
-                return line;
-              }
-
-              const options =
-                getLineFormatOptions(
-                  line
-                );
-
-              const selected =
-                options.find(
-                  (option) =>
-                    option.value ===
-                    formatValue
-                );
-
-              if (!selected) {
-                return recalculateLine(
-                  {
-                    ...line,
-                    format_label:
-                      "",
-                    width_cm:
-                      "",
-                    height_cm:
-                      "",
-                  },
-                  "width_cm"
-                );
-              }
-
-              return recalculateLine(
-                {
-                  ...line,
-                  format_label:
-                    selected.value,
-                  width_cm:
-                    selected.width_cm,
-                  height_cm:
-                    selected.height_cm,
-                },
-                "width_cm"
-              );
-            }
-          )
-      );
-    };
-
 
   const removeLine =
     (
-      localId
-    ) => {
+      index
+    ) =>
       setLines(
         (
           current
         ) =>
-          current
-            .filter(
-              (
-                line
-              ) =>
-                line.local_id !==
-                localId
-            )
-            .map(
-              (
-                line,
-                index
-              ) => ({
-                ...line,
-                sort_order:
-                  index,
-              })
-            )
+          current.filter(
+            (
+              _,
+              lineIndex
+            ) =>
+              lineIndex !==
+              index
+          )
       );
-    };
-
-
-  const appendLine =
-    (
-      lineType
-    ) => {
-      setLines(
-        (
-          current
-        ) => [
-          ...current,
-          createEmptyLine(
-            lineType,
-            current.length
-          ),
-        ]
-      );
-    };
-
-
-  const addCatalogProduct =
-    (
-      product
-    ) => {
-      const megProduct =
-        isMegProduct(
-          product
-        );
-
-      const labProduct =
-        isLabProduct(
-          product
-        );
-
-      const selectableFormatProduct =
-        megProduct ||
-        labProduct;
-
-      const widthCm =
-        !selectableFormatProduct &&
-        product
-          ?.width_mm
-          ? Number(
-              product
-                .width_mm
-            ) /
-            10
-          : "";
-
-      const heightCm =
-        !selectableFormatProduct &&
-        product
-          ?.height_mm
-          ? Number(
-              product
-                .height_mm
-            ) /
-            10
-          : "";
-
-      const basePrice =
-        numberValue(
-          product
-            ?.base_price
-        );
-
-      const line = {
-        ...createEmptyLine(
-          "PRODUCT",
-          lines.length
-        ),
-
-        product_id:
-          product.id,
-
-        description:
-          product.name ||
-          "",
-
-        code:
-          product
-            .internal_code ||
-          product.sku ||
-          "",
-
-        finish:
-          product.finish ||
-          "",
-
-        thickness_mm:
-          selectableFormatProduct
-            ? ""
-            : product
-                .thickness_mm ||
-              "",
-
-        width_cm:
-          widthCm,
-
-        height_cm:
-          heightCm,
-
-        format_label:
-          widthCm &&
-          heightCm
-            ? `${widthCm}x${heightCm} cm`
-            : "",
-
-        catalog_formats:
-          megProduct
-            ? MEG_PROJECT_FORMATS
-            : labProduct
-              ? LAB_PROJECT_FORMATS
-              : [],
-
-        catalog_thicknesses:
-          megProduct
-            ? MEG_PROJECT_THICKNESSES
-            : labProduct
-              ? LAB_PROJECT_THICKNESSES
-              : [],
-
-        unit_price_gross:
-          basePrice,
-
-        line_total_gross:
-          basePrice,
-
-        tax_rate:
-          numberValue(
-            product
-              .tax_rate ||
-              19
-          ),
-
-        pricing_mode:
-          "UNIT",
-      };
-
-      setLines(
-        (
-          current
-        ) => [
-          ...current,
-          line,
-        ]
-      );
-    };
-
 
   const validate =
     () => {
       if (
-        !String(
-          projectName ||
-          ""
-        ).trim()
+        !clean(
+          projectName
+        )
       ) {
         return "Ingresa el nombre del proyecto.";
+      }
+
+      if (
+        !clean(
+          customer.rut
+        ) ||
+        !clean(
+          customer.name
+        ) ||
+        !clean(
+          customer.email
+        ) ||
+        !clean(
+          customer.phone
+        ) ||
+        !clean(
+          customer.address
+        )
+      ) {
+        return "Completa RUT, nombre, correo, teléfono y dirección del cliente.";
+      }
+
+      if (
+        documentType ===
+          "FACTURA" &&
+        (
+          !clean(
+            customer.legal_name
+          ) ||
+          !clean(
+            customer.business_activity
+          ) ||
+          !clean(
+            customer.commune
+          ) ||
+          !clean(
+            customer.city
+          )
+        )
+      ) {
+        return "Para Factura completa razón social, giro, comuna y ciudad.";
       }
 
       if (
         lines.length ===
         0
       ) {
-        return "Agrega al menos una línea a la cotización.";
+        return "Agrega al menos una línea al proyecto.";
       }
 
-      const invalidLine =
-        lines.find(
-          (
-            line
-          ) =>
-            !String(
-              line
-                .description ||
-              ""
-            ).trim() ||
-            numberValue(
-              line.quantity
-            ) <= 0
-        );
-
-      if (
-        invalidLine
+      for (
+        let index = 0;
+        index <
+        lines.length;
+        index += 1
       ) {
-        return "Todas las líneas deben tener descripción y cantidad mayor a cero.";
-      }
-
-      const rutValidation =
-        getChileanRutValidation(
-          documentType ===
-          "FACTURA"
-            ? billing.rut
-            : customer.rut
-        );
-
-      if (
-        !rutValidation
-          .valid
-      ) {
-        return "El RUT ingresado no es válido.";
-      }
-
-      const lookupMatchesCurrentRut =
-        rutLookup
-          .searchedRut ===
-        rutValidation
-          .cleaned;
-
-      if (
-        !lookupMatchesCurrentRut ||
-        ![
-          "FOUND",
-          "NOT_FOUND",
-        ].includes(
-          rutLookup.status
-        )
-      ) {
-        return "Espera la validación del RUT en Relbase antes de guardar la cotización.";
-      }
-
-      if (
-        documentType ===
-        "FACTURA"
-      ) {
-        const required =
-          [
-            [
-              billing
-                .legal_name,
-              "razón social",
-            ],
-            [
-              billing
-                .business_activity,
-              "giro",
-            ],
-            [
-              billing
-                .billing_email,
-              "correo de facturación",
-            ],
-            [
-              billing.phone,
-              "teléfono",
-            ],
-            [
-              billing
-                .address_line,
-              "dirección",
-            ],
-            [
-              billing.commune,
-              "comuna",
-            ],
-            [
-              billing.city,
-              "ciudad",
-            ],
-          ];
-
-        const missing =
-          required.find(
-            (
-              [
-                value,
-              ]
-            ) =>
-              !String(
-                value ||
-                ""
-              ).trim()
-          );
+        const line =
+          lines[index];
 
         if (
-          missing
-        ) {
-          return `Falta ${missing[1]}.`;
-        }
-
-        if (
-          !isValidEmail(
-            billing
-              .billing_email
+          !clean(
+            line.description
           )
         ) {
-          return "El correo de facturación no es válido.";
+          return `Completa la descripción de la línea ${index + 1}.`;
         }
-      } else {
-        const required =
-          [
-            [
-              customer.name,
-              "nombre del cliente",
-            ],
-            [
-              customer.email,
-              "correo",
-            ],
-            [
-              customer.phone,
-              "teléfono",
-            ],
-            [
-              customer.address,
-              "dirección",
-            ],
-          ];
-
-        const missing =
-          required.find(
-            (
-              [
-                value,
-              ]
-            ) =>
-              !String(
-                value ||
-                ""
-              ).trim()
-          );
 
         if (
-          missing
+          Number(
+            line.quantity
+          ) <=
+          0
         ) {
-          return `Falta ${missing[1]}.`;
+          return `La cantidad de la línea ${index + 1} debe ser mayor a 0.`;
         }
 
         if (
-          !isValidEmail(
-            customer.email
+          line.line_type ===
+            "PRODUCT" &&
+          !line.product_id &&
+          !clean(
+            line.code
           )
         ) {
-          return "El correo del cliente no es válido.";
+          return `Ingresa el código del producto manual en la línea ${index + 1}.`;
         }
-      }
 
-      if (
-        isEdit &&
-        !validUntil
-      ) {
-        return "Selecciona la fecha de vigencia.";
+        if (
+          line.line_type ===
+            "PRODUCT" &&
+          !clean(
+            line.brand
+          )
+        ) {
+          return `Selecciona o ingresa la marca del producto en la línea ${index + 1}.`;
+        }
+
       }
 
       return "";
     };
 
+  const buildPayload =
+    () => ({
+      quotation_type:
+        "PROJECT",
+      project_name:
+        clean(
+          projectName
+        ),
+      project_reference:
+        clean(
+          projectReference
+        ) ||
+        null,
+      visible_to_italy:
+        visibleToItaly,
+      document_type:
+        documentType,
+      ...(editing
+        ? {
+            valid_until:
+              validUntil,
+          }
+        : {
+            valid_days:
+              Number(
+                validDays
+              ),
+          }),
+      notes:
+        clean(
+          notes
+        ) ||
+        null,
+      customer: {
+        rut:
+          clean(
+            customer.rut
+          ),
+        name:
+          clean(
+            customer.name
+          ),
+        email:
+          clean(
+            customer.email
+          ),
+        phone:
+          clean(
+            customer.phone
+          ),
+        address:
+          clean(
+            customer.address
+          ),
+      },
+      billing: {
+        rut:
+          clean(
+            customer.rut
+          ),
+        legal_name:
+          clean(
+            customer.legal_name ||
+            customer.name
+          ),
+        trade_name:
+          clean(
+            customer.trade_name
+          ) ||
+          null,
+        business_activity:
+          clean(
+            customer.business_activity
+          ),
+        billing_email:
+          clean(
+            customer.billing_email ||
+            customer.email
+          ),
+        phone:
+          clean(
+            customer.billing_phone ||
+            customer.phone
+          ),
+        address_line:
+          clean(
+            customer.address_line ||
+            customer.address
+          ),
+        commune:
+          clean(
+            customer.commune
+          ),
+        city:
+          clean(
+            customer.city
+          ),
+        region:
+          clean(
+            customer.region
+          ),
+        country:
+          clean(
+            customer.country ||
+            "Chile"
+          ),
+        relbase_customer_id:
+          clean(
+            customer.relbase_customer_id
+          ) ||
+          null,
+      },
+      lines:
+        lines.map(
+          (
+            line,
+            index
+          ) => ({
+            line_type:
+              line.line_type,
+            product_id:
+              line.product_id ||
+              null,
+            description:
+              clean(
+                line.description
+              ),
+            code:
+              clean(
+                line.code
+              ) ||
+              null,
+            brand:
+              line.line_type ===
+                "PRODUCT"
+                ? clean(
+                    line.brand
+                  ) ||
+                  null
+                : null,
+            collection:
+              line.line_type ===
+                "PRODUCT"
+                ? clean(
+                    line.collection
+                  ) ||
+                  null
+                : null,
+            italy_price_usd:
+              line.line_type ===
+                "PRODUCT"
+                ? numberOrNull(
+                    line.italy_price_usd
+                  )
+                : null,
+            finish:
+              clean(
+                line.finish
+              ) ||
+              null,
+            thickness_mm:
+              numberOrNull(
+                line.thickness_mm
+              ),
+            quantity:
+              Number(
+                line.quantity
+              ),
+            unit:
+              clean(
+                line.unit ||
+                "UN"
+              ),
+            format_label:
+              clean(
+                line.format_label
+              ) ||
+              null,
+            width_cm:
+              numberOrNull(
+                line.width_cm
+              ),
+            height_cm:
+              numberOrNull(
+                line.height_cm
+              ),
+            price_m2_gross:
+              line.pricing_mode ===
+                "AREA"
+                ? numberOrNull(
+                    line.price_m2_gross
+                  )
+                : null,
+            unit_price_gross:
+              line.pricing_mode ===
+                "UNIT"
+                ? numberOrNull(
+                    line.unit_price_gross
+                  )
+                : null,
+            line_total_gross:
+              line.pricing_mode ===
+                "TOTAL"
+                ? numberOrNull(
+                    line.line_total_gross
+                  )
+                : null,
+            tax_rate:
+              numberOrNull(
+                line.tax_rate
+              ) ??
+              19,
+            pricing_mode:
+              line.pricing_mode,
+            sort_order:
+              index,
+          })
+        ),
+    });
 
   const save =
     async () => {
@@ -2436,212 +2069,24 @@ export default function ProjectQuotationEditor({
         setError(
           validationError
         );
+
         return;
-      }
-
-      const rutValidation =
-        getChileanRutValidation(
-          documentType ===
-          "FACTURA"
-            ? billing.rut
-            : customer.rut
-        );
-
-      const payload = {
-        document_type:
-          documentType,
-
-        customer: {
-          name:
-            documentType ===
-            "FACTURA"
-              ? billing
-                  .legal_name
-              : customer.name,
-
-          rut:
-            rutValidation
-              .formatted,
-
-          email:
-            documentType ===
-            "FACTURA"
-              ? billing
-                  .billing_email
-              : customer.email,
-
-          phone:
-            documentType ===
-            "FACTURA"
-              ? billing.phone
-              : customer.phone,
-
-          address:
-            documentType ===
-            "FACTURA"
-              ? billing
-                  .address_line
-              : customer.address,
-        },
-
-        billing: {
-          ...billing,
-          rut:
-            rutValidation
-              .formatted,
-        },
-
-        project_name:
-          String(
-            projectName
-          ).trim(),
-
-        project_reference:
-          String(
-            projectReference ||
-            ""
-          ).trim() ||
-          null,
-
-        visible_to_italy:
-          Boolean(
-            visibleToItaly
-          ),
-
-        notes:
-          String(
-            notes ||
-            ""
-          ).trim() ||
-          null,
-
-        lines:
-          lines.map(
-            (
-              line,
-              index
-            ) => ({
-              line_type:
-                line
-                  .line_type,
-
-              product_id:
-                line
-                  .product_id ||
-                null,
-
-              description:
-                String(
-                  line
-                    .description ||
-                  ""
-                ).trim(),
-
-              code:
-                String(
-                  line.code ||
-                  ""
-                ).trim() ||
-                null,
-
-              finish:
-                String(
-                  line.finish ||
-                  ""
-                ).trim() ||
-                null,
-
-              thickness_mm:
-                optionalNumber(
-                  line
-                    .thickness_mm
-                ),
-
-              quantity:
-                numberValue(
-                  line.quantity
-                ),
-
-              unit:
-                String(
-                  line.unit ||
-                  "UN"
-                ).trim() ||
-                "UN",
-
-              format_label:
-                String(
-                  line
-                    .format_label ||
-                  ""
-                ).trim() ||
-                null,
-
-              width_cm:
-                optionalNumber(
-                  line.width_cm
-                ),
-
-              height_cm:
-                optionalNumber(
-                  line.height_cm
-                ),
-
-              price_m2_gross:
-                optionalNumber(
-                  line
-                    .price_m2_gross
-                ),
-
-              unit_price_gross:
-                numberValue(
-                  line
-                    .unit_price_gross
-                ),
-
-              line_total_gross:
-                numberValue(
-                  line
-                    .line_total_gross
-                ),
-
-              tax_rate:
-                numberValue(
-                  line.tax_rate ||
-                    19
-                ),
-
-              pricing_mode:
-                line
-                  .pricing_mode,
-
-              sort_order:
-                index,
-            })
-          ),
-      };
-
-      if (
-        isEdit
-      ) {
-        payload.valid_until =
-          validUntil;
-      } else {
-        payload.valid_days =
-          Number(
-            validDays
-          );
       }
 
       try {
         setSaving(
           true
         );
-        setError("");
-        setMessage("");
+
+        setError(
+          ""
+        );
+
+        const payload =
+          buildPayload();
 
         const response =
-          isEdit
+          editing
             ? await updateProjectQuotation(
                 quotationId,
                 payload
@@ -2650,35 +2095,35 @@ export default function ProjectQuotationEditor({
                 payload
               );
 
-        const saved =
+        const savedId =
           response?.data
-            ?.quotation ||
-          null;
-
-        setMessage(
-          isEdit
-            ? "Cotización de proyecto actualizada correctamente."
-            : "Cotización de proyecto creada correctamente."
-        );
+            ?.quotation
+            ?.id ||
+          quotationId;
 
         if (
-          saved
+          savedId
         ) {
-          window.setTimeout(
-            () => {
-              router.push(
-                `/admin/cotizaciones/${saved.id}`
-              );
-              router.refresh();
-            },
-            500
+          router.push(
+            `/admin/showroom/cotizaciones/${savedId}`
           );
+
+          return;
         }
+
+        router.push(
+          "/admin/showroom/cotizaciones"
+        );
       } catch (
-        err
+        saveError
       ) {
+        console.error(
+          "Error guardando cotización de proyecto:",
+          saveError
+        );
+
         setError(
-          err?.message ||
+          saveError?.message ||
             "No fue posible guardar la cotización de proyecto."
         );
       } finally {
@@ -2688,1430 +2133,683 @@ export default function ProjectQuotationEditor({
       }
     };
 
-
   if (
     loading
   ) {
     return (
-      <main className="min-h-screen bg-[#f6f5f2] p-8 text-sm text-neutral-500">
+      <div className="p-8 text-sm text-neutral-500">
         Cargando cotización de proyecto...
-      </main>
+      </div>
     );
   }
 
-
   return (
-    <main className="min-h-screen bg-[#f6f5f2] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f6f5f2] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1500px]">
-        <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
               Laminati · Cotizaciones · Proyecto
             </p>
 
-            <h1 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-neutral-950">
-              {isEdit
-                ? `Editar ${quotation?.quote_number || "cotización"}`
+            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-neutral-950">
+              {editing
+                ? "Editar cotización de proyecto"
                 : "Nueva cotización de proyecto"}
             </h1>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
-              Productos, formatos, valores por m², valores unitarios, servicios y otros conceptos quedan como un snapshot editable antes del envío.
+              Los productos pueden venir del catálogo o ingresarse manualmente. El Precio Italia se guarda como snapshot privado para Gerencia Italia.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={
-                isEdit
-                  ? `/admin/cotizaciones/${quotationId}`
-                  : "/admin/cotizaciones"
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() =>
+                router.back()
               }
-              className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-xs font-medium text-neutral-700 transition hover:border-black"
+              className="rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-neutral-700"
             >
               Cancelar
-            </Link>
+            </button>
 
             <button
               type="button"
-              onClick={save}
-              disabled={saving}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-black px-6 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:bg-neutral-300"
+              disabled={
+                saving
+              }
+              onClick={
+                save
+              }
+              className="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
             >
               {saving
                 ? "Guardando..."
-                : isEdit
+                : editing
                   ? "Guardar cambios"
                   : "Crear cotización"}
             </button>
           </div>
         </header>
 
-        {error && (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+        {error ? (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-600">
             {error}
           </div>
-        )}
+        ) : null}
 
-        {message && (
-          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
-            {message}
-          </div>
-        )}
-
-        {quotation?.status === "SENT" && (
-          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-            Esta cotización ya fue enviada. Al guardar cambios, el backend volverá a estado Borrador para que puedas revisarla antes de reenviarla.
-          </div>
-        )}
-
-        <section className="mt-6 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-          <div className="grid gap-5 lg:grid-cols-3">
-            <Field label="Nombre del proyecto">
-              <input
-                value={projectName}
-                onChange={(event) =>
-                  setProjectName(
-                    event.target.value
-                  )
-                }
-                placeholder="Ej. Remodelación Hotel"
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Referencia">
-              <input
-                value={projectReference}
-                onChange={(event) =>
-                  setProjectReference(
-                    event.target.value
-                  )
-                }
-                placeholder="Ej. OBRA-2026-001"
-                className={inputClass}
-              />
-            </Field>
-
-            {isEdit ? (
-              <Field label="Vigencia">
+        <div className="space-y-5">
+          <Section
+            eyebrow="Proyecto"
+            title="Datos de la cotización"
+          >
+            <div className="grid gap-4 lg:grid-cols-3">
+              <Field label="Nombre del proyecto">
                 <input
-                  type="date"
-                  value={validUntil}
-                  onChange={(event) =>
-                    setValidUntil(
-                      event.target.value
+                  className={INPUT}
+                  value={
+                    projectName
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setProjectName(
+                      event.target
+                        .value
                     )
                   }
-                  className={inputClass}
                 />
               </Field>
-            ) : (
-              <Field label="Vigencia">
-                <select
-                  value={validDays}
-                  onChange={(event) =>
-                    setValidDays(
-                      Number(
-                        event.target.value
-                      )
+
+              <Field label="Referencia">
+                <input
+                  className={INPUT}
+                  value={
+                    projectReference
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setProjectReference(
+                      event.target
+                        .value
                     )
                   }
-                  className={inputClass}
-                >
-                  <option value={7}>
-                    7 días
-                  </option>
-                  <option value={15}>
-                    15 días
-                  </option>
-                  <option value={30}>
-                    30 días
-                  </option>
-                </select>
+                />
               </Field>
-            )}
-          </div>
 
-          <div className="mt-5">
-            <Field label="Tipo de documento">
-              <div className="grid gap-2 sm:grid-cols-2">
+              {editing ? (
+                <Field label="Válida hasta">
+                  <input
+                    className={INPUT}
+                    type="date"
+                    value={
+                      validUntil
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setValidUntil(
+                        event.target
+                          .value
+                      )
+                    }
+                  />
+                </Field>
+              ) : (
+                <Field label="Vigencia">
+                  <select
+                    className={INPUT}
+                    value={
+                      validDays
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setValidDays(
+                        event.target
+                          .value
+                      )
+                    }
+                  >
+                    <option value="7">
+                      7 días
+                    </option>
+                    <option value="15">
+                      15 días
+                    </option>
+                    <option value="30">
+                      30 días
+                    </option>
+                  </select>
+                </Field>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <span className={LABEL}>
+                Tipo de documento
+              </span>
+
+              <div className="grid grid-cols-2 gap-2">
                 {[
-                  [
-                    "BOLETA",
-                    "Boleta",
-                  ],
-                  [
-                    "FACTURA",
-                    "Factura",
-                  ],
+                  "BOLETA",
+                  "FACTURA",
                 ].map(
-                  ([
-                    value,
-                    label,
-                  ]) => (
+                  (
+                    type
+                  ) => (
                     <button
-                      key={value}
+                      key={
+                        type
+                      }
                       type="button"
-                      onClick={() => {
+                      onClick={() =>
                         setDocumentType(
-                          value
-                        );
-                        setCustomerSearchError(
-                          ""
-                        );
-                        resetRutLookup();
-                        setSelectedRelbaseCustomer(
-                          null
-                        );
-                      }}
-                      className={`h-11 rounded-xl border text-sm font-medium transition ${
+                          type
+                        )
+                      }
+                      className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
                         documentType ===
-                        value
+                        type
                           ? "border-black bg-black text-white"
-                          : "border-black/10 bg-white text-neutral-700 hover:border-black"
+                          : "border-neutral-200 bg-white text-neutral-700"
                       }`}
                     >
-                      {label}
+                      {type ===
+                      "BOLETA"
+                        ? "Boleta"
+                        : "Factura"}
                     </button>
                   )
                 )}
               </div>
-            </Field>
-          </div>
-        </section>
+            </div>
 
-        <section className="mt-5 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="text-lg font-semibold text-neutral-950">
-            Cliente
-          </h2>
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4"
+                checked={
+                  visibleToItaly
+                }
+                onChange={(
+                  event
+                ) =>
+                  setVisibleToItaly(
+                    event.target
+                      .checked
+                  )
+                }
+              />
 
-          <div className="mt-5 rounded-2xl border border-black/5 bg-[#faf9f7] p-4 sm:p-5">
-            <Field label="Buscar cliente en Relbase por nombre o RUT">
-              <div className="relative">
+              <span>
+                <strong className="block text-sm text-neutral-900">
+                  Mostrar esta cotización a Gerencia Italia
+                </strong>
+
+                <span className="mt-1 block text-xs leading-5 text-neutral-500">
+                  Gerencia verá sólo líneas PRODUCT de ABET LAMINATI y únicamente su valorización en USD. No verá precios comerciales de Chile.
+                </span>
+              </span>
+            </label>
+          </Section>
+
+          <Section
+            eyebrow="Cliente"
+            title="Datos del cliente"
+          >
+            <div className="relative">
+              <Field label="Buscar cliente en Relbase por nombre o RUT">
                 <input
-                  value={customerSearch}
-                  onChange={(event) => {
-                    setCustomerSearch(
-                      event.target.value
-                    );
-                    setCustomerSearchOpen(
-                      true
-                    );
-                    setCustomerSearchError(
-                      ""
-                    );
-                  }}
-                  onFocus={() => {
-                    if (
-                      customerSearchResults.length >
-                      0
-                    ) {
-                      setCustomerSearchOpen(
-                        true
-                      );
-                    }
-                  }}
-                  placeholder="Ej. Juan Estay o 18.083.379-K"
-                  autoComplete="off"
-                  className="h-12 w-full rounded-xl border border-black/10 bg-white px-4 pr-12 text-sm outline-none transition placeholder:text-neutral-400 focus:border-black"
-                />
-
-                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                  {customerSearchLoading ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-200 border-t-black" />
-                  ) : (
-                    <span className="text-neutral-400">
-                      ⌕
-                    </span>
-                  )}
-                </div>
-
-                {customerSearchOpen &&
-                  String(
-                    customerSearch ||
-                      ""
-                  ).trim().length >=
-                    2 && (
-                    <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-80 overflow-y-auto rounded-2xl border border-black/10 bg-white p-2 shadow-[0_20px_60px_rgba(0,0,0,0.15)]">
-                      {customerSearchLoading ? (
-                        <div className="px-3 py-5 text-center text-xs text-neutral-500">
-                          Buscando clientes en Relbase...
-                        </div>
-                      ) : customerSearchError ? (
-                        <div className="rounded-xl bg-red-50 px-3 py-3 text-xs font-medium text-red-700">
-                          {customerSearchError}
-                        </div>
-                      ) : customerSearchResults.length ===
-                        0 ? (
-                        <div className="px-3 py-5 text-center text-xs text-neutral-500">
-                          No encontramos clientes para esta búsqueda.
-                        </div>
-                      ) : (
-                        customerSearchResults.map(
-                          (
-                            relbaseCustomer
-                          ) => {
-                            const mapped =
-                              mapRelbaseCustomer(
-                                relbaseCustomer
-                              );
-
-                            const incompatibleInvoice =
-                              documentType ===
-                                "FACTURA" &&
-                              mapped.type &&
-                              mapped.type !==
-                                "company";
-
-                            return (
-                              <button
-                                key={
-                                  mapped.id ||
-                                  `${mapped.rut}-${mapped.name}`
-                                }
-                                type="button"
-                                disabled={
-                                  incompatibleInvoice
-                                }
-                                onClick={() =>
-                                  handleSelectRelbaseCustomer(
-                                    relbaseCustomer
-                                  )
-                                }
-                                className="flex w-full items-start justify-between gap-4 rounded-xl px-3 py-3 text-left transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45"
-                              >
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold text-neutral-900">
-                                    {mapped.name ||
-                                      mapped.trade_name ||
-                                      "Cliente Relbase"}
-                                  </p>
-
-                                  <p className="mt-1 text-xs text-neutral-500">
-                                    {mapped.rut ||
-                                      "Sin RUT"}
-
-                                    {mapped.type
-                                      ? ` · ${
-                                          mapped.type ===
-                                          "company"
-                                            ? "Empresa"
-                                            : "Persona"
-                                        }`
-                                      : ""}
-                                  </p>
-
-                                  {mapped.address && (
-                                    <p className="mt-1 truncate text-[11px] text-neutral-400">
-                                      {mapped.address}
-                                    </p>
-                                  )}
-                                </div>
-
-                                {incompatibleInvoice && (
-                                  <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-1 text-[9px] font-medium text-neutral-500">
-                                    Solo persona
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          }
-                        )
-                      )}
-                    </div>
-                  )}
-              </div>
-            </Field>
-
-            {selectedRelbaseCustomer && (
-              <div className="mt-3 flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-600">
-                    Cliente seleccionado
-                  </p>
-
-                  <p className="mt-1 text-sm font-semibold text-emerald-950">
-                    {mapRelbaseCustomer(
-                      selectedRelbaseCustomer
-                    ).name ||
-                      "Cliente Relbase"}
-                  </p>
-
-                  <p className="mt-0.5 text-xs text-emerald-700">
-                    {mapRelbaseCustomer(
-                      selectedRelbaseCustomer
-                    ).rut ||
-                      "—"}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedRelbaseCustomer(
-                      null
-                    )
-                  }
-                  className="text-left text-xs font-semibold text-emerald-800 underline underline-offset-2 sm:text-right"
-                >
-                  Cambiar cliente
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-5 grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
-            <Field
-              label={
-                documentType ===
-                "FACTURA"
-                  ? "RUT empresa"
-                  : "RUT cliente"
-              }
-            >
-              <div className="relative">
-                <input
+                  className={INPUT}
                   value={
-                    documentType ===
-                      "FACTURA"
-                      ? billing.rut
-                      : customer.rut
+                    customerSearch
                   }
-                  onChange={(event) =>
-                    handleRutChange(
-                      event.target.value
+                  onChange={(
+                    event
+                  ) =>
+                    setCustomerSearch(
+                      event.target
+                        .value
                     )
                   }
-                  onBlur={
-                    handleRutBlur
-                  }
-                  onKeyDown={(event) => {
-                    if (
-                      event.key ===
-                      "Enter"
-                    ) {
-                      event.preventDefault();
-                      event.currentTarget.blur();
-                    }
-                  }}
-                  placeholder="12.345.678-5"
-                  inputMode="text"
-                  autoComplete="off"
-                  className={`h-11 w-full rounded-xl border px-3.5 pr-12 text-sm outline-none transition ${
-                    rutLookup.status ===
-                      "INVALID" ||
-                    rutLookup.status ===
-                      "ERROR"
-                      ? "border-red-300 focus:border-red-500"
-                      : rutLookup.status ===
-                          "FOUND"
-                        ? "border-emerald-300 focus:border-emerald-500"
-                        : rutLookup.status ===
-                            "NOT_FOUND"
-                          ? "border-amber-300 focus:border-amber-500"
-                          : rutLookup.status ===
-                              "CHECKING"
-                            ? "border-emerald-200 focus:border-emerald-400"
-                            : "border-black/10 focus:border-black"
-                  }`}
+                  placeholder="Ej. Juan Estay o 18.083.379-K"
                 />
+              </Field>
 
-                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                  <RutStatusIcon
-                    status={
-                      rutLookup.status
-                    }
-                  />
+              {customerLoading ? (
+                <p className="mt-2 text-xs text-neutral-400">
+                  Buscando...
+                </p>
+              ) : null}
+
+              {customerResults.length >
+              0 ? (
+                <div className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl">
+                  {customerResults.map(
+                    (
+                      item,
+                      index
+                    ) => (
+                      <button
+                        key={
+                          item.id ||
+                          item.customer_id ||
+                          `${item.rut}-${index}`
+                        }
+                        type="button"
+                        onClick={() =>
+                          selectCustomer(
+                            item
+                          )
+                        }
+                        className="block w-full rounded-xl px-4 py-3 text-left hover:bg-neutral-50"
+                      >
+                        <strong className="block text-sm text-neutral-900">
+                          {item.name ||
+                            item.legal_name ||
+                            item.business_name ||
+                            "Cliente"}
+                        </strong>
+
+                        <span className="mt-1 block text-xs text-neutral-500">
+                          {item.rut ||
+                            "Sin RUT"}
+                        </span>
+                      </button>
+                    )
+                  )}
                 </div>
-              </div>
+              ) : null}
+            </div>
 
-              <p className="mt-1.5 text-[11px] text-neutral-400">
-                También puedes escribir el RUT directamente y presionar Tab.
-              </p>
-            </Field>
-
-            <div>
-              {rutLookup.message ? (
-                <div
-                  className={`min-h-11 rounded-xl px-3.5 py-3 text-xs font-medium ${
-                    rutLookup.status ===
-                      "FOUND"
-                      ? "bg-emerald-50 text-emerald-700"
-                      : rutLookup.status ===
-                          "NOT_FOUND"
-                        ? "bg-amber-50 text-amber-800"
-                        : rutLookup.status ===
-                            "CHECKING"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-red-50 text-red-700"
-                  }`}
-                >
-                  {
-                    rutLookup.message
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Field label="RUT cliente">
+                <input
+                  className={INPUT}
+                  value={
+                    customer.rut
                   }
-                </div>
-              ) : (
-                <div className="min-h-11 rounded-xl bg-neutral-50 px-3.5 py-3 text-xs text-neutral-400">
-                  La validación exacta del RUT aparecerá aquí.
-                </div>
-              )}
-            </div>
-          </div>
+                  onChange={(
+                    event
+                  ) =>
+                    updateCustomer(
+                      "rut",
+                      event.target
+                        .value
+                    )
+                  }
+                />
+              </Field>
 
-          {documentType === "FACTURA" ? (
-            <div className="mt-5">
-              {rutLookup.status !==
-                "FOUND" && (
-                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-                  {rutLookup.status ===
-                  "NOT_FOUND"
-                    ? "El RUT empresa es válido, pero no existe actualmente en Relbase. Puedes completar los datos tributarios manualmente para la cotización."
-                    : "Busca o ingresa el RUT empresa. Si existe en Relbase cargaremos sus datos tributarios automáticamente."}
-                </div>
-              )}
-
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <Field label="Razón social">
-                  <input
-                    value={
-                      billing.legal_name
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          legal_name:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-
-                <Field label="Nombre de fantasía">
-                  <input
-                    value={
-                      billing.trade_name
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          trade_name:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-
-                <Field label="Giro">
-                  <input
-                    value={
-                      billing.business_activity
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          business_activity:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-
-                <Field label="Correo">
-                  <input
-                    type="email"
-                    value={
-                      billing.billing_email
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          billing_email:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-
-                <Field label="Teléfono">
-                  <input
-                    value={
-                      billing.phone
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          phone:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-
-                <Field label="Dirección">
-                  <input
-                    value={
-                      billing.address_line
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          address_line:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-
-                <Field label="Comuna">
-                  <input
-                    value={
-                      billing.commune
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          commune:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-
-                <Field label="Ciudad">
-                  <input
-                    value={
-                      billing.city
-                    }
-                    onChange={(event) =>
-                      setBilling(
-                        (
-                          current
-                        ) => ({
-                          ...current,
-                          city:
-                            event.target.value,
-                        })
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </Field>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
               <Field label="Nombre">
                 <input
+                  className={INPUT}
                   value={
                     customer.name
                   }
-                  onChange={(event) =>
-                    setCustomer(
-                      (
-                        current
-                      ) => ({
-                        ...current,
-                        name:
-                          event.target.value,
-                      })
+                  onChange={(
+                    event
+                  ) =>
+                    updateCustomer(
+                      "name",
+                      event.target
+                        .value
                     )
-                  }
-                  className={
-                    inputClass
                   }
                 />
               </Field>
 
               <Field label="Correo">
                 <input
+                  className={INPUT}
                   type="email"
                   value={
                     customer.email
                   }
-                  onChange={(event) =>
-                    setCustomer(
-                      (
-                        current
-                      ) => ({
-                        ...current,
-                        email:
-                          event.target.value,
-                      })
+                  onChange={(
+                    event
+                  ) =>
+                    updateCustomer(
+                      "email",
+                      event.target
+                        .value
                     )
-                  }
-                  className={
-                    inputClass
                   }
                 />
               </Field>
 
               <Field label="Teléfono">
                 <input
+                  className={INPUT}
                   value={
                     customer.phone
                   }
-                  onChange={(event) =>
-                    setCustomer(
-                      (
-                        current
-                      ) => ({
-                        ...current,
-                        phone:
-                          event.target.value,
-                      })
+                  onChange={(
+                    event
+                  ) =>
+                    updateCustomer(
+                      "phone",
+                      event.target
+                        .value
                     )
-                  }
-                  className={
-                    inputClass
                   }
                 />
               </Field>
 
               <Field label="Dirección">
                 <input
+                  className={INPUT}
                   value={
                     customer.address
                   }
-                  onChange={(event) =>
-                    setCustomer(
-                      (
-                        current
-                      ) => ({
-                        ...current,
-                        address:
-                          event.target.value,
-                      })
+                  onChange={(
+                    event
+                  ) =>
+                    updateCustomer(
+                      "address",
+                      event.target
+                        .value
                     )
-                  }
-                  className={
-                    inputClass
                   }
                 />
               </Field>
-            </div>
-          )}
 
-          <div className="mt-5 rounded-2xl border border-black/5 bg-neutral-50 p-4 sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                  Visibilidad internacional
-                </p>
-                <p className="mt-1 text-sm font-semibold text-neutral-950">
-                  Mostrar a Gerencia Italia
-                </p>
-                <p className="mt-1 max-w-2xl text-xs leading-5 text-neutral-500">
-                  Al activarlo, esta cotización de proyecto podrá ser consultada por el perfil Gerencia Italia.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                role="switch"
-                aria-checked={visibleToItaly}
-                onClick={() =>
-                  setVisibleToItaly(
-                    (current) =>
-                      !current
-                  )
-                }
-                className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition ${
-                  visibleToItaly
-                    ? "border-emerald-500 bg-emerald-500"
-                    : "border-black/10 bg-neutral-200"
-                }`}
-              >
-                <span
-                  className={`inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
-                    visibleToItaly
-                      ? "translate-x-7"
-                      : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-5 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                Catálogo
-              </p>
-              <h2 className="mt-1 text-lg font-semibold text-neutral-950">
-                Agregar producto
-              </h2>
-              <p className="mt-1 text-xs text-neutral-500">
-                El producto sólo precarga información. Después puedes modificar todos los campos de la línea.
-              </p>
-            </div>
-
-            <input
-              value={catalogQuery}
-              onChange={(event) =>
-                setCatalogQuery(
-                  event.target.value
-                )
-              }
-              placeholder="Buscar por SKU o nombre"
-              className="h-11 w-full rounded-xl border border-black/10 px-4 text-sm outline-none focus:border-black xl:max-w-md"
-            />
-          </div>
-
-          <div className="mt-4 max-h-72 overflow-y-auto rounded-2xl border border-black/5">
-            {catalogLoading ? (
-              <p className="p-4 text-sm text-neutral-500">
-                Cargando productos...
-              </p>
-            ) : catalogError ? (
-              <p className="p-4 text-sm text-red-600">
-                {catalogError}
-              </p>
-            ) : products.length === 0 ? (
-              <p className="p-4 text-sm text-neutral-500">
-                Sin productos para mostrar.
-              </p>
-            ) : (
-              <div className="divide-y divide-black/5">
-                {products.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between gap-4 p-4"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-neutral-950">
-                        {product.name}
-                      </p>
-                      <p className="mt-1 text-xs text-neutral-500">
-                        {product.sku}
-                        {product.finish
-                          ? ` · ${product.finish}`
-                          : ""}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        addCatalogProduct(
-                          product
+              {documentType ===
+              "FACTURA" ? (
+                <>
+                  <Field label="Razón social">
+                    <input
+                      className={INPUT}
+                      value={
+                        customer.legal_name
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updateCustomer(
+                          "legal_name",
+                          event.target
+                            .value
                         )
                       }
-                      className="h-9 shrink-0 rounded-full border border-black/10 px-4 text-xs font-semibold text-neutral-800 transition hover:border-black"
-                    >
-                      Agregar
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
+                    />
+                  </Field>
 
-        <section className="mt-5 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                Detalle del proyecto
-              </p>
-              <h2 className="mt-1 text-lg font-semibold text-neutral-950">
-                Productos, servicios y otros conceptos
-              </h2>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  appendLine(
-                    "PRODUCT"
-                  )
-                }
-                className="h-9 rounded-full border border-black/10 px-4 text-xs font-semibold text-neutral-700 hover:border-black"
-              >
-                + Producto manual
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  appendLine(
-                    "SERVICE"
-                  )
-                }
-                className="h-9 rounded-full border border-black/10 px-4 text-xs font-semibold text-neutral-700 hover:border-black"
-              >
-                + Servicio
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  appendLine(
-                    "OTHER"
-                  )
-                }
-                className="h-9 rounded-full border border-black/10 px-4 text-xs font-semibold text-neutral-700 hover:border-black"
-              >
-                + Otro
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            {lines.map(
-              (
-                line,
-                index
-              ) => (
-                <div
-                  key={line.local_id}
-                  className="rounded-2xl border border-black/5 bg-neutral-50 p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-[10px] font-semibold text-white">
-                        {index + 1}
-                      </span>
-
-                      <select
-                        value={line.line_type}
-                        onChange={(event) =>
-                          updateLine(
-                            line.local_id,
-                            "line_type",
-                            event.target.value
-                          )
-                        }
-                        className="h-9 rounded-lg border border-black/10 bg-white px-3 text-xs font-semibold text-neutral-700"
-                      >
-                        <option value="PRODUCT">
-                          Producto
-                        </option>
-                        <option value="SERVICE">
-                          Servicio
-                        </option>
-                        <option value="OTHER">
-                          Otro
-                        </option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeLine(
-                          line.local_id
+                  <Field label="Giro">
+                    <input
+                      className={INPUT}
+                      value={
+                        customer.business_activity
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updateCustomer(
+                          "business_activity",
+                          event.target
+                            .value
                         )
                       }
-                      disabled={
-                        lines.length ===
-                        1
+                    />
+                  </Field>
+
+                  <Field label="Comuna">
+                    <input
+                      className={INPUT}
+                      value={
+                        customer.commune
                       }
-                      className="text-xs font-medium text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      Quitar
-                    </button>
-                  </div>
+                      onChange={(
+                        event
+                      ) =>
+                        updateCustomer(
+                          "commune",
+                          event.target
+                            .value
+                        )
+                      }
+                    />
+                  </Field>
 
-                  {line.line_type === "PRODUCT" ? (
-                    <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      <div className="xl:col-span-2">
-                        <Field label="Producto">
-                          <input
-                            value={line.description}
-                            onChange={(event) =>
-                              updateLine(
-                                line.local_id,
-                                "description",
-                                event.target.value
-                              )
-                            }
-                            className={inputClass}
-                          />
-                        </Field>
-                      </div>
+                  <Field label="Ciudad">
+                    <input
+                      className={INPUT}
+                      value={
+                        customer.city
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updateCustomer(
+                          "city",
+                          event.target
+                            .value
+                        )
+                      }
+                    />
+                  </Field>
+                </>
+              ) : null}
+            </div>
+          </Section>
 
-                      <Field label="Código">
-                        <input
-                          value={line.code || ""}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "code",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
+          <Section
+            eyebrow="Catálogo"
+            title="Agregar producto existente"
+          >
+            <div className="relative">
+              <input
+                className={INPUT}
+                value={
+                  productSearch
+                }
+                onChange={(
+                  event
+                ) =>
+                  setProductSearch(
+                    event.target
+                      .value
+                  )
+                }
+                placeholder="Buscar por nombre, SKU o código..."
+              />
 
-                      <Field label="Acabado">
-                        <input
-                          value={line.finish || ""}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "finish",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
+              {productLoading ? (
+                <p className="mt-2 text-xs text-neutral-400">
+                  Buscando productos...
+                </p>
+              ) : null}
 
-                      <Field label="Espesor mm">
-                        {getLineThicknessOptions(
-                          line
-                        ).length > 0 ? (
-                          <select
-                            value={line.thickness_mm || ""}
-                            onChange={(event) =>
-                              updateLine(
-                                line.local_id,
-                                "thickness_mm",
-                                event.target.value
-                              )
-                            }
-                            className={inputClass}
-                          >
-                            <option value="">
-                              Seleccionar espesor
-                            </option>
-                            {getLineThicknessOptions(
-                              line
-                            ).map((thickness) => (
-                              <option
-                                key={thickness}
-                                value={thickness}
-                              >
-                                {thickness} mm
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.1"
-                            value={line.thickness_mm}
-                            onChange={(event) =>
-                              updateLine(
-                                line.local_id,
-                                "thickness_mm",
-                                event.target.value
-                              )
-                            }
-                            className={inputClass}
-                          />
-                        )}
-                      </Field>
-
-                      <Field label="Cantidad">
-                        <input
-                          type="number"
-                          min="0.001"
-                          step="0.001"
-                          value={line.quantity}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "quantity",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field label="Unidad">
-                        <input
-                          value={line.unit}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "unit",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field
-                        label="Formato"
-                        hint={
-                          getLineFormatOptions(
-                            line
-                          ).length > 0
-                            ? "Al seleccionar un formato se completan Ancho y Alto automáticamente."
-                            : undefined
+              {productResults.length >
+              0 ? (
+                <div className="mt-3 space-y-2">
+                  {productResults.map(
+                    (
+                      product
+                    ) => (
+                      <div
+                        key={
+                          product.id ||
+                          product.product_id
                         }
+                        className="flex items-center justify-between gap-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
                       >
-                        {getLineFormatOptions(
-                          line
-                        ).length > 0 ? (
-                          <select
-                            value={line.format_label || ""}
-                            onChange={(event) =>
-                              updateLineFormat(
-                                line.local_id,
-                                event.target.value
-                              )
-                            }
-                            className={inputClass}
-                          >
-                            <option value="">
-                              Seleccionar formato
-                            </option>
-                            {getLineFormatOptions(
-                              line
-                            ).map((format) => (
-                              <option
-                                key={format.value}
-                                value={format.value}
-                              >
-                                {format.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            value={line.format_label || ""}
-                            onChange={(event) =>
-                              updateLine(
-                                line.local_id,
-                                "format_label",
-                                event.target.value
-                              )
-                            }
-                            placeholder="130x305 cm"
-                            className={inputClass}
-                          />
-                        )}
-                      </Field>
+                        <div>
+                          <strong className="block text-sm text-neutral-900">
+                            {product.name}
+                          </strong>
 
-                      <Field label="Ancho cm">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={line.width_cm}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "width_cm",
-                              event.target.value
+                          <span className="mt-1 block text-xs text-neutral-500">
+                            {product.internal_code ||
+                              product.sku ||
+                              "Sin código"}
+                            {product.brand
+                              ? ` · ${product.brand}`
+                              : ""}
+                            {product.collection
+                              ? ` · ${product.collection}`
+                              : ""}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addCatalogProduct(
+                              product
                             )
                           }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field label="Alto cm">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={line.height_cm}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "height_cm",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field
-                        label="Modo de precio"
-                        hint="Área puede sugerir el valor unitario desde formato × valor m²."
-                      >
-                        <select
-                          value={line.pricing_mode}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "pricing_mode",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
+                          className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold"
                         >
-                          <option value="AREA">
-                            Área / m²
-                          </option>
-                          <option value="UNIT">
-                            Unitario
-                          </option>
-                          <option value="TOTAL">
-                            Total manual
-                          </option>
-                        </select>
-                      </Field>
-
-                      <Field label="Valor m²">
-                        <input
-                          type="number"
-                          min="0"
-                          value={line.price_m2_gross}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "price_m2_gross",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field label="Valor unitario">
-                        <input
-                          type="number"
-                          min="0"
-                          value={line.unit_price_gross}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "unit_price_gross",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field label="Total">
-                        <input
-                          type="number"
-                          min="0"
-                          value={line.line_total_gross}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "line_total_gross",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-                    </div>
-                  ) : (
-                    <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                      <div className="xl:col-span-2">
-                        <Field label="Descripción">
-                          <input
-                            value={line.description}
-                            onChange={(event) =>
-                              updateLine(
-                                line.local_id,
-                                "description",
-                                event.target.value
-                              )
-                            }
-                            className={inputClass}
-                          />
-                        </Field>
+                          Agregar
+                        </button>
                       </div>
-
-                      <Field label="Cantidad">
-                        <input
-                          type="number"
-                          min="0.001"
-                          step="0.001"
-                          value={line.quantity}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "quantity",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field label="Unidad">
-                        <input
-                          value={line.unit}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "unit",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field label="Modo de precio">
-                        <select
-                          value={line.pricing_mode}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "pricing_mode",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        >
-                          <option value="UNIT">
-                            Unitario
-                          </option>
-                          <option value="TOTAL">
-                            Total manual
-                          </option>
-                        </select>
-                      </Field>
-
-                      <Field label="Valor unitario">
-                        <input
-                          type="number"
-                          min="0"
-                          value={line.unit_price_gross}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "unit_price_gross",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      <Field label="Total">
-                        <input
-                          type="number"
-                          min="0"
-                          value={line.line_total_gross}
-                          onChange={(event) =>
-                            updateLine(
-                              line.local_id,
-                              "line_total_gross",
-                              event.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </Field>
-                    </div>
+                    )
                   )}
                 </div>
-              )
-            )}
-          </div>
-        </section>
+              ) : null}
+            </div>
+          </Section>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]">
-          <section className="rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-            <Field label="Observaciones">
+          <Section
+            eyebrow="Detalle del proyecto"
+            title="Productos, servicios y otros conceptos"
+            action={
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    addLine(
+                      "PRODUCT"
+                    )
+                  }
+                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium"
+                >
+                  + Producto manual
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    addLine(
+                      "SERVICE"
+                    )
+                  }
+                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium"
+                >
+                  + Servicio
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    addLine(
+                      "OTHER"
+                    )
+                  }
+                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium"
+                >
+                  + Otro
+                </button>
+              </div>
+            }
+          >
+            <div className="space-y-4">
+              {lines.map(
+                (
+                  line,
+                  index
+                ) => (
+                  <LineEditor
+                    key={
+                      line.local_id
+                    }
+                    line={
+                      line
+                    }
+                    index={
+                      index
+                    }
+                    onChange={(
+                      next
+                    ) =>
+                      updateLine(
+                        index,
+                        next
+                      )
+                    }
+                    onRemove={() =>
+                      removeLine(
+                        index
+                      )
+                    }
+                  />
+                )
+              )}
+            </div>
+          </Section>
+
+          <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+            <Section
+              title="Observaciones"
+            >
               <textarea
-                value={notes}
-                onChange={(event) =>
+                className={`${INPUT} min-h-32 resize-y`}
+                value={
+                  notes
+                }
+                onChange={(
+                  event
+                ) =>
                   setNotes(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
-                rows={7}
-                placeholder="Condiciones comerciales, alcance, forma de pago, observaciones de instalación, etc."
-                className="w-full resize-y rounded-xl border border-black/10 bg-white px-3.5 py-3 text-sm text-neutral-900 outline-none transition focus:border-black"
+                placeholder="Condiciones, notas o información del proyecto..."
               />
-            </Field>
-          </section>
+            </Section>
 
-          <aside className="rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
-              Resumen
-            </p>
-
-            <div className="mt-4 flex items-end justify-between gap-4">
-              <span className="text-sm text-neutral-500">
-                Total bruto
-              </span>
-              <span className="text-2xl font-semibold tracking-[-0.04em] text-neutral-950">
-                {money(total)}
-              </span>
-            </div>
-
-            <p className="mt-3 text-xs leading-5 text-neutral-500">
-              El backend recalculará Neto e IVA al guardar usando la tasa definida en cada línea.
-            </p>
-
-            <button
-              type="button"
-              onClick={save}
-              disabled={saving}
-              className="mt-5 h-12 w-full rounded-2xl bg-black text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:bg-neutral-300"
+            <Section
+              eyebrow="Resumen"
+              title="Totales"
             >
-              {saving
-                ? "Guardando..."
-                : isEdit
-                  ? "Guardar cambios"
-                  : "Crear cotización de proyecto"}
-            </button>
-          </aside>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs text-neutral-500">
+                    Total bruto cotización
+                  </span>
+
+                  <strong className="mt-1 block text-2xl text-neutral-950">
+                    {money(
+                      grossTotal
+                    )}
+                  </strong>
+                </div>
+
+                <div className="border-t border-neutral-100 pt-4">
+                  <span className="text-xs text-neutral-500">
+                    Valorización Italia ingresada
+                  </span>
+
+                  <strong className="mt-1 block text-lg text-neutral-950">
+                    {usd(
+                      italyTotal
+                    )}
+                  </strong>
+
+                  <p className="mt-2 text-[11px] leading-4 text-neutral-400">
+                    El backend completará automáticamente el Precio Italia de productos de catálogo que tengan un valor activo y se haya dejado el campo vacío.
+                  </p>
+                </div>
+              </div>
+            </Section>
+          </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

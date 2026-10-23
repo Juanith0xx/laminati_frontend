@@ -14,7 +14,11 @@ import {
 } from "next/navigation";
 
 import { apiRequest } from "@/services/api";
-import { clearAuthSession } from "@/services/auth.service";
+import {
+  AUTH_CHANGED_EVENT,
+  clearAuthSession,
+  getStoredUser,
+} from "@/services/auth.service";
 
 /* =========================================
    ICONOS
@@ -66,27 +70,6 @@ function IconProducts({
     >
       <path d="M4.5 7.5 12 3l7.5 4.5v9L12 21l-7.5-4.5v-9Z" />
       <path d="m4.8 7.7 7.2 4.2 7.2-4.2M12 12v8.4" />
-    </svg>
-  );
-}
-
-function IconPriceLists({
-  className = "",
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M4 5h16v14H4z" />
-      <path d="M8 9h8M8 13h5" />
-      <path d="M17 13v4M15 15h4" />
     </svg>
   );
 }
@@ -188,6 +171,33 @@ function IconQuotations({
       <path d="M8 11h8" />
       <path d="M8 15h8" />
       <path d="M8 19h5" />
+    </svg>
+  );
+}
+
+function IconPriceLists({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect
+        x="4"
+        y="3"
+        width="16"
+        height="18"
+        rx="2.5"
+      />
+      <path d="M8 8h8M8 12h5M8 16h3" />
+      <path d="M15.5 14.5h2.5v2.5h-2.5z" />
     </svg>
   );
 }
@@ -432,6 +442,27 @@ const NAVIGATION = [
           "/admin/showroom/cotizaciones",
         icon:
           IconQuotations,
+        excludePaths: [
+          "/admin/showroom/cotizaciones/nueva",
+        ],
+      },
+      {
+        label:
+          "Board proyectos cotizados",
+        href:
+          "/admin/proyectos-cotizados",
+        icon:
+          IconProjects,
+      },
+      {
+        label:
+          "Nueva cotización de proyecto",
+        href:
+          "/admin/cotizaciones/nueva/proyecto",
+        exact:
+          true,
+        icon:
+          IconQuotations,
       },
       {
         label: "Pedidos",
@@ -516,6 +547,38 @@ const NAVIGATION = [
   },
 ];
 
+const SELLER_ALLOWED_PATHS = new Set([
+  "/admin/dashboard",
+  "/admin/showroom",
+  "/admin/showroom/cotizaciones",
+  "/admin/cotizaciones/nueva/proyecto",
+  "/admin/proyectos-cotizados",
+  "/admin/pedidos",
+  "/admin/pagos",
+  "/admin/documentos-tributarios",
+  "/admin/retiros",
+]);
+
+const normalizeRole = (role) =>
+  String(role || "")
+    .trim()
+    .toUpperCase();
+
+const getNavigationForRole = (role) => {
+  if (normalizeRole(role) !== "VENDEDOR") {
+    return NAVIGATION;
+  }
+
+  return NAVIGATION
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) =>
+        SELLER_ALLOWED_PATHS.has(item.href)
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
+};
+
 /* =========================================
    ITEM NAVEGACIÓN
 ========================================= */
@@ -524,13 +587,24 @@ function NavigationItem({
   pathname,
   onNavigate,
 }) {
+  const excluded =
+    Array.isArray(item.excludePaths) &&
+    item.excludePaths.some(
+      (excludedPath) =>
+        pathname === excludedPath ||
+        pathname.startsWith(
+          `${excludedPath}/`
+        )
+    );
+
   const active =
-    item.exact
+    !excluded &&
+    (item.exact
       ? pathname === item.href
       : pathname === item.href ||
         pathname.startsWith(
           `${item.href}/`
-        );
+        ));
 
   const Icon = item.icon;
 
@@ -579,6 +653,8 @@ function SidebarContent({
   pathname,
   onNavigate,
   onLogout,
+  navigation,
+  role,
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -595,14 +671,16 @@ function SidebarContent({
           </p>
 
           <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-            Administración
+            {normalizeRole(role) === "VENDEDOR"
+              ? "Perfil vendedor"
+              : "Administración"}
           </p>
         </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-5">
         <nav className="space-y-6">
-          {NAVIGATION.map(
+          {navigation.map(
             (
               section
             ) => (
@@ -733,6 +811,42 @@ export default function AdminSidebar() {
   ] =
     useState(false);
 
+  const [
+    currentRole,
+    setCurrentRole,
+  ] =
+    useState("");
+
+  useEffect(() => {
+    const syncRole = () => {
+      setCurrentRole(
+        normalizeRole(
+          getStoredUser()?.role
+        )
+      );
+    };
+
+    syncRole();
+
+    window.addEventListener(
+      AUTH_CHANGED_EVENT,
+      syncRole
+    );
+
+    return () => {
+      window.removeEventListener(
+        AUTH_CHANGED_EVENT,
+        syncRole
+      );
+    };
+  }, []);
+
+  const navigation =
+    useMemo(
+      () => getNavigationForRole(currentRole),
+      [currentRole]
+    );
+
   useEffect(
     () => {
       setMobileOpen(
@@ -780,7 +894,7 @@ export default function AdminSidebar() {
 
         for (
           const section
-          of NAVIGATION
+          of navigation
         ) {
           for (
             const item
@@ -807,6 +921,7 @@ export default function AdminSidebar() {
         return "Backoffice";
       },
       [
+        navigation,
         pathname,
       ]
     );
@@ -848,6 +963,12 @@ export default function AdminSidebar() {
           onLogout={
             handleLogout
           }
+          navigation={
+            navigation
+          }
+          role={
+            currentRole
+          }
         />
       </aside>
 
@@ -855,7 +976,9 @@ export default function AdminSidebar() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-              Administración
+              {normalizeRole(currentRole) === "VENDEDOR"
+                ? "Vendedor"
+                : "Administración"}
             </p>
 
             <p className="truncate text-sm font-medium text-neutral-900">
@@ -918,6 +1041,12 @@ export default function AdminSidebar() {
               }
               onLogout={
                 handleLogout
+              }
+              navigation={
+                navigation
+              }
+              role={
+                currentRole
               }
             />
           </aside>

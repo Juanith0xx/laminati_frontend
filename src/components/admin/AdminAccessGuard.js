@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -11,31 +12,32 @@ import {
 } from "next/navigation";
 
 import {
+  AUTH_CHANGED_EVENT,
   getStoredUser,
 } from "@/services/auth.service";
 
-const SELLER_ALLOWED_PREFIXES = [
+const SELLER_ALLOWED_PATHS = [
   "/admin/dashboard",
   "/admin/showroom",
-  "/admin/cotizaciones",
+  "/admin/proyectos-cotizados",
+  "/admin/cotizaciones/nueva/proyecto",
   "/admin/pedidos",
   "/admin/pagos",
+  "/admin/documentos-tributarios",
   "/admin/retiros",
+  "/admin/perfil",
   "/admin/contactos",
   "/admin/notificaciones",
 ];
 
-const normalizeRole = (role) =>
-  String(role || "")
+const normalizeRole = (value) =>
+  String(value || "")
     .trim()
     .toUpperCase();
 
-const isAllowedSellerPath = (pathname) =>
-  SELLER_ALLOWED_PREFIXES.some(
-    (prefix) =>
-      pathname === prefix ||
-      pathname.startsWith(`${prefix}/`)
-  );
+const matchesAllowedPath = (pathname, root) =>
+  pathname === root ||
+  pathname.startsWith(`${root}/`);
 
 export default function AdminAccessGuard({
   children,
@@ -43,46 +45,79 @@ export default function AdminAccessGuard({
   const pathname = usePathname();
   const router = useRouter();
 
-  const [resolved, setResolved] =
+  const [ready, setReady] =
     useState(false);
+  const [role, setRole] =
+    useState("");
 
   useEffect(() => {
-    setResolved(false);
+    const syncUser = () => {
+      const storedUser =
+        getStoredUser();
 
-    const user = getStoredUser();
-    const role = normalizeRole(user?.role);
+      setRole(
+        normalizeRole(
+          storedUser?.role
+        )
+      );
+      setReady(true);
+    };
 
-    if (role === "ADMIN") {
-      setResolved(true);
-      return;
-    }
+    syncUser();
 
-    if (role === "VENDEDOR") {
-      if (pathname === "/admin") {
-        router.replace("/admin/dashboard");
-        return;
-      }
-
-      if (!isAllowedSellerPath(pathname)) {
-        router.replace("/admin/dashboard");
-        return;
-      }
-
-      setResolved(true);
-      return;
-    }
-
-    router.replace("/login");
-  }, [pathname, router]);
-
-  if (!resolved) {
-    return (
-      <div className="flex min-h-[calc(100vh-72px)] items-center justify-center bg-[#f5f4f1] px-6">
-        <p className="text-sm text-neutral-500">
-          Verificando acceso...
-        </p>
-      </div>
+    window.addEventListener(
+      AUTH_CHANGED_EVENT,
+      syncUser
     );
+
+    return () => {
+      window.removeEventListener(
+        AUTH_CHANGED_EVENT,
+        syncUser
+      );
+    };
+  }, []);
+
+  const sellerAllowed =
+    useMemo(
+      () =>
+        SELLER_ALLOWED_PATHS.some(
+          (root) =>
+            matchesAllowedPath(
+              pathname,
+              root
+            )
+        ),
+      [pathname]
+    );
+
+  const allowed =
+    role === "ADMIN" ||
+    (role === "VENDEDOR" &&
+      sellerAllowed);
+
+  useEffect(() => {
+    if (!ready || allowed) {
+      return;
+    }
+
+    if (!role) {
+      router.replace("/login");
+      return;
+    }
+
+    router.replace(
+      "/admin/dashboard"
+    );
+  }, [
+    allowed,
+    ready,
+    role,
+    router,
+  ]);
+
+  if (!ready || !allowed) {
+    return null;
   }
 
   return children;
