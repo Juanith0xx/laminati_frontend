@@ -328,6 +328,29 @@ function IconUsers({
   );
 }
 
+
+function IconSessions({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 8v4l2.5 1.5" />
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M4.5 4.5 7 7" />
+      <path d="M19.5 4.5 17 7" />
+    </svg>
+  );
+}
+
 function IconLogout({
   className = "",
 }) {
@@ -542,6 +565,16 @@ const NAVIGATION = [
           "/admin/usuarios",
         icon:
           IconUsers,
+      },
+      {
+        label:
+          "Historial de Sesiones",
+        href:
+          "/admin/historial-sesiones",
+        exact:
+          true,
+        icon:
+          IconSessions,
       },
     ],
   },

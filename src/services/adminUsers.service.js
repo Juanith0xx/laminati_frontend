@@ -62,6 +62,24 @@ export const getAdminUserPriceList = async (userId, options = {}) =>
     signal: options.signal,
   });
 
+export const listAdminAuthHistory = async (filters = {}, options = {}) =>
+  apiRequest(`/admin/auth-history${buildQuery(filters)}`, {
+    signal: options.signal,
+  });
+
+export const getAdminUserAuthHistory = async (
+  userId,
+  filters = {},
+  options = {}
+) =>
+  apiRequest(
+    `/admin/users/${encodeURIComponent(userId)}/auth-history${buildQuery(filters)}`,
+    {
+      signal: options.signal,
+    }
+  );
+
+
 export const assignAdminUserPriceList = async (
   userId,
   priceListId

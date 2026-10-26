@@ -13,6 +13,7 @@ import {
   deleteAdminUser,
   getAdminUserOptions,
   getAdminUserPriceList,
+  getAdminUserAuthHistory,
   listAdminPriceListsForUsers,
   listAdminUsers,
   removeAdminUserPriceList,
@@ -60,6 +61,7 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("es-CL", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "America/Santiago",
   }).format(date);
 }
 
@@ -72,6 +74,7 @@ function formatClock(value) {
   return new Intl.DateTimeFormat("es-CL", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Santiago",
   }).format(date);
 }
 
@@ -408,6 +411,510 @@ function PresenceDetailModal({
   );
 }
 
+
+const AUTH_EVENT_LABELS = {
+  LOGIN_SUCCESS: "Inicio de sesión",
+  LOGIN_FAILED: "Intento fallido",
+  LOGOUT: "Cierre de sesión",
+};
+
+const AUTH_FAILURE_LABELS = {
+  INVALID_LOGIN_PAYLOAD: "Datos de acceso inválidos",
+  USER_NOT_FOUND: "Usuario no encontrado",
+  INVALID_PASSWORD: "Contraseña incorrecta",
+  ACCOUNT_DISABLED: "Cuenta deshabilitada",
+  LOGIN_PROCESS_ERROR: "Error durante el inicio de sesión",
+  RATE_LIMITED: "Demasiados intentos de acceso",
+};
+
+function formatAuthEventLabel(eventType) {
+  return AUTH_EVENT_LABELS[eventType] || eventType || "Evento";
+}
+
+function formatAuthFailureReason(reason) {
+  return AUTH_FAILURE_LABELS[reason] || reason || null;
+}
+
+function getAuthEventAppearance(eventType) {
+  if (eventType === "LOGIN_SUCCESS") {
+    return {
+      dot: "bg-emerald-500",
+      badge:
+        "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+      symbol: "✓",
+    };
+  }
+
+  if (eventType === "LOGIN_FAILED") {
+    return {
+      dot: "bg-red-500",
+      badge: "bg-red-50 text-red-700 ring-1 ring-red-200",
+      symbol: "!",
+    };
+  }
+
+  return {
+    dot: "bg-neutral-400",
+    badge: "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200",
+    symbol: "↪",
+  };
+}
+
+function AuthHistoryModal({
+  user,
+  onClose,
+}) {
+  const [events, setEvents] = useState([]);
+  const [summary, setSummary] = useState({
+    total_events: 0,
+    login_success: 0,
+    login_failed: 0,
+    logout: 0,
+    distinct_users: 0,
+    last_event_at: null,
+    last_login_success_at: null,
+    last_login_failed_at: null,
+  });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    total_pages: 1,
+  });
+  const [filters, setFilters] = useState({
+    event_type: "ALL",
+    date_from: "",
+    date_to: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadHistory = useCallback(
+    async (page = 1, signal) => {
+      if (!user?.id) return;
+
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await getAdminUserAuthHistory(
+          user.id,
+          {
+            event_type:
+              filters.event_type === "ALL"
+                ? ""
+                : filters.event_type,
+            date_from: filters.date_from,
+            date_to: filters.date_to,
+            page,
+            limit: 10,
+          },
+          {
+            signal,
+          }
+        );
+
+        setEvents(
+          Array.isArray(response?.data)
+            ? response.data
+            : []
+        );
+
+        setSummary(
+          response?.summary || {
+            total_events: 0,
+            login_success: 0,
+            login_failed: 0,
+            logout: 0,
+            distinct_users: 0,
+            last_event_at: null,
+            last_login_success_at: null,
+            last_login_failed_at: null,
+          }
+        );
+
+        setPagination(
+          response?.pagination || {
+            page,
+            limit: 10,
+            total: 0,
+            total_pages: 1,
+          }
+        );
+      } catch (requestError) {
+        if (requestError?.name === "AbortError") {
+          return;
+        }
+
+        setError(
+          requestError?.message ||
+            "No fue posible cargar el historial de accesos."
+        );
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    [
+      user?.id,
+      filters.event_type,
+      filters.date_from,
+      filters.date_to,
+    ]
+  );
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+
+    const controller = new AbortController();
+    loadHistory(1, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [user?.id, loadHistory]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setEvents([]);
+      setError("");
+      setFilters({
+        event_type: "ALL",
+        date_from: "",
+        date_to: "",
+      });
+      setPagination({
+        page: 1,
+        limit: 10,
+        total: 0,
+        total_pages: 1,
+      });
+    }
+  }, [user?.id]);
+
+  if (!user) return null;
+
+  const resetFilters = () => {
+    setFilters({
+      event_type: "ALL",
+      date_from: "",
+      date_to: "",
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[130] flex items-center justify-center bg-black/40 p-3 backdrop-blur-[2px] sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Historial de accesos de ${user.first_name} ${user.last_name}`}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="border-b border-neutral-100 px-5 py-5 sm:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
+                {getInitials(user)}
+                <span
+                  className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                    user.presence?.is_online
+                      ? "bg-emerald-500"
+                      : "bg-neutral-300"
+                  }`}
+                />
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                  Historial de accesos
+                </p>
+                <h3 className="truncate text-lg font-semibold text-neutral-950">
+                  {user.first_name} {user.last_name}
+                </h3>
+                <p className="truncate text-xs text-neutral-500">
+                  {user.email} · {formatRole(user.role)}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 text-lg text-neutral-500 transition hover:bg-neutral-50 hover:text-black"
+              aria-label="Cerrar historial"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto">
+          <div className="space-y-5 p-5 sm:p-6">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-neutral-200 p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                  Accesos exitosos
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-emerald-700">
+                  {Number(summary.login_success || 0)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-200 p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                  Intentos fallidos
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-red-600">
+                  {Number(summary.login_failed || 0)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-200 p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                  Cierres de sesión
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-800">
+                  {Number(summary.logout || 0)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-200 p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                  Último acceso
+                </p>
+                <p className="mt-2 text-xs font-semibold leading-5 text-neutral-800">
+                  {formatDate(summary.last_login_success_at)}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4">
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                    Evento
+                  </span>
+                  <select
+                    value={filters.event_type}
+                    onChange={(event) =>
+                      setFilters((previous) => ({
+                        ...previous,
+                        event_type: event.target.value,
+                      }))
+                    }
+                    className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                  >
+                    <option value="ALL">Todos</option>
+                    <option value="LOGIN_SUCCESS">Inicios exitosos</option>
+                    <option value="LOGIN_FAILED">Intentos fallidos</option>
+                    <option value="LOGOUT">Cierres de sesión</option>
+                  </select>
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                    Desde
+                  </span>
+                  <input
+                    type="date"
+                    value={filters.date_from}
+                    onChange={(event) =>
+                      setFilters((previous) => ({
+                        ...previous,
+                        date_from: event.target.value,
+                      }))
+                    }
+                    className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                  />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                    Hasta
+                  </span>
+                  <input
+                    type="date"
+                    value={filters.date_to}
+                    onChange={(event) =>
+                      setFilters((previous) => ({
+                        ...previous,
+                        date_to: event.target.value,
+                      }))
+                    }
+                    className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="h-10 rounded-xl border border-neutral-200 bg-white px-4 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100"
+                >
+                  Limpiar
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="overflow-hidden rounded-2xl border border-neutral-200">
+              <div className="flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Eventos registrados
+                  </p>
+                  <p className="text-[10px] text-neutral-400">
+                    {pagination.total || 0} evento
+                    {Number(pagination.total || 0) === 1 ? "" : "s"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => loadHistory(pagination.page || 1)}
+                  disabled={loading}
+                  className="rounded-lg border border-neutral-200 px-3 py-1.5 text-[10px] font-semibold text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Actualizar
+                </button>
+              </div>
+
+              {loading ? (
+                <div className="flex min-h-40 items-center justify-center px-4 py-8 text-xs text-neutral-500">
+                  Cargando historial...
+                </div>
+              ) : events.length === 0 ? (
+                <div className="flex min-h-40 flex-col items-center justify-center px-4 py-8 text-center">
+                  <p className="text-sm font-semibold text-neutral-700">
+                    Sin eventos para mostrar
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-400">
+                    No hay registros que coincidan con los filtros seleccionados.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral-100">
+                  {events.map((event) => {
+                    const appearance =
+                      getAuthEventAppearance(event.event_type);
+                    const failureLabel =
+                      formatAuthFailureReason(event.failure_reason);
+
+                    return (
+                      <article
+                        key={event.id}
+                        className="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(150px,.8fr)_minmax(180px,1.2fr)_minmax(160px,1fr)] sm:items-center"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${appearance.dot}`}
+                          />
+                          <div>
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-[9px] font-semibold ${appearance.badge}`}
+                            >
+                              {appearance.symbol}{" "}
+                              {formatAuthEventLabel(event.event_type)}
+                            </span>
+                            <p className="mt-1.5 text-[11px] font-medium text-neutral-700">
+                              {formatDate(event.created_at)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-semibold text-neutral-800">
+                            {[
+                              event.device_type,
+                              event.browser,
+                              event.operating_system,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || "Dispositivo no identificado"}
+                          </p>
+
+                          {failureLabel && (
+                            <p className="mt-1 text-[10px] font-medium text-red-600">
+                              {failureLabel}
+                            </p>
+                          )}
+
+                          <p className="mt-1 truncate text-[10px] text-neutral-400">
+                            {event.user_agent || "User-Agent no disponible"}
+                          </p>
+                        </div>
+
+                        <div className="sm:text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
+                            Dirección IP
+                          </p>
+                          <p className="mt-1 font-mono text-[11px] text-neutral-700">
+                            {event.ip_address || "—"}
+                          </p>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!loading && pagination.total_pages > 1 && (
+                <div className="flex items-center justify-between border-t border-neutral-100 bg-neutral-50/60 px-4 py-3">
+                  <p className="text-[10px] text-neutral-500">
+                    Página {pagination.page} de {pagination.total_pages}
+                  </p>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={pagination.page <= 1}
+                      onClick={() =>
+                        loadHistory(pagination.page - 1)
+                      }
+                      className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Anterior
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={
+                        pagination.page >=
+                        pagination.total_pages
+                      }
+                      onClick={() =>
+                        loadHistory(pagination.page + 1)
+                      }
+                      className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <p className="text-[10px] leading-4 text-neutral-400">
+              Las fechas se muestran en horario de Chile. El historial no almacena
+              contraseñas, cookies ni tokens de autenticación.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function MetricCard({ label, value, caption }) {
   return (
     <article className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)]">
@@ -428,6 +935,26 @@ function EditIcon(props) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+    </svg>
+  );
+}
+
+
+function HistoryIcon(props) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }
@@ -1042,6 +1569,7 @@ export default function AdminUsersPage() {
   const [action, setAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [presenceDetailUserId, setPresenceDetailUserId] = useState(null);
+  const [authHistoryUserId, setAuthHistoryUserId] = useState(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   const loadOptions = useCallback(async () => {
@@ -1212,6 +1740,14 @@ export default function AdminUsersPage() {
         (user) => String(user.id) === String(presenceDetailUserId || "")
       ) || null,
     [users, presenceDetailUserId]
+  );
+
+  const authHistoryUser = useMemo(
+    () =>
+      users.find(
+        (user) => String(user.id) === String(authHistoryUserId || "")
+      ) || null,
+    [users, authHistoryUserId]
   );
 
   const handleRefresh = async () => {
@@ -1511,6 +2047,12 @@ export default function AdminUsersPage() {
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
                           <ActionIconButton
+                            label="Historial de accesos"
+                            onClick={() => setAuthHistoryUserId(user.id)}
+                            icon={<HistoryIcon className="h-5 w-5" />}
+                          />
+
+                          <ActionIconButton
                             label="Editar usuario"
                             onClick={() => setModal({ mode: "edit", user })}
                             icon={<EditIcon className="h-5 w-5" />}
@@ -1627,6 +2169,12 @@ export default function AdminUsersPage() {
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     <ActionIconButton
+                      label="Historial de accesos"
+                      onClick={() => setAuthHistoryUserId(user.id)}
+                      icon={<HistoryIcon className="h-5 w-5" />}
+                    />
+
+                    <ActionIconButton
                       label="Editar usuario"
                       onClick={() => setModal({ mode: "edit", user })}
                       icon={<EditIcon className="h-5 w-5" />}
@@ -1677,6 +2225,11 @@ export default function AdminUsersPage() {
         user={presenceDetailUser}
         now={nowTick}
         onClose={() => setPresenceDetailUserId(null)}
+      />
+
+      <AuthHistoryModal
+        user={authHistoryUser}
+        onClose={() => setAuthHistoryUserId(null)}
       />
 
       <UserFormModal
