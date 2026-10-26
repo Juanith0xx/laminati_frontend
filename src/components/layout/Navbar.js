@@ -23,6 +23,11 @@ import {
 
 import AdminNotificationCenter from "@/components/admin/AdminNotificationCenter";
 
+import {
+  connectRealtimeSocket,
+  disconnectRealtimeSocket,
+} from "@/services/realtimeSocket.service";
+
 const API_BASE_URL = (
 
   process.env.NEXT_PUBLIC_API_URL ||
@@ -696,6 +701,26 @@ export default function Navbar() {
       );
     };
   }, [pathname]);
+
+  /* =========================================
+     PRESENCIA REALTIME GLOBAL
+     Una sola conexión compartida para cualquier
+     usuario autenticado. Las salas privadas se
+     siguen resolviendo en backend por rol.
+  ========================================= */
+
+  useEffect(() => {
+    if (!sessionUser?.id) {
+      disconnectRealtimeSocket();
+      return undefined;
+    }
+
+    connectRealtimeSocket();
+
+    return () => {
+      disconnectRealtimeSocket();
+    };
+  }, [sessionUser?.id]);
 
   /* =========================================
      CERRAR MENÚ DE CUENTA AL HACER CLICK

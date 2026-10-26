@@ -11,83 +11,15 @@ import {
 } from "next/navigation";
 
 import {
-  io,
-} from "socket.io-client";
-
-import {
   ADMIN_NOTIFICATION_READ_EVENT,
   ADMIN_NOTIFICATION_RECEIVED_EVENT,
   QUOTATION_TRACKING_UPDATED_EVENT,
   markAdminNotificationRead,
 } from "@/services/adminNotifications.service";
 
-const API_URL =
-  process.env
-    .NEXT_PUBLIC_API_URL;
-
-const TOAST_DURATION_MS =
-  7000;
-
-const MAX_TOASTS =
-  4;
-
-function getSocketUrl() {
-  const raw =
-    String(
-      API_URL || ""
-    ).trim();
-
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const url =
-      new URL(raw);
-
-    const pathname =
-      url.pathname
-        .replace(
-          /\/+$/,
-          ""
-        );
-
-    if (
-      pathname.endsWith(
-        "/api"
-      )
-    ) {
-      url.pathname =
-        pathname.slice(
-          0,
-          -4
-        ) || "/";
-    }
-
-    url.search =
-      "";
-
-    url.hash =
-      "";
-
-    return url
-      .toString()
-      .replace(
-        /\/$/,
-        ""
-      );
-  } catch {
-    return raw
-      .replace(
-        /\/api\/?$/,
-        ""
-      )
-      .replace(
-        /\/$/,
-        ""
-      );
-  }
-}
+import {
+  connectRealtimeSocket,
+} from "@/services/realtimeSocket.service";
 
 function money(
   value,
@@ -317,40 +249,12 @@ export default function AdminRealtimeNotifications() {
     );
 
   useEffect(() => {
-    const socketUrl =
-      getSocketUrl();
+    const socket =
+      connectRealtimeSocket();
 
-    if (
-      !socketUrl
-    ) {
+    if (!socket) {
       return undefined;
     }
-
-    const socket =
-      io(
-        socketUrl,
-        {
-          withCredentials:
-            true,
-
-          transports: [
-            "websocket",
-            "polling",
-          ],
-
-          reconnection:
-            true,
-
-          reconnectionAttempts:
-            Infinity,
-
-          reconnectionDelay:
-            1000,
-
-          reconnectionDelayMax:
-            5000,
-        }
-      );
 
     const removeToast = (
       notificationId
@@ -478,8 +382,6 @@ export default function AdminRealtimeNotifications() {
         "quotation:tracking-updated",
         handleQuotationTrackingUpdated
       );
-
-      socket.disconnect();
 
       for (
         const timer

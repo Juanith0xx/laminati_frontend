@@ -20,6 +20,10 @@ import {
   updateAdminUser,
 } from "@/services/adminUsers.service";
 
+import {
+  connectRealtimeSocket,
+} from "@/services/realtimeSocket.service";
+
 import PriceListSelector from "@/components/admin/users/PriceListSelector";
 
 const EMPTY_FORM = {
@@ -37,6 +41,8 @@ const EMPTY_FORM = {
 
 const ROLE_LABELS = {
   ADMIN: "Administrador",
+  VENDEDOR: "Vendedor",
+  GERENCIA_ITALIA: "Gerencia Italia",
   CLIENTE: "Cliente",
   USUARIO_EMPRESA: "Usuario empresa",
 };
@@ -55,6 +61,75 @@ function formatDate(value) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function formatClock(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return new Intl.DateTimeFormat("es-CL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatRelativeTime(value, now = Date.now()) {
+  if (!value) return "Sin actividad registrada";
+
+  const date = new Date(value);
+  const time = date.getTime();
+
+  if (Number.isNaN(time)) {
+    return "Sin actividad registrada";
+  }
+
+  const diffMs = Math.max(0, now - time);
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 1) return "hace unos segundos";
+  if (minutes < 60) return `hace ${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} h`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `hace ${days} d`;
+
+  return formatDate(value);
+}
+
+function formatDuration(fromValue, now = Date.now()) {
+  if (!fromValue) return "—";
+
+  const from = new Date(fromValue).getTime();
+  if (Number.isNaN(from)) return "—";
+
+  const totalMinutes = Math.max(0, Math.floor((now - from) / 60000));
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (days > 0) {
+    return `${days} d ${hours} h`;
+  }
+
+  if (hours > 0) {
+    return `${hours} h ${minutes} min`;
+  }
+
+  return `${minutes} min`;
+}
+
+function getPresenceDeviceLabel(presence) {
+  return [
+    presence?.device_type,
+    presence?.browser,
+    presence?.platform,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function getInitials(user) {
@@ -95,6 +170,241 @@ function PriceListBadge({ name }) {
     <span className="inline-flex rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-200">
       {name}
     </span>
+  );
+}
+
+function PresenceIndicator({
+  user,
+  now,
+  onOpen,
+  compact = false,
+}) {
+  const presence = user?.presence || {};
+  const isOnline = Boolean(presence.is_online);
+  const lastActivity =
+    presence.last_seen_at ||
+    user?.last_login_at ||
+    null;
+  const deviceLabel =
+    getPresenceDeviceLabel(presence);
+
+  const detailText = isOnline
+    ? presence.connected_at
+      ? `Desde ${formatClock(presence.connected_at)} · ${formatDuration(
+          presence.connected_at,
+          now
+        )}`
+      : "Conectado ahora"
+    : `Última actividad ${formatRelativeTime(lastActivity, now)}`;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`group text-left ${compact ? "w-full" : "min-w-[190px]"}`}
+      title="Ver detalle de conexión"
+    >
+      <span className="flex items-center gap-2">
+        <span
+          className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+            isOnline
+              ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,.12)]"
+              : "bg-neutral-300"
+          }`}
+        />
+        <span
+          className={`text-xs font-semibold ${
+            isOnline ? "text-emerald-700" : "text-neutral-600"
+          }`}
+        >
+          {isOnline ? "En línea" : "Desconectado"}
+        </span>
+        {isOnline && Number(presence.active_sessions || 0) > 1 && (
+          <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">
+            {presence.active_sessions} sesiones
+          </span>
+        )}
+      </span>
+
+      <span className="mt-1 block text-[11px] leading-4 text-neutral-500">
+        {detailText}
+      </span>
+
+      {deviceLabel && (
+        <span className="mt-0.5 block truncate text-[10px] text-neutral-400 group-hover:text-neutral-600">
+          {deviceLabel}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function PresenceDetailModal({
+  user,
+  now,
+  onClose,
+}) {
+  if (!user) return null;
+
+  const presence = user.presence || {};
+  const isOnline = Boolean(presence.is_online);
+  const sessions = Array.isArray(presence.sessions)
+    ? presence.sessions
+    : [];
+  const lastActivity =
+    presence.last_seen_at ||
+    user.last_login_at ||
+    null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Detalle de conexión de ${user.first_name} ${user.last_name}`}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="w-full max-w-xl overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="border-b border-neutral-100 px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
+                {getInitials(user)}
+                <span
+                  className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                    isOnline ? "bg-emerald-500" : "bg-neutral-300"
+                  }`}
+                />
+              </div>
+              <div className="min-w-0">
+                <h3 className="truncate text-lg font-semibold text-neutral-950">
+                  {user.first_name} {user.last_name}
+                </h3>
+                <p className="truncate text-xs text-neutral-500">
+                  {user.email} · {formatRole(user.role)}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-lg text-neutral-500 transition hover:bg-neutral-50 hover:text-black"
+              aria-label="Cerrar detalle"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-5 p-6">
+          <div
+            className={`rounded-2xl border p-4 ${
+              isOnline
+                ? "border-emerald-200 bg-emerald-50/60"
+                : "border-neutral-200 bg-neutral-50"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${
+                  isOnline ? "bg-emerald-500" : "bg-neutral-300"
+                }`}
+              />
+              <p
+                className={`text-sm font-semibold ${
+                  isOnline ? "text-emerald-800" : "text-neutral-700"
+                }`}
+              >
+                {isOnline ? "Usuario conectado" : "Usuario desconectado"}
+              </p>
+            </div>
+
+            <p className="mt-2 text-xs text-neutral-600">
+              {isOnline && presence.connected_at
+                ? `Conectado desde ${formatDate(
+                    presence.connected_at
+                  )} · ${formatDuration(presence.connected_at, now)}`
+                : `Última actividad ${formatRelativeTime(lastActivity, now)}`}
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                Último inicio de sesión
+              </p>
+              <p className="mt-2 text-sm font-semibold text-neutral-800">
+                {formatDate(user.last_login_at)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                Sesiones activas
+              </p>
+              <p className="mt-2 text-sm font-semibold text-neutral-800">
+                {Number(presence.active_sessions || 0)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                Dispositivo
+              </p>
+              <p className="mt-2 text-sm font-semibold text-neutral-800">
+                {presence.device_type || "—"}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                Navegador / sistema
+              </p>
+              <p className="mt-2 text-sm font-semibold text-neutral-800">
+                {[presence.browser, presence.platform]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
+              </p>
+            </div>
+          </div>
+
+          {isOnline && sessions.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                Sesiones conectadas
+              </p>
+              <div className="mt-2 space-y-2">
+                {sessions.map((session, index) => (
+                  <div
+                    key={`${session.connected_at || "session"}-${index}`}
+                    className="flex items-center justify-between gap-4 rounded-2xl bg-neutral-50 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-neutral-800">
+                        {[session.device_type, session.browser, session.platform]
+                          .filter(Boolean)
+                          .join(" · ") || "Sesión"}
+                      </p>
+                      <p className="mt-0.5 text-[10px] text-neutral-400">
+                        Conectada desde {formatDate(session.connected_at)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-semibold text-emerald-700">
+                      En línea
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -731,6 +1041,8 @@ export default function AdminUsersPage() {
   const [modal, setModal] = useState(null);
   const [action, setAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
+  const [presenceDetailUserId, setPresenceDetailUserId] = useState(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   const loadOptions = useCallback(async () => {
     const [userOptions, priceListResponse] = await Promise.all([
@@ -835,6 +1147,47 @@ export default function AdminUsersPage() {
   }, [loadUsers]);
 
   useEffect(() => {
+    const socket = connectRealtimeSocket();
+
+    if (!socket) {
+      return undefined;
+    }
+
+    const handlePresenceUpdate = (payload) => {
+      const userId = String(payload?.user_id || "");
+
+      if (!userId || !payload?.presence) {
+        return;
+      }
+
+      setUsers((current) =>
+        current.map((user) =>
+          String(user.id) === userId
+            ? {
+                ...user,
+                presence: payload.presence,
+              }
+            : user
+        )
+      );
+    };
+
+    socket.on("presence:update", handlePresenceUpdate);
+
+    return () => {
+      socket.off("presence:update", handlePresenceUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowTick(Date.now());
+    }, 30000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       setFilters((previous) => ({
         ...previous,
@@ -851,6 +1204,14 @@ export default function AdminUsersPage() {
       label: formatRole(role.name),
     })),
     [roles]
+  );
+
+  const presenceDetailUser = useMemo(
+    () =>
+      users.find(
+        (user) => String(user.id) === String(presenceDetailUserId || "")
+      ) || null,
+    [users, presenceDetailUserId]
   );
 
   const handleRefresh = async () => {
@@ -1051,7 +1412,7 @@ export default function AdminUsersPage() {
         ) : (
           <>
             <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[1180px] border-collapse text-left">
+              <table className="w-full min-w-[1390px] border-collapse text-left">
                 <thead>
                   <tr className="bg-neutral-50 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
                     <th className="px-6 py-3.5">Usuario</th>
@@ -1059,6 +1420,7 @@ export default function AdminUsersPage() {
                     <th className="px-4 py-3.5">Empresa</th>
                     <th className="px-4 py-3.5">Lista de precios</th>
                     <th className="px-4 py-3.5">Estado</th>
+                    <th className="px-4 py-3.5">Conexión</th>
                     <th className="px-4 py-3.5 text-center">Acceso</th>
                     <th className="px-4 py-3.5">Último acceso</th>
                     <th className="px-6 py-3.5 text-right">Acciones</th>
@@ -1069,8 +1431,20 @@ export default function AdminUsersPage() {
                     <tr key={user.id} className="transition hover:bg-neutral-50/70">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
+                          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
                             {getInitials(user)}
+                            <span
+                              className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                                user.presence?.is_online
+                                  ? "bg-emerald-500"
+                                  : "bg-neutral-300"
+                              }`}
+                              title={
+                                user.presence?.is_online
+                                  ? "En línea"
+                                  : "Desconectado"
+                              }
+                            />
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
@@ -1105,6 +1479,13 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-4 py-4">
                         <StatusBadge active={user.is_active} />
+                      </td>
+                      <td className="px-4 py-4">
+                        <PresenceIndicator
+                          user={user}
+                          now={nowTick}
+                          onOpen={() => setPresenceDetailUserId(user.id)}
+                        />
                       </td>
                       <td className="px-4 py-4">
                         <div
@@ -1155,8 +1536,15 @@ export default function AdminUsersPage() {
               {users.map((user) => (
                 <article key={user.id} className="p-5">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
+                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
                       {getInitials(user)}
+                      <span
+                        className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                          user.presence?.is_online
+                            ? "bg-emerald-500"
+                            : "bg-neutral-300"
+                        }`}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -1188,6 +1576,15 @@ export default function AdminUsersPage() {
                       <p className="mt-1 font-semibold text-neutral-700">
                         {formatDate(user.last_login_at)}
                       </p>
+                    </div>
+                    <div className="col-span-2 rounded-xl border border-neutral-200 bg-white p-3">
+                      <p className="mb-2 text-neutral-400">Conexión</p>
+                      <PresenceIndicator
+                        user={user}
+                        now={nowTick}
+                        compact
+                        onOpen={() => setPresenceDetailUserId(user.id)}
+                      />
                     </div>
                     {user.company_name && (
                       <div className="col-span-2">
@@ -1275,6 +1672,12 @@ export default function AdminUsersPage() {
           </div>
         )}
       </section>
+
+      <PresenceDetailModal
+        user={presenceDetailUser}
+        now={nowTick}
+        onClose={() => setPresenceDetailUserId(null)}
+      />
 
       <UserFormModal
         open={Boolean(modal)}
