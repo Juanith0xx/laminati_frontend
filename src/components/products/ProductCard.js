@@ -48,6 +48,21 @@ export default function ProductCard({ product }) {
   const currentQuantity =
     currentCartItem?.quantity || 0;
 
+  /* =========================================
+     KISAFIX / ADHESIVOS
+
+     Oculta el SKU solamente para los productos
+     Kisafix en la tarjeta pública.
+     Los laminados mantienen su SKU visible.
+  ========================================= */
+
+  const isKisafixProduct = String(
+    product.sku || ""
+  )
+    .trim()
+    .toUpperCase()
+    .startsWith("KISAFIX-");
+
   const canAdd =
     product.in_stock &&
     availableStock > 0 &&
@@ -330,7 +345,7 @@ export default function ProductCard({ product }) {
                 SKU
             ================================= */}
 
-            {product.sku && (
+            {product.sku && !isKisafixProduct && (
               <p className="mt-2 text-xs text-neutral-400">
 
                 SKU {product.sku}

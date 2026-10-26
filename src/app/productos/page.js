@@ -436,8 +436,22 @@ function ProductCatalogCard({
   projectFamilyLabel = "",
 }) {
 
-              const code = getProductCode(product);
-              const productName = getCleanProductName(product);
+              const isKisafixProduct = String(
+                product?.sku || ""
+              )
+                .trim()
+                .toUpperCase()
+                .startsWith("KISAFIX-");
+
+              const code = isKisafixProduct
+                ? ""
+                : getProductCode(product);
+
+              const productName = isKisafixProduct
+                ? String(product?.name || "Producto")
+                    .split("|")[0]
+                    .trim()
+                : getCleanProductName(product);
 
               const isProjectOnly =
                 product?.commercial_mode ===
