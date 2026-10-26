@@ -711,15 +711,17 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!sessionUser?.id) {
+      /*
+       * Sólo cerramos realtime cuando ya no existe
+       * una sesión autenticada. No lo cerramos en el
+       * cleanup porque el socket es compartido por
+       * Navbar, notificaciones y presencia.
+       */
       disconnectRealtimeSocket();
-      return undefined;
+      return;
     }
 
     connectRealtimeSocket();
-
-    return () => {
-      disconnectRealtimeSocket();
-    };
   }, [sessionUser?.id]);
 
   /* =========================================
