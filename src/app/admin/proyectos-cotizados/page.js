@@ -244,11 +244,25 @@ function Card({ project, selected, onSelect }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-400">
-            {project.quote_number}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-400">
+              {project.quote_number}
+            </p>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] ${
+                clean(project.quotation_type).toUpperCase() === "PROJECT"
+                  ? "bg-violet-50 text-violet-700"
+                  : "bg-blue-50 text-blue-700"
+              }`}
+            >
+              {clean(project.quotation_type).toUpperCase() === "PROJECT" ? "Proyecto" : "Cotización"}
+            </span>
+          </div>
           <h3 className="mt-1 line-clamp-2 text-sm font-semibold text-neutral-950">
-            {project.project_name || "Proyecto sin nombre"}
+            {project.project_name ||
+              (clean(project.quotation_type).toUpperCase() === "PROJECT"
+                ? "Proyecto sin nombre"
+                : "Cotización comercial")}
           </h3>
           <p className="mt-1 truncate text-xs text-neutral-500">
             {project.legal_name || project.customer_name}
@@ -392,9 +406,9 @@ function Detail({
       <aside className="space-y-4">
         <div className="rounded-[1.5rem] border border-black/5 bg-white p-6 shadow-sm">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">Detalles</p>
-          <h2 className="mt-2 text-lg font-semibold text-neutral-950">Selecciona un proyecto</h2>
+          <h2 className="mt-2 text-lg font-semibold text-neutral-950">Selecciona una cotización</h2>
           <p className="mt-3 text-sm leading-6 text-neutral-500">
-            Abre una tarjeta para revisar historial, seguimiento y próximas acciones.
+            Abre una tarjeta para revisar historial, seguimiento y próximas acciones comerciales.
           </p>
         </div>
         <MiniCalendar month={month} items={calendarItems} previous={previousMonth} next={nextMonth} />
@@ -413,8 +427,24 @@ function Detail({
       <div className="rounded-[1.5rem] border border-black/5 bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">{quotation.quote_number}</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-neutral-950">{quotation.project_name}</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">{quotation.quote_number}</p>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] ${
+                  clean(quotation.quotation_type).toUpperCase() === "PROJECT"
+                    ? "bg-violet-50 text-violet-700"
+                    : "bg-blue-50 text-blue-700"
+                }`}
+              >
+                {clean(quotation.quotation_type).toUpperCase() === "PROJECT" ? "Proyecto" : "Cotización"}
+              </span>
+            </div>
+            <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-neutral-950">
+              {quotation.project_name ||
+                (clean(quotation.quotation_type).toUpperCase() === "PROJECT"
+                  ? "Proyecto sin nombre"
+                  : "Cotización comercial")}
+            </h2>
             <p className="mt-1 text-xs text-neutral-500">{quotation.legal_name || quotation.customer_name}</p>
           </div>
           <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold text-neutral-600">
@@ -623,7 +653,7 @@ export default function ProjectBoardPage() {
   const loadDetail=useCallback(async(id)=>{
     if(!id){setDetail(null);return;}
     try{const response=await getProjectBoardDetail(id);setDetail(response?.data||null);}
-    catch(e){setError(e?.message||"No fue posible cargar el proyecto.");}
+    catch(e){setError(e?.message||"No fue posible cargar la cotización.");}
   },[]);
 
   const loadCalendar=useCallback(async()=>{
@@ -673,7 +703,7 @@ export default function ProjectBoardPage() {
   const updateSelected=async(payload)=>{
     if(!selectedId)return;
     try{await updateProjectBoard(selectedId,payload);await refresh();}
-    catch(e){setError(e?.message||"No fue posible actualizar el proyecto.");}
+    catch(e){setError(e?.message||"No fue posible actualizar la cotización.");}
   };
 
   const onDrop=async(event,stage)=>{
@@ -684,7 +714,7 @@ export default function ProjectBoardPage() {
       await updateProjectBoard(id,{stage});
       setSelectedId(id);
       await refresh();
-    }catch(e){setError(e?.message||"No fue posible mover el proyecto.");}
+    }catch(e){setError(e?.message||"No fue posible mover la cotización.");}
   };
 
   return (
@@ -694,9 +724,9 @@ export default function ProjectBoardPage() {
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">Laminati · Comercial</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-neutral-950">Board de proyectos cotizados</h1>
+              <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-neutral-950">Board de cotizaciones</h1>
               <p className="mt-2 text-sm leading-6 text-neutral-500">
-                Seguimiento comercial, historial, próximas acciones y calendario de todas las cotizaciones de proyecto.
+                Seguimiento comercial, historial, próximas acciones y calendario de todas las cotizaciones, tanto comerciales como de proyecto.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -710,10 +740,10 @@ export default function ProjectBoardPage() {
         </section>
 
         <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Summary label="Proyectos activos" value={Number(summary.active_projects||0)} helper="Cotizaciones en proceso comercial" />
-          <Summary label="En revisión / negociación" value={Number(summary.in_review||0)} helper="Proyectos que requieren seguimiento" />
-          <Summary label="Ganados" value={Number(summary.won_projects||0)} helper="Proyectos cerrados con éxito" />
-          <Summary label="Monto total cotizado" value={money.format(Number(summary.total_quoted||0))} helper="Suma de proyectos según filtros" />
+          <Summary label="Cotizaciones activas" value={Number(summary.active_quotations ?? summary.active_projects ?? 0)} helper="Cotizaciones en proceso comercial" />
+          <Summary label="En revisión / negociación" value={Number(summary.in_review||0)} helper="Cotizaciones que requieren seguimiento" />
+          <Summary label="Ganadas" value={Number(summary.won_quotations ?? summary.won_projects ?? 0)} helper="Cotizaciones cerradas con éxito" />
+          <Summary label="Monto total cotizado" value={money.format(Number(summary.total_quoted||0))} helper="Suma de cotizaciones según filtros" />
         </section>
 
         <section className="mt-5 rounded-[1.5rem] border border-black/5 bg-white p-4 shadow-sm">
@@ -739,7 +769,7 @@ export default function ProjectBoardPage() {
         <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="min-w-0 rounded-[1.5rem] border border-black/5 bg-white p-4 shadow-sm sm:p-5">
             {loading ? (
-              <div className="grid min-h-[420px] place-items-center text-sm text-neutral-400">Cargando proyectos...</div>
+              <div className="grid min-h-[420px] place-items-center text-sm text-neutral-400">Cargando cotizaciones...</div>
             ) : (
               <div className="space-y-3">
                 {STAGES.map(([value,label,dot,panel])=>{
@@ -779,7 +809,7 @@ export default function ProjectBoardPage() {
                           </div>
                         ) : (
                           <div className="flex min-h-[46px] items-center rounded-xl border border-dashed border-black/10 bg-white/35 px-4 text-xs text-neutral-400">
-                            Sin proyectos · arrastra aquí para mover a {label.toLowerCase()}.
+                            Sin cotizaciones · arrastra aquí para mover a {label.toLowerCase()}.
                           </div>
                         )}
                       </div>
