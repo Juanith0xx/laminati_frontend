@@ -153,7 +153,7 @@ export default function QuotationDetailPage() {
   const canEdit = useMemo(
     () =>
       quotation &&
-      ["DRAFT", "SENT"].includes(
+      ["DRAFT", "SENT", "EXPIRED"].includes(
         quotation.status
       ),
     [quotation]

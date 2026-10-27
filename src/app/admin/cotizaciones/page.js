@@ -938,6 +938,7 @@ export default function QuotationsPage() {
                     [
                       "DRAFT",
                       "SENT",
+                      "EXPIRED",
                     ].includes(
                       quotation.status
                     );

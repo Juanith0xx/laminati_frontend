@@ -1020,36 +1020,46 @@ function LineEditor({
           </Field>
         ) : null}
 
-        {isProduct ? (
-          <Field
-            label="Precio Italia USD"
-            hint={
-              line.product_id
-                ? "Opcional. Si queda vacío, el backend usa el Precio Italia activo del catálogo."
-                : "Opcional. Para productos manuales se guarda como snapshot privado de esta cotización."
-            }
-          >
-            <input
-              className={INPUT}
-              type="number"
-              step="0.0001"
-              min="0"
-              value={
-                line.italy_price_usd
-              }
-              onChange={(
-                event
-              ) =>
-                update(
-                  "italy_price_usd",
-                  event.target
-                    .value
+        <Field
+          label={
+            isProduct
+              ? "Precio Italia USD"
+              : "Valor Italia USD"
+          }
+          hint={
+            isProduct
+              ? (
+                  line.product_id
+                    ? "Opcional. Si queda vacío, el backend usa el Precio Italia activo del catálogo."
+                    : "Opcional. Para productos manuales se guarda como snapshot privado de esta cotización."
                 )
-              }
-              placeholder="Ej. 32.5000"
-            />
-          </Field>
-        ) : null}
+              : "Opcional. Para fletes, servicios u otros conceptos ingresa el valor unitario USD que verá Gerencia Italia. Queda congelado en esta cotización."
+          }
+        >
+          <input
+            className={INPUT}
+            type="number"
+            step="0.0001"
+            min="0"
+            value={
+              line.italy_price_usd
+            }
+            onChange={(
+              event
+            ) =>
+              update(
+                "italy_price_usd",
+                event.target
+                  .value
+              )
+            }
+            placeholder={
+              isProduct
+                ? "Ej. 32.5000"
+                : "Ej. 750.0000"
+            }
+          />
+        </Field>
 
         <Field label="Total línea">
           <div className="flex min-h-[42px] items-center rounded-xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-900">
@@ -1060,14 +1070,21 @@ function LineEditor({
         </Field>
       </div>
 
-      {isProduct &&
-      clean(
-        line.brand
-      ).toUpperCase() ===
-        ABET_BRAND &&
+      {(
+        (
+          isProduct &&
+          clean(
+            line.brand
+          ).toUpperCase() ===
+            ABET_BRAND
+        ) ||
+        !isProduct
+      ) &&
       line.italy_price_usd ? (
         <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-          Valor Italia de esta línea:{" "}
+          {isProduct
+            ? "Valor Italia de esta línea: "
+            : "Valor Italia de este concepto: "}
           <strong>
             {usd(
               Number(
@@ -1251,13 +1268,23 @@ export default function ProjectQuotationEditor({
             total,
             line
           ) => {
-            if (
-              line.line_type !==
-                "PRODUCT" ||
+            const isItalyProduct =
+              line.line_type ===
+                "PRODUCT" &&
               clean(
                 line.brand
-              ).toUpperCase() !==
-                ABET_BRAND
+              ).toUpperCase() ===
+                ABET_BRAND;
+
+            const isItalyConcept =
+              line.line_type ===
+                "SERVICE" ||
+              line.line_type ===
+                "OTHER";
+
+            if (
+              !isItalyProduct &&
+              !isItalyConcept
             ) {
               return total;
             }
@@ -1987,12 +2014,9 @@ export default function ProjectQuotationEditor({
                   null
                 : null,
             italy_price_usd:
-              line.line_type ===
-                "PRODUCT"
-                ? numberOrNull(
-                    line.italy_price_usd
-                  )
-                : null,
+              numberOrNull(
+                line.italy_price_usd
+              ),
             finish:
               clean(
                 line.finish
@@ -2802,7 +2826,7 @@ export default function ProjectQuotationEditor({
                   </strong>
 
                   <p className="mt-2 text-[11px] leading-4 text-neutral-400">
-                    El backend completará automáticamente el Precio Italia de productos de catálogo que tengan un valor activo y se haya dejado el campo vacío.
+                    Incluye productos ABET valorizados en USD y los fletes, servicios u otros conceptos que tengan un Valor Italia USD. El backend completará automáticamente el Precio Italia de productos de catálogo cuando exista un valor activo.
                   </p>
                 </div>
               </div>

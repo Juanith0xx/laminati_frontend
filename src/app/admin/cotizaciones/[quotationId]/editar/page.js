@@ -36,6 +36,14 @@ function money(value) {
   );
 }
 
+function localTodayValue() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function dateInputValue(value) {
   if (!value) return "";
 
@@ -215,9 +223,14 @@ export default function EditQuotationPage() {
 
   const canEdit =
     quotation &&
-    ["DRAFT", "SENT"].includes(
+    ["DRAFT", "SENT", "EXPIRED"].includes(
       quotation.status
     );
+
+  const todayValue = useMemo(
+    () => localTodayValue(),
+    []
+  );
 
   const total = useMemo(
     () =>
@@ -865,6 +878,15 @@ export default function EditQuotationPage() {
       return;
     }
 
+    if (validUntil < todayValue) {
+      setError(
+        quotation?.status === "EXPIRED"
+          ? "La cotización está vencida. Selecciona una nueva fecha de vigencia desde hoy en adelante para reactivarla."
+          : "La fecha de vigencia no puede ser anterior a hoy."
+      );
+      return;
+    }
+
     if (
       isConvertingToProject &&
       !String(
@@ -1078,6 +1100,14 @@ export default function EditQuotationPage() {
           canEdit && (
             <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-800">
               Esta cotización ya fue enviada. Al guardar cambios volverá a estado <strong>Borrador</strong> y deberá enviarse nuevamente.
+            </div>
+          )}
+
+        {quotation.status ===
+          "EXPIRED" &&
+          canEdit && (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+              Esta cotización está vencida. Asigna una <strong>nueva fecha de vigencia</strong>. Al guardar, volverá a estado <strong>Borrador</strong> y podrá enviarse nuevamente.
             </div>
           )}
 
@@ -2014,6 +2044,7 @@ export default function EditQuotationPage() {
               <Field label="Válida hasta">
                 <input
                   type="date"
+                  min={todayValue}
                   value={
                     validUntil
                   }
