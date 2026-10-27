@@ -846,101 +846,102 @@ export default function QuotationDetailPage() {
           </section>
 
           <section className="mt-5 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-              <div className="shrink-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                  Gestión
-                </p>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                Gestión
+              </p>
 
-                <h2 className="mt-1 text-base font-semibold text-neutral-950">
-                  Acciones de la cotización
-                </h2>
-              </div>
+              <h2 className="mt-1 text-base font-semibold text-neutral-950">
+                Acciones de la cotización
+              </h2>
 
-              <div className="flex w-full flex-wrap gap-3 xl:w-auto xl:justify-end">
-                {canEdit && (
-                  <Link
-                    href={`/admin/cotizaciones/${quotation.id}/editar`}
-                    className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl bg-black px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800"
-                    style={{ color: "#ffffff" }}
-                  >
-                    Editar cotización
-                  </Link>
-                )}
+              <p className="mt-1 text-xs leading-5 text-neutral-500">
+                Edita, descarga, envía o administra esta cotización desde aquí.
+              </p>
+            </div>
 
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              {canEdit && (
+                <Link
+                  href={`/admin/cotizaciones/${quotation.id}/editar`}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-black px-4 text-center text-xs font-semibold !text-white shadow-sm transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-black/20 sm:w-auto sm:min-w-[150px]"
+                  style={{ color: "#ffffff" }}
+                >
+                  Editar cotización
+                </Link>
+              )}
+
+              <button
+                type="button"
+                onClick={openPdf}
+                disabled={actionLoading === "pdf"}
+                className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 text-center text-xs font-semibold text-neutral-800 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[190px]"
+              >
+                {actionLoading === "pdf"
+                  ? "Abriendo..."
+                  : "Previsualizar / descargar PDF"}
+              </button>
+
+              <button
+                type="button"
+                onClick={sendEmail}
+                disabled={
+                  Boolean(actionLoading) ||
+                  ["CANCELLED", "CONVERTED"].includes(
+                    quotation.status
+                  )
+                }
+                className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-black px-4 text-center text-xs font-semibold !text-white shadow-sm transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-black/20 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[150px]"
+                style={{ color: "#ffffff" }}
+              >
+                {actionLoading === "email"
+                  ? "Enviando..."
+                  : "Enviar por correo"}
+              </button>
+
+              {canConvert && (
                 <button
                   type="button"
-                  onClick={openPdf}
-                  disabled={actionLoading === "pdf"}
-                  className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-black/10 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:border-black hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={() => setConvertOpen(true)}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-neutral-900 px-4 text-center text-xs font-semibold !text-white shadow-sm transition hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-300 sm:w-auto sm:min-w-[150px]"
+                  style={{ color: "#ffffff" }}
                 >
-                  {actionLoading === "pdf"
-                    ? "Abriendo..."
-                    : "Previsualizar / descargar PDF"}
+                  Generar{" "}
+                  {quotation.intended_document_type === "FACTURA"
+                    ? "Factura"
+                    : "Boleta"}
                 </button>
+              )}
 
+              {quotation.status === "CONVERTED" && (
                 <button
                   type="button"
-                  onClick={sendEmail}
-                  disabled={
-                    Boolean(actionLoading) ||
-                    ["CANCELLED", "CONVERTED"].includes(
-                      quotation.status
-                    )
-                  }
-                  className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-black/10 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:border-black hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={retryTaxDocumentValidation}
+                  disabled={Boolean(actionLoading)}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-center text-xs font-semibold text-amber-900 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[190px]"
                 >
-                  {actionLoading === "email"
-                    ? "Enviando..."
-                    : "Enviar por correo"}
+                  {actionLoading === "dte-validation"
+                    ? "Validando documento..."
+                    : "Validar documento tributario"}
                 </button>
+              )}
 
-                {canConvert && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConvertOpen(true)
-                    }
-                    className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl bg-black px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800"
-                    style={{ color: "#ffffff" }}
-                  >
-                    Generar{" "}
-                    {quotation.intended_document_type === "FACTURA"
-                      ? "Factura"
-                      : "Boleta"}
-                  </button>
-                )}
-
-                {quotation.status === "CONVERTED" && (
-                  <button
-                    type="button"
-                    onClick={retryTaxDocumentValidation}
-                    disabled={Boolean(actionLoading)}
-                    className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-black/10 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:border-black hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {actionLoading === "dte-validation"
-                      ? "Validando documento..."
-                      : "Validar documento tributario"}
-                  </button>
-                )}
-
-                {canCancel && (
-                  <button
-                    type="button"
-                    onClick={cancel}
-                    disabled={actionLoading === "cancel"}
-                    className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-red-200 bg-white px-5 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {actionLoading === "cancel"
-                      ? "Cancelando..."
-                      : "Cancelar cotización"}
-                  </button>
-                )}
-              </div>
+              {canCancel && (
+                <button
+                  type="button"
+                  onClick={cancel}
+                  disabled={actionLoading === "cancel"}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-4 text-center text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[150px]"
+                >
+                  {actionLoading === "cancel"
+                    ? "Cancelando..."
+                    : "Cancelar cotización"}
+                </button>
+              )}
             </div>
 
             {quotation.status === "CONVERTED" && (
-              <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
+              <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
                 Convertida en venta
                 {quotation.converted_order_number
                   ? ` ${quotation.converted_order_number}`
