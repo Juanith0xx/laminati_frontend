@@ -126,6 +126,42 @@ const formatDate = (
       );
 };
 
+const formatFreightLabel = (
+  line
+) => {
+  const freightType =
+    String(
+      line?.freight_type ||
+        ""
+    )
+      .trim()
+      .toUpperCase();
+
+  if (
+    ["AIR", "AEREO", "AÉREO"].includes(
+      freightType
+    )
+  ) {
+    return "Flete aéreo";
+  }
+
+  if (
+    ["SEA", "MARITIMO", "MARÍTIMO"].includes(
+      freightType
+    )
+  ) {
+    return "Flete marítimo";
+  }
+
+  return (
+    String(
+      line?.description ||
+        ""
+    ).trim() ||
+    "Flete"
+  );
+};
+
 function SummaryCard({
   eyebrow,
   value,
@@ -737,7 +773,7 @@ export default function GerenciaProjectQuotationsPage() {
                     summary.total_value_usd
                   )
             }
-            detail="Suma calculada sólo con Precio Italia."
+            detail="Suma de laminados y fletes valorizados en USD."
           />
 
           <SummaryCard
@@ -1377,6 +1413,90 @@ export default function GerenciaProjectQuotationsPage() {
                   )}
                 </div>
 
+                {(selectedQuotation.freight_lines || []).length >
+                0 ? (
+                  <div className="border-t border-black/5">
+                    <div className="px-5 pb-2 pt-5 sm:px-6">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                        Flete
+                      </p>
+                    </div>
+
+                    <div className="divide-y divide-black/5">
+                      {(selectedQuotation.freight_lines || []).map(
+                        (
+                          freight
+                        ) => (
+                          <div
+                            key={
+                              freight.project_line_id
+                            }
+                            className="p-5 pt-3 sm:p-6 sm:pt-3"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 ring-1 ring-inset ring-sky-100">
+                                  Servicio
+                                </span>
+
+                                <p className="mt-2 font-semibold leading-5 text-neutral-950">
+                                  {
+                                    formatFreightLabel(
+                                      freight
+                                    )
+                                  }
+                                </p>
+
+                                {freight.code ? (
+                                  <p className="mt-1 text-xs text-neutral-400">
+                                    Código{" "}
+                                    {
+                                      freight.code
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div className="shrink-0 text-right">
+                                {freight.italy_unit_price_usd ===
+                                null ? (
+                                  <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+                                    Sin valorizar
+                                  </span>
+                                ) : (
+                                  <>
+                                    <p className="font-semibold text-neutral-950">
+                                      {
+                                        formatUsd(
+                                          freight.italy_total_usd
+                                        )
+                                      }
+                                    </p>
+
+                                    <p className="mt-1 text-xs text-neutral-400">
+                                      {
+                                        formatQuantity(
+                                          freight.quantity
+                                        )
+                                      }{" "}
+                                      ×{" "}
+                                      {
+                                        formatUsd(
+                                          freight.italy_unit_price_usd
+                                        )
+                                      }
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="border-t border-black/5 bg-[#fafaf9] p-5 sm:p-6">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-sm font-medium text-neutral-500">
@@ -1393,7 +1513,60 @@ export default function GerenciaProjectQuotationsPage() {
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-4">
+                  <div className="mt-5 space-y-2 border-t border-black/5 pt-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-neutral-500">
+                        Productos
+                      </span>
+
+                      <span className="text-sm font-semibold text-neutral-800">
+                        {
+                          formatUsd(
+                            selectedQuotation.product_total_usd
+                          )
+                        }
+                      </span>
+                    </div>
+
+                    {(selectedQuotation.freight_lines || []).map(
+                      (
+                        freight
+                      ) => (
+                        <div
+                          key={`summary-${freight.project_line_id}`}
+                          className="flex items-center justify-between gap-4"
+                        >
+                          <span className="text-sm text-neutral-500">
+                            {
+                              formatFreightLabel(
+                                freight
+                              )
+                            }
+                          </span>
+
+                          <span
+                            className={`text-sm font-semibold ${
+                              freight.italy_total_usd ===
+                              null
+                                ? "text-amber-700"
+                                : "text-neutral-800"
+                            }`}
+                          >
+                            {
+                              freight.italy_total_usd ===
+                              null
+                                ? "Sin valorizar"
+                                : formatUsd(
+                                    freight.italy_total_usd
+                                  )
+                            }
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between gap-4 border-t border-black/10 pt-4">
                     <span className="text-sm font-semibold text-neutral-900">
                       Total
                     </span>
