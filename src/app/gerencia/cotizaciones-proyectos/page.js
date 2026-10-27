@@ -61,16 +61,28 @@ const STATUS_LABELS = {
     "Borrador",
   SENT:
     "Enviada",
+  REVIEW:
+    "En revisión",
+  NEGOTIATION:
+    "Negociación",
+  APPROVED:
+    "Aprobada",
+  WON:
+    "Ganada",
+  LOST:
+    "Perdida",
+
+  // Compatibilidad con registros/ respuestas técnicas antiguas.
   ACCEPTED:
-    "Aceptada",
+    "Aprobada",
   REJECTED:
-    "Rechazada",
+    "Perdida",
   EXPIRED:
-    "Vencida",
+    "Perdida",
   CONVERTED:
-    "Convertida",
+    "Ganada",
   CANCELLED:
-    "Cancelada",
+    "Perdida",
 };
 
 const formatUsd = (
