@@ -471,27 +471,13 @@ return;
 
 }
 
-const storedToken =
-
-window.localStorage
-.getItem("token");
-
-if (
-
-!storedToken ||
-
-storedToken === "null" ||
-
-storedToken === "undefined"
-
-) {
-
-setCustomerPricing(null);
-setCustomerPricingLoading(false);
-
-return;
-
-}
+/*
+ * No inspeccionamos Web Storage para determinar la sesión.
+ * apiRequest envía la cookie HttpOnly mediante
+ * credentials: "include". Si no hay sesión, el backend
+ * responderá 401 y simplemente no aplicaremos pricing
+ * personalizado.
+ */
 
 const controller =
 new AbortController();
@@ -547,7 +533,8 @@ return;
 }
 
 if (
-error?.status !== 401
+error?.status !== 401 &&
+error?.status !== 403
 ) {
 
 console.error(

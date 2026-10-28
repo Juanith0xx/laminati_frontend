@@ -63,10 +63,10 @@ export async function apiRequest(
   {
     method = "GET",
     body,
-    token,
     headers = {},
     cache = "no-store",
     signal,
+    keepalive = false,
   } = {}
 ) {
   const isFormData =
@@ -81,23 +81,6 @@ export async function apiRequest(
         }
       : {}),
 
-    /*
-     * Compatibilidad temporal para llamadas antiguas
-     * que todavía entreguen token explícitamente.
-     * La autenticación principal usa cookie HttpOnly.
-     */
-    ...(token
-      ? {
-          Authorization:
-            `Bearer ${String(token)
-              .replace(
-                /^Bearer\s+/i,
-                ""
-              )
-              .trim()}`,
-        }
-      : {}),
-
     ...headers,
   };
 
@@ -107,6 +90,7 @@ export async function apiRequest(
       method,
       cache,
       signal,
+      keepalive,
       credentials: "include",
       headers: requestHeaders,
       ...(body

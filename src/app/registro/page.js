@@ -15,6 +15,10 @@ import {
   apiRequest,
 } from "@/services/api";
 
+import {
+  saveAuthSession,
+} from "@/services/auth.service";
+
 /* =========================================
    CONFIG
 ========================================= */
@@ -93,21 +97,13 @@ const persistSessionAndContinue = (
     return;
   }
 
-  if (response?.token) {
-    window.localStorage.setItem(
-      "token",
-      response.token
-    );
-  }
-
-  if (response?.user) {
-    window.localStorage.setItem(
-      "user",
-      JSON.stringify(
-        response.user
-      )
-    );
-  }
+  /*
+   * La sesión real queda exclusivamente en la cookie
+   * HttpOnly emitida por el backend. saveAuthSession
+   * sólo conserva el snapshot público del usuario y
+   * elimina cualquier JWT legacy de Web Storage.
+   */
+  saveAuthSession(response);
 
   window.localStorage.setItem(
     "mustChangePassword",
@@ -116,8 +112,9 @@ const persistSessionAndContinue = (
 
   /*
    * Recarga completa intencional:
-   * Navbar y cualquier consumidor de sesión
-   * parten leyendo localStorage desde cero.
+   * Navbar y consumidores de UI reconstruyen
+   * su estado visual desde el usuario público.
+   * La autenticación real permanece en HttpOnly.
    */
   window.location.assign(
     "/mi-cuenta"
@@ -941,7 +938,6 @@ export default function RegisterPage() {
 
         if (
           !response?.success ||
-          !response?.token ||
           !response?.user
         ) {
           throw new Error(

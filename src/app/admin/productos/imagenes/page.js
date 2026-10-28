@@ -17,6 +17,10 @@ import {
   apiRequest,
 } from "@/services/api";
 
+import {
+  clearAuthSession,
+} from "@/services/auth.service";
+
 const ACCEPTED_EXTENSIONS =
   /\.(jpe?g|png|webp|avif)$/i;
 
@@ -1984,17 +1988,18 @@ export default function AdminProductImagesPage() {
   ========================================= */
   const handleLogout =
     () => {
-      localStorage.removeItem(
-        "token"
-      );
-
-      localStorage.removeItem(
-        "user"
-      );
+      /*
+       * clearAuthSession solicita /auth/logout con
+       * keepalive, limpia la cookie HttpOnly en backend
+       * y elimina cualquier estado local legacy.
+       */
+      clearAuthSession();
 
       router.replace(
         "/login"
       );
+
+      router.refresh();
     };
 
   const selectedBrand =

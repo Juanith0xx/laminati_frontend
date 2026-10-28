@@ -1,6 +1,6 @@
 import { apiRequest } from "@/services/api";
 
-export const AUTH_TOKEN_KEY = "token";
+const LEGACY_AUTH_TOKEN_KEY = "token";
 export const AUTH_USER_KEY = "user";
 export const AUTH_CHANGED_EVENT = "laminati-auth-changed";
 
@@ -181,7 +181,7 @@ export const saveAuthSession = (response) => {
    * de una versión anterior del frontend.
    */
   window.localStorage.removeItem(
-    AUTH_TOKEN_KEY
+    LEGACY_AUTH_TOKEN_KEY
   );
 
   window.localStorage.setItem(
@@ -248,7 +248,7 @@ export const clearAuthSession = () => {
 
   // Limpieza de compatibilidad con sesiones antiguas.
   window.localStorage.removeItem(
-    AUTH_TOKEN_KEY
+    LEGACY_AUTH_TOKEN_KEY
   );
   window.localStorage.removeItem(
     AUTH_USER_KEY
