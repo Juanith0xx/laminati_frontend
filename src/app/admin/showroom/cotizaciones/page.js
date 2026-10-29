@@ -416,7 +416,7 @@ function TrackingModal({
 
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-white shadow-2xl">
+      <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-black/5 bg-white/95 px-6 py-5 backdrop-blur sm:px-7">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
@@ -801,49 +801,52 @@ export default function QuotationsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#f6f5f2] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-              Laminati · Administración
-            </p>
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="space-y-5">
+        <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+          <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                Laminati · Backoffice
+              </p>
 
-            <h1 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-neutral-950">
-              Cotizaciones
-            </h1>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
+                Cotizaciones
+              </h1>
 
-            <p className="mt-2 max-w-3xl text-sm text-neutral-500">
-              Administra cotizaciones comerciales y de proyecto desde un solo lugar, con edición, PDF, envío y seguimiento en tiempo real.
-            </p>
+              <p className="mt-1 max-w-3xl text-sm text-neutral-500">
+                Administra cotizaciones comerciales y de proyecto desde un solo lugar, con edición, PDF, envío y seguimiento en tiempo real.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              <Link
+                href="/admin/showroom"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Showroom
+              </Link>
+
+              <Link
+                href="/admin/cotizaciones/nueva"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Nueva cotización
+              </Link>
+
+              <Link
+                href="/admin/cotizaciones/nueva/proyecto"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-black px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800"
+                style={{ color: "#ffffff" }}
+              >
+                Nueva cotización de proyecto
+              </Link>
+            </div>
           </div>
+        </section>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin/showroom"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-xs font-medium text-neutral-700 transition hover:border-black hover:text-black"
-            >
-              Showroom
-            </Link>
-
-            <Link
-              href="/admin/cotizaciones/nueva"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-xs font-semibold text-neutral-900 transition hover:border-black"
-            >
-              Nueva cotización
-            </Link>
-
-            <Link
-              href="/admin/cotizaciones/nueva/proyecto"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-black px-5 text-xs font-semibold !text-white transition hover:bg-neutral-800"
-              style={{ color: "#ffffff" }}
-            >
-              Nueva cotización de proyecto
-            </Link>
-          </div>
-        </header>
-
-        <section className="mt-6 rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+        <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
           <div className="grid gap-3 md:grid-cols-[1fr_190px_220px]">
             <input
               value={search}
@@ -853,7 +856,7 @@ export default function QuotationsPage() {
                 )
               }
               placeholder="Buscar número, cliente, RUT, proyecto, referencia, código o producto"
-              className="h-11 rounded-xl border border-black/10 px-4 text-sm outline-none focus:border-black"
+              className="h-11 rounded-xl border border-neutral-200 px-4 text-sm outline-none transition focus:border-black"
             />
 
             <select
@@ -863,7 +866,7 @@ export default function QuotationsPage() {
                   event.target.value
                 )
               }
-              className="h-11 rounded-xl border border-black/10 bg-white px-4 text-sm outline-none focus:border-black"
+              className="h-11 rounded-xl border border-neutral-200 bg-white px-4 text-sm outline-none transition focus:border-black"
             >
               <option value="">
                 Todos los tipos
@@ -883,7 +886,7 @@ export default function QuotationsPage() {
                   event.target.value
                 )
               }
-              className="h-11 rounded-xl border border-black/10 bg-white px-4 text-sm outline-none focus:border-black"
+              className="h-11 rounded-xl border border-neutral-200 bg-white px-4 text-sm outline-none transition focus:border-black"
             >
               <option value="">
                 Todos los estados
@@ -909,18 +912,18 @@ export default function QuotationsPage() {
         </section>
 
         {error && (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          <div className="rounded-[20px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
             {error}
           </div>
         )}
 
         {message && (
-          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+          <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
             {message}
           </div>
         )}
 
-        <section className="mt-5 overflow-hidden rounded-[2rem] border border-black/5 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
           {loading ? (
             <div className="p-8 text-center text-sm text-neutral-500">
               Cargando cotizaciones...
@@ -1164,7 +1167,7 @@ export default function QuotationsPage() {
 
       {quotationToDelete && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl sm:p-7">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl sm:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500">
               Eliminar cotización
             </p>

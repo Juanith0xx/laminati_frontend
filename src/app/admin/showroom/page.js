@@ -3976,43 +3976,46 @@ function ShowroomContent() {
   };
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <div className="mx-auto max-w-[1500px]">
-        <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
-              {quotationMode ? "Cotizaciones comerciales" : "Ventas presenciales"}
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl">
-              {quotationMode ? "Nueva cotización" : "Showroom"}
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
-              {quotationMode
-                ? "Completa el cliente, selecciona los productos y genera una cotización sin reservar inventario."
-                : "Flujo de venta presencial ordenado de principio a fin, sincronizado con la bodega principal Relbase 956."}
-            </p>
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="space-y-5">
+        <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+          <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                Laminati · Backoffice
+              </p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
+                {quotationMode ? "Nueva cotización" : "Showroom"}
+              </h1>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-500">
+                {quotationMode
+                  ? "Completa el cliente, selecciona los productos y genera una cotización sin reservar inventario."
+                  : "Flujo de venta presencial ordenado de principio a fin, sincronizado con la bodega principal Relbase 956."}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/admin/cotizaciones"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Ver cotizaciones
+              </Link>
+
+              <button
+                type="button"
+                disabled={submitting || quotationSaving}
+                onClick={() => changeClosingMode(quotationMode ? "SALE" : "QUOTE")}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              >
+                {quotationMode ? "Volver a venta" : "Nueva cotización"}
+              </button>
+            </div>
           </div>
+        </section>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin/cotizaciones"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-xs font-medium text-neutral-700 transition hover:border-black hover:text-black"
-            >
-              Ver cotizaciones
-            </Link>
-
-            <button
-              type="button"
-              disabled={submitting || quotationSaving}
-              onClick={() => changeClosingMode(quotationMode ? "SALE" : "QUOTE")}
-              className="inline-flex h-10 items-center justify-center rounded-full bg-black px-4 text-xs font-medium text-white transition hover:bg-neutral-800"
-            >
-              {quotationMode ? "Volver a venta" : "Nueva cotización"}
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-6 grid gap-2 sm:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-4">
           {[
             ["01", "Cliente", rutLookup.status === "FOUND"],
             ["02", "Productos", cart.length > 0],
@@ -4049,7 +4052,7 @@ function ShowroomContent() {
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -4645,7 +4648,7 @@ function ShowroomContent() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -5293,7 +5296,7 @@ function ShowroomContent() {
             </div>
           </section>
 
-          <section id="showroom-step-03" className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section id="showroom-step-03" className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -5923,7 +5926,7 @@ function ShowroomContent() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_430px] xl:items-start">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">

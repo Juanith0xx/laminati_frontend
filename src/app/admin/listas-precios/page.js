@@ -391,17 +391,19 @@ export default function AdminPriceListsPage() {
       : rule.collection_name || "Colección";
 
   return (
-    <main className="min-h-screen bg-[#f6f5f2] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1500px]">
-        <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <div>
+        <header className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+          <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
-              Catálogo · Condiciones comerciales
+            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+              Laminati · Backoffice
             </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-black sm:text-4xl">
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
               Listas de precios
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
+            <p className="mt-1 max-w-2xl text-sm text-neutral-500">
               Crea descuentos por producto o colección y administra las listas que luego podrás asignar a cada cliente.
             </p>
           </div>
@@ -425,9 +427,10 @@ export default function AdminPriceListsPage() {
               Nueva lista
             </button>
           </div>
+                  </div>
         </header>
 
-        <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             label="Listas"
             value={metrics.total}
@@ -465,19 +468,19 @@ export default function AdminPriceListsPage() {
           </div>
         )}
 
-        <section className="mt-5 rounded-[28px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-5">
+        <section className="mt-5 rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
           <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar lista por nombre o descripción..."
-              className="h-12 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 text-sm outline-none transition focus:border-black focus:bg-white"
+              className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
             />
 
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="h-12 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 text-sm outline-none transition focus:border-black focus:bg-white"
+              className="h-11 rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
             >
               <option value="ALL">Todas las listas</option>
               <option value="ACTIVE">Solo activas</option>
@@ -487,7 +490,7 @@ export default function AdminPriceListsPage() {
         </section>
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <section className="rounded-[28px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-5">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">

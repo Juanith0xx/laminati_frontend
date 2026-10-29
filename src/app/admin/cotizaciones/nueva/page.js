@@ -1467,37 +1467,40 @@ export default function NewQuotationPage() {
   };
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1500px]">
-        <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
-              "Cotizaciones · Estándar"
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl">
-              "Nueva cotización"
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
-              Completa el cliente, selecciona productos del catálogo y genera una cotización estándar sin reservar inventario.
-            </p>
-          </div>
+        <section className="mb-5 overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+          <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                Laminati · Backoffice
+              </p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
+                Nueva cotización
+              </h1>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-500">
+                Completa el cliente, selecciona productos del catálogo y genera una cotización estándar sin reservar inventario.
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin/cotizaciones"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-xs font-medium text-neutral-700 transition hover:border-black hover:text-black"
-            >
-              Ver cotizaciones
-            </Link>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <Link
+                href="/admin/cotizaciones"
+                className="inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-6 text-sm font-semibold !text-neutral-800 shadow-sm transition-all duration-200 hover:border-black/20 hover:bg-neutral-50 hover:!text-black"
+              >
+                Ver cotizaciones
+              </Link>
 
-            <Link
-              href="/admin/showroom"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-black px-4 text-xs font-medium text-white transition hover:bg-neutral-800"
-            >
-              Ir al Showroom
-            </Link>
+              <Link
+                href="/admin/showroom"
+                className="inline-flex h-11 min-w-[144px] shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-black bg-black px-6 text-sm font-semibold !text-white shadow-sm transition-all duration-200 hover:bg-neutral-800 hover:!text-white"
+              >
+                Ir al Showroom
+              </Link>
+            </div>
           </div>
-        </div>
+        </section>
 
         <div className="mb-6 grid gap-2 sm:grid-cols-4">
           {[
@@ -1536,7 +1539,7 @@ export default function NewQuotationPage() {
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -1602,7 +1605,7 @@ export default function NewQuotationPage() {
               </button>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-black/5 bg-[#faf9f7] p-4 sm:p-5">
+            <div className="mt-6 rounded-2xl border border-black/5 bg-neutral-50 p-4 sm:p-5">
               <Field label="Buscar cliente en Relbase por nombre o RUT">
                 <div className="relative">
                   <input
@@ -1970,7 +1973,7 @@ export default function NewQuotationPage() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -2042,7 +2045,7 @@ export default function NewQuotationPage() {
                   return (
                     <article
                       key={product.id}
-                      className="group flex flex-col justify-between rounded-2xl border border-black/5 bg-[#faf9f7] p-4"
+                      className="group flex flex-col justify-between rounded-2xl border border-black/5 bg-neutral-50 p-4"
                     >
                       <div>
                         <div className="mb-4 overflow-hidden rounded-xl border border-black/5 bg-white">
@@ -2141,7 +2144,7 @@ export default function NewQuotationPage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -2171,7 +2174,7 @@ export default function NewQuotationPage() {
                   {cart.map((item) => (
                     <div
                       key={item.id}
-                      className="grid gap-3 rounded-2xl border border-black/5 bg-[#faf9f7] p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"
+                      className="grid gap-3 rounded-2xl border border-black/5 bg-neutral-50 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"
                     >
                       <div className="min-w-0">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
@@ -2288,7 +2291,7 @@ export default function NewQuotationPage() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+          <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -2487,7 +2490,7 @@ export default function NewQuotationPage() {
 
       {documentPreviewOpen && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5">
-          <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] bg-[#f6f5f2] shadow-2xl">
+          <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-neutral-50 shadow-2xl">
             <div className="flex flex-col gap-4 border-b border-black/5 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-neutral-400">

@@ -765,6 +765,520 @@ const ABET_LAMINATI_FINISHES = [
 
 ];
 
+
+const TECHNICAL_PRODUCT_PRESETS = {
+
+  MEG: {
+
+    label:
+      "MEG",
+
+    collectionName:
+      "Fachadas Ventiladas",
+
+    application:
+      "Exterior",
+
+    core:
+      "Brown",
+
+    orderOnly:
+      true,
+
+    description:
+      "MEG – MATERIAL EXTERIOR GRADE",
+
+    orderMessage:
+      "Producto a pedido, no se mantiene en stock. La configuración final de formato, espesor y acabado se define según los requerimientos del proyecto.",
+
+    finishes: [
+      "Sei",
+      "Sei Due",
+      "Climb",
+    ],
+
+    formats: [
+
+      {
+        value:
+          "130x305",
+        label:
+          "305 × 130 cm",
+        width_mm:
+          1300,
+        height_mm:
+          3050,
+      },
+
+      {
+        value:
+          "130x420",
+        label:
+          "420 × 130 cm",
+        width_mm:
+          1300,
+        height_mm:
+          4200,
+      },
+
+      {
+        value:
+          "161x420",
+        label:
+          "420 × 161 cm",
+        width_mm:
+          1610,
+        height_mm:
+          4200,
+      },
+
+    ],
+
+    thicknesses: [
+      "1.2",
+      "2",
+      "2.5",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "18",
+    ],
+
+  },
+
+  LAB: {
+
+    label:
+      "Labgrade",
+
+    collectionName:
+      "Cubiertas de Laboratorio",
+
+    orderOnly:
+      true,
+
+    description:
+      "LABGRADE – SUPERFICIE TÉCNICA",
+
+    orderMessage:
+      "Producto técnico a pedido. El formato y el espesor se definen según los requerimientos del proyecto.",
+
+    finishes: [],
+
+    formats: [
+
+      {
+        value:
+          "130x305",
+        label:
+          "305 × 130 cm",
+        width_mm:
+          1300,
+        height_mm:
+          3050,
+      },
+
+      {
+        value:
+          "161x366",
+        label:
+          "366 × 161 cm",
+        width_mm:
+          1610,
+        height_mm:
+          3660,
+      },
+
+      {
+        value:
+          "161x420",
+        label:
+          "420 × 161 cm",
+        width_mm:
+          1610,
+        height_mm:
+          4200,
+      },
+
+      {
+        value:
+          "186x420",
+        label:
+          "420 × 186 cm",
+        width_mm:
+          1860,
+        height_mm:
+          4200,
+      },
+
+    ],
+
+    thicknesses: [
+      "6",
+      "8",
+      "10",
+      "12",
+      "13",
+      "16",
+    ],
+
+  },
+
+  LABP: {
+
+    label:
+      "Labgrade Plus",
+
+    collectionName:
+      "Cubiertas de Laboratorio",
+
+    orderOnly:
+      true,
+
+    description:
+      "LABGRADE PLUS – SUPERFICIE TÉCNICA",
+
+    orderMessage:
+      "Producto técnico a pedido. La configuración final se define según los requerimientos del proyecto.",
+
+    finishes: [],
+
+    formats: [
+
+      {
+        value:
+          "159x366",
+        label:
+          "366 × 159 cm",
+        width_mm:
+          1590,
+        height_mm:
+          3660,
+      },
+
+    ],
+
+    thicknesses: [
+      "8",
+      "13",
+      "16",
+      "18",
+      "20",
+    ],
+
+  },
+
+};
+
+function normalizeCatalogLabel(
+  value
+) {
+  return String(
+    value ||
+      ""
+  )
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    );
+}
+
+function getTechnicalFamilyFromValues({
+  sku,
+  categoryName,
+  collectionName,
+}) {
+  const normalizedSku =
+    String(
+      sku ||
+        ""
+    )
+      .trim()
+      .toUpperCase();
+
+  if (
+    normalizedSku.startsWith(
+      "LABP-"
+    )
+  ) {
+    return "LABP";
+  }
+
+  if (
+    normalizedSku.startsWith(
+      "MEG-"
+    )
+  ) {
+    return "MEG";
+  }
+
+  if (
+    normalizedSku.startsWith(
+      "LAB-"
+    )
+  ) {
+    return "LAB";
+  }
+
+  const normalizedCategory =
+    normalizeCatalogLabel(
+      categoryName
+    );
+
+  const normalizedCollection =
+    normalizeCatalogLabel(
+      collectionName
+    );
+
+  if (
+    normalizedCategory ===
+      "meg" ||
+    normalizedCategory.includes(
+      "fachadas ventiladas"
+    ) ||
+    normalizedCollection.includes(
+      "fachadas ventiladas"
+    )
+  ) {
+    return "MEG";
+  }
+
+  if (
+    normalizedCategory.includes(
+      "labgrade"
+    ) ||
+    normalizedCategory ===
+      "lab" ||
+    normalizedCollection.includes(
+      "cubiertas de laboratorio"
+    )
+  ) {
+    return "LAB";
+  }
+
+  return null;
+}
+
+const PROJECT_FAMILY_CODE_BY_TECHNICAL_FAMILY = {
+  MEG: "MEG",
+  LAB: "LABGRADE",
+  LABP: "LABGRADE_PLUS",
+};
+
+function normalizeProjectFamilyCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function getProjectFamilyCode(family) {
+  return normalizeProjectFamilyCode(
+    family?.code ||
+      family?.family_code ||
+      family?.project_family_code ||
+      family?.slug ||
+      family?.name
+  );
+}
+
+function findProjectFamilyForTechnicalFamily(projectFamilies, technicalFamily) {
+  const expectedCode =
+    PROJECT_FAMILY_CODE_BY_TECHNICAL_FAMILY[technicalFamily];
+
+  if (!expectedCode) {
+    return null;
+  }
+
+  return (
+    projectFamilies.find(
+      (family) => getProjectFamilyCode(family) === expectedCode
+    ) || null
+  );
+}
+
+function parseTechnicalFormatString(value) {
+  const label = String(value || "").trim();
+  const match = label.match(
+    /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/i
+  );
+
+  if (!match) return null;
+
+  const first = Number(match[1].replace(",", "."));
+  const second = Number(match[2].replace(",", "."));
+
+  if (!Number.isFinite(first) || !Number.isFinite(second)) {
+    return null;
+  }
+
+  const widthCm = Math.min(first, second);
+  const heightCm = Math.max(first, second);
+
+  return {
+    value: `${widthCm}x${heightCm}`,
+    label,
+    width_mm: Math.round(widthCm * 10),
+    height_mm: Math.round(heightCm * 10),
+  };
+}
+
+function normalizeProjectFamilyFormats(family) {
+  const source =
+    family?.formats ||
+    family?.project_formats ||
+    family?.available_formats ||
+    [];
+
+  if (!Array.isArray(source)) return [];
+
+  return source
+    .map((item, index) => {
+      if (typeof item === "string") {
+        return parseTechnicalFormatString(item);
+      }
+
+      const widthCm = Number(
+        item?.width_cm ?? item?.ancho_cm
+      );
+      const lengthCm = Number(
+        item?.length_cm ?? item?.height_cm ?? item?.largo_cm
+      );
+
+      const widthMm = Number(
+        item?.width_mm ??
+          item?.width ??
+          item?.ancho_mm ??
+          (Number.isFinite(widthCm) ? widthCm * 10 : NaN)
+      );
+      const heightMm = Number(
+        item?.height_mm ??
+          item?.height ??
+          item?.alto_mm ??
+          (Number.isFinite(lengthCm) ? lengthCm * 10 : NaN)
+      );
+      const label = String(
+        item?.label ||
+          item?.name ||
+          item?.format ||
+          item?.display_name ||
+          ""
+      ).trim();
+
+      if (Number.isFinite(widthMm) && Number.isFinite(heightMm)) {
+        return {
+          value: String(
+            item?.value || item?.code || `${widthMm}x${heightMm}`
+          ),
+          label:
+            label ||
+            `${Math.max(widthMm, heightMm) / 10} × ${
+              Math.min(widthMm, heightMm) / 10
+            } cm`,
+          width_mm: widthMm,
+          height_mm: heightMm,
+          sort_order: Number(item?.sort_order ?? index),
+        };
+      }
+
+      return label ? parseTechnicalFormatString(label) : null;
+    })
+    .filter(Boolean)
+    .sort(
+      (a, b) => Number(a?.sort_order || 0) - Number(b?.sort_order || 0)
+    );
+}
+
+function normalizeProjectFamilyFinishes(family) {
+  const source =
+    family?.finishes ||
+    family?.project_finishes ||
+    family?.available_finishes ||
+    [];
+
+  if (!Array.isArray(source)) return [];
+
+  return source
+    .map((item) =>
+      String(
+        typeof item === "string"
+          ? item
+          : item?.name || item?.finish || item?.label || item?.code || ""
+      ).trim()
+    )
+    .filter(Boolean);
+}
+
+function normalizeProjectFamilyThicknesses(family) {
+  const source =
+    family?.thicknesses ||
+    family?.project_thicknesses ||
+    family?.available_thicknesses ||
+    [];
+
+  if (!Array.isArray(source)) return [];
+
+  return source
+    .map((item) => {
+      const raw =
+        typeof item === "string" || typeof item === "number"
+          ? item
+          : item?.thickness_mm ?? item?.value ?? item?.thickness ?? item?.label;
+
+      if (raw === null || raw === undefined || raw === "") return "";
+
+      return String(raw)
+        .replace(/\s*mm\s*$/i, "")
+        .trim();
+    })
+    .filter(Boolean);
+}
+
+function mergeTechnicalPresetWithProjectFamily(basePreset, family) {
+  if (!basePreset || !family) return basePreset;
+
+  const formats = normalizeProjectFamilyFormats(family);
+  const finishes = normalizeProjectFamilyFinishes(family);
+  const thicknesses = normalizeProjectFamilyThicknesses(family);
+
+  return {
+    ...basePreset,
+    label: family?.name || family?.family_name || basePreset.label,
+    application:
+      family?.application ||
+      family?.project_application ||
+      basePreset.application,
+    core:
+      family?.default_core ||
+      family?.core ||
+      family?.project_default_core ||
+      basePreset.core,
+    description:
+      family?.description ||
+      family?.project_family_description ||
+      basePreset.description,
+    formats: formats.length > 0 ? formats : basePreset.formats,
+    finishes: finishes.length > 0 ? finishes : basePreset.finishes,
+    thicknesses:
+      thicknesses.length > 0 ? thicknesses : basePreset.thicknesses,
+  };
+}
+
 const EMPTY_FORM = {
 
   sku:
@@ -792,6 +1306,14 @@ const EMPTY_FORM = {
     "",
 
   collection_id:
+
+    "",
+
+  commercial_mode:
+
+    "WEB",
+
+  project_family_id:
 
     "",
 
@@ -914,6 +1436,16 @@ function productToForm(
     collection_id:
       valueToFormString(
         product?.collection_id
+      ),
+
+    commercial_mode:
+      valueToFormString(
+        product?.commercial_mode || "WEB"
+      ),
+
+    project_family_id:
+      valueToFormString(
+        product?.project_family_id
       ),
 
     short_description:
@@ -1282,6 +1814,16 @@ export default function AdminProductsPage() {
 
   const [
 
+    projectFamilies,
+
+    setProjectFamilies,
+
+  ] =
+
+    useState([]);
+
+  const [
+
     search,
 
     setSearch,
@@ -1641,6 +2183,8 @@ export default function AdminProductsPage() {
 
             collectionResponse,
 
+            projectFamilyResponse,
+
           ] =
 
             await Promise.all([
@@ -1684,6 +2228,23 @@ export default function AdminProductsPage() {
                 }
 
               ),
+
+              apiRequest(
+
+                "/admin/project-product-families",
+
+                {
+
+                }
+
+              ).catch((error) => {
+                console.warn(
+                  "No fue posible cargar las familias técnicas de proyecto:",
+                  error
+                );
+
+                return { families: [] };
+              }),
 
             ]);
 
@@ -1757,6 +2318,18 @@ export default function AdminProductsPage() {
 
               : []
 
+          );
+
+          const projectFamilyRows =
+            projectFamilyResponse?.families ||
+            projectFamilyResponse?.project_families ||
+            projectFamilyResponse?.data ||
+            projectFamilyResponse;
+
+          setProjectFamilies(
+            Array.isArray(projectFamilyRows)
+              ? projectFamilyRows
+              : []
           );
 
         } catch (
@@ -1953,6 +2526,184 @@ export default function AdminProductsPage() {
 
     );
 
+  const selectedCategory =
+
+    useMemo(
+
+      () =>
+
+        categories.find(
+
+          (
+
+            category
+
+          ) =>
+
+            String(
+
+              category.id
+
+            ) ===
+
+            String(
+
+              form
+
+                .category_id
+
+            )
+
+        ) ||
+
+        null,
+
+      [
+
+        categories,
+
+        form.category_id,
+
+      ]
+
+    );
+
+  const selectedCollection =
+
+    useMemo(
+
+      () =>
+
+        collections.find(
+
+          (
+
+            collection
+
+          ) =>
+
+            String(
+
+              collection.id
+
+            ) ===
+
+            String(
+
+              form
+
+                .collection_id
+
+            )
+
+        ) ||
+
+        null,
+
+      [
+
+        collections,
+
+        form.collection_id,
+
+      ]
+
+    );
+
+  const technicalFamily =
+
+    useMemo(
+
+      () =>
+
+        getTechnicalFamilyFromValues({
+
+          sku:
+            form.sku,
+
+          categoryName:
+            selectedCategory
+              ?.name,
+
+          collectionName:
+            selectedCollection
+              ?.name,
+
+        }),
+
+      [
+
+        form.sku,
+
+        selectedCategory,
+
+        selectedCollection,
+
+      ]
+
+    );
+
+  const selectedProjectFamily =
+
+    useMemo(
+      () => {
+        const byId =
+          form.project_family_id
+            ? projectFamilies.find(
+                (family) =>
+                  String(family?.id) ===
+                  String(form.project_family_id)
+              )
+            : null;
+
+        return (
+          byId ||
+          findProjectFamilyForTechnicalFamily(
+            projectFamilies,
+            technicalFamily
+          )
+        );
+      },
+      [
+        form.project_family_id,
+        projectFamilies,
+        technicalFamily,
+      ]
+    );
+
+  const technicalPreset =
+
+    technicalFamily
+
+      ? mergeTechnicalPresetWithProjectFamily(
+          TECHNICAL_PRODUCT_PRESETS[technicalFamily],
+          selectedProjectFamily
+        )
+
+      : null;
+
+  const technicalPreviewUrl =
+
+    pendingImages.find(
+      (
+        image
+      ) =>
+        image?.is_primary
+    )?.previewUrl ||
+    pendingImages[0]?.previewUrl ||
+    getProductImageUrl(
+      savedImages.find(
+        (
+          image
+        ) =>
+          image?.is_primary
+      )
+    ) ||
+    getProductImageUrl(
+      savedImages[0]
+    ) ||
+    null;
+
   const isAbetLaminati =
 
     String(
@@ -1990,6 +2741,275 @@ export default function AdminProductsPage() {
       .toLowerCase() ===
 
     "karikal";
+
+  const handleCategoryChange =
+
+    (
+      categoryId
+    ) => {
+
+      const category =
+        categories.find(
+          (
+            item
+          ) =>
+            String(
+              item.id
+            ) ===
+            String(
+              categoryId
+            )
+        ) ||
+        null;
+
+      const categoryName =
+        normalizeCatalogLabel(
+          category?.name
+        );
+
+      let family =
+        null;
+
+      if (
+        categoryName ===
+          "meg" ||
+        categoryName.includes(
+          "fachadas ventiladas"
+        )
+      ) {
+        family =
+          "MEG";
+      } else if (
+        categoryName.includes(
+          "labgrade"
+        ) ||
+        categoryName ===
+          "lab"
+      ) {
+        family =
+          String(
+            form.sku ||
+              ""
+          )
+            .trim()
+            .toUpperCase()
+            .startsWith(
+              "LABP-"
+            )
+            ? "LABP"
+            : "LAB";
+      }
+
+      if (
+        !family
+      ) {
+        setForm(
+          (
+            current
+          ) => ({
+            ...current,
+            category_id:
+              categoryId,
+            ...(technicalPreset
+              ? {
+                  allow_sale:
+                    true,
+                  commercial_mode:
+                    "WEB",
+                  project_family_id:
+                    "",
+                }
+              : {}),
+          })
+        );
+        return;
+      }
+
+      const preset =
+        TECHNICAL_PRODUCT_PRESETS[
+          family
+        ];
+
+      const abetBrand =
+        brands.find(
+          (
+            brand
+          ) =>
+            normalizeCatalogLabel(
+              brand?.name
+            ) ===
+            "abet laminati"
+        ) ||
+        null;
+
+      const targetCollection =
+        collections.find(
+          (
+            collection
+          ) =>
+            normalizeCatalogLabel(
+              collection?.name
+            ) ===
+            normalizeCatalogLabel(
+              preset.collectionName
+            ) &&
+            (
+              !abetBrand?.id ||
+              !collection?.brand_id ||
+              String(
+                collection.brand_id
+              ) ===
+              String(
+                abetBrand.id
+              )
+            )
+        ) ||
+        collections.find(
+          (
+            collection
+          ) =>
+            normalizeCatalogLabel(
+              collection?.name
+            ).includes(
+              normalizeCatalogLabel(
+                preset.collectionName
+              )
+            )
+        ) ||
+        null;
+
+      const projectFamily =
+        findProjectFamilyForTechnicalFamily(
+          projectFamilies,
+          family
+        );
+
+      /*
+       * Estructura original: la disponibilidad técnica vive en la
+       * familia de proyecto y sus tablas hijas, no en una combinación
+       * única dentro de products.
+       */
+      setForm(
+        (
+          current
+        ) => ({
+          ...current,
+          category_id:
+            categoryId,
+          brand_id:
+            abetBrand?.id ||
+            current.brand_id,
+          collection_id:
+            targetCollection?.id ||
+            current.collection_id,
+          commercial_mode:
+            "PROJECT_ONLY",
+          project_family_id:
+            projectFamily?.id ||
+            "",
+          width_mm:
+            "",
+          height_mm:
+            "",
+          thickness_mm:
+            "",
+          finish:
+            "",
+          base_price:
+            "",
+          italy_price_usd:
+            "",
+          allow_sale:
+            false,
+        })
+      );
+
+    };
+
+  useEffect(
+    () => {
+      if (!technicalFamily) return;
+
+      const projectFamily =
+        findProjectFamilyForTechnicalFamily(
+          projectFamilies,
+          technicalFamily
+        );
+
+      if (!projectFamily?.id) return;
+
+      setForm((current) => {
+        const alreadyLinked =
+          current.commercial_mode === "PROJECT_ONLY" &&
+          String(current.project_family_id || "") ===
+            String(projectFamily.id);
+
+        if (alreadyLinked) return current;
+
+        return {
+          ...current,
+          commercial_mode: "PROJECT_ONLY",
+          project_family_id: projectFamily.id,
+          base_price: "",
+          italy_price_usd: "",
+          width_mm: "",
+          height_mm: "",
+          thickness_mm: "",
+          finish: "",
+          allow_sale: false,
+        };
+      });
+    },
+    [
+      technicalFamily,
+      projectFamilies,
+    ]
+  );
+
+  /*
+   * MEG / LAB / LABP son familias a pedido:
+   * no tienen precio de venta directo y no deben
+   * habilitarse para compra normal en ecommerce.
+   */
+  useEffect(
+    () => {
+      if (
+        !technicalPreset
+      ) {
+        return;
+      }
+
+      setForm(
+        (
+          current
+        ) => {
+          if (
+            current.base_price ===
+              "" &&
+            current.italy_price_usd ===
+              "" &&
+            current.allow_sale ===
+              false
+          ) {
+            return current;
+          }
+
+          return {
+            ...current,
+            base_price:
+              "",
+            italy_price_usd:
+              "",
+            allow_sale:
+              false,
+          };
+        }
+      );
+    },
+    [
+      technicalPreset,
+    ]
+  );
 
   /* =========================================
      FILTRO PRODUCTOS
@@ -4316,6 +5336,23 @@ export default function AdminProductsPage() {
 
       }
 
+      if (
+        technicalPreset &&
+        !selectedProjectFamily?.id &&
+        !form.project_family_id
+      ) {
+
+        setFormError(
+          `No se encontró la familia técnica ${
+            PROJECT_FAMILY_CODE_BY_TECHNICAL_FAMILY[technicalFamily] ||
+            technicalPreset.label
+          } en la base de datos. Revisa /admin/project-product-families antes de crear el producto.`
+        );
+
+        return;
+
+      }
+
       const taxRate =
 
         Number(
@@ -4359,6 +5396,8 @@ export default function AdminProductsPage() {
         );
 
       if (
+
+        !technicalPreset &&
 
         form
 
@@ -4456,6 +5495,26 @@ export default function AdminProductsPage() {
 
           null,
 
+        commercial_mode:
+
+          technicalPreset
+
+            ? "PROJECT_ONLY"
+
+            : "WEB",
+
+        project_family_id:
+
+          technicalPreset
+
+            ? (
+                selectedProjectFamily?.id ||
+                form.project_family_id ||
+                null
+              )
+
+            : null,
+
         sku,
 
         internal_code:
@@ -4506,17 +5565,25 @@ export default function AdminProductsPage() {
 
         base_price:
 
-          toOptionalNumber(
+          technicalPreset
 
-            form
+            ? null
 
-              .base_price
+            : toOptionalNumber(
 
-          ),
+                form
+
+                  .base_price
+
+              ),
 
         italy_price_usd:
 
-          italyPriceUsd,
+          technicalPreset
+
+            ? null
+
+            : italyPriceUsd,
 
         tax_rate:
 
@@ -4524,33 +5591,45 @@ export default function AdminProductsPage() {
 
         width_mm:
 
-          toOptionalNumber(
+          technicalPreset
 
-            form
+            ? null
 
-              .width_mm
+            : toOptionalNumber(
 
-          ),
+                form
+
+                  .width_mm
+
+              ),
 
         height_mm:
 
-          toOptionalNumber(
+          technicalPreset
 
-            form
+            ? null
 
-              .height_mm
+            : toOptionalNumber(
 
-          ),
+                form
+
+                  .height_mm
+
+              ),
 
         thickness_mm:
 
-          toOptionalNumber(
+          technicalPreset
 
-            form
+            ? null
 
-              .thickness_mm
+            : toOptionalNumber(
 
-          ),
+                form
+
+                  .thickness_mm
+
+              ),
 
         weight_kg:
 
@@ -4574,13 +5653,17 @@ export default function AdminProductsPage() {
 
         finish:
 
-          cleanOptionalText(
+          technicalPreset
 
-            form
+            ? null
 
-              .finish
+            : cleanOptionalText(
 
-          ),
+                form
+
+                  .finish
+
+              ),
 
         is_active:
 
@@ -4614,13 +5697,17 @@ export default function AdminProductsPage() {
 
         allow_sale:
 
-          Boolean(
+          technicalPreset
 
-            form
+            ? false
 
-              .allow_sale
+            : Boolean(
 
-          ),
+                form
+
+                  .allow_sale
+
+              ),
 
         sort_order:
 
@@ -5363,29 +6450,31 @@ export default function AdminProductsPage() {
 
   return (
 
-    <main className="min-h-[calc(100vh-72px)] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
 
-      <div className="mx-auto max-w-[1500px] space-y-6">
+      <div className="space-y-5">
 
-        <section className="rounded-[2rem] border border-black/5 bg-white px-6 py-7 shadow-sm sm:px-8">
+        <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
 
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+
+          <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
 
             <div>
 
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
 
-                Catálogo
+                Laminati · Backoffice
 
               </p>
 
-              <h1 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-neutral-950 sm:text-4xl">
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
 
                 Productos
 
               </h1>
 
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-500">
+              <p className="mt-1 max-w-2xl text-sm text-neutral-500">
 
                 Crea productos del catálogo y revisa su estado de publicación, precio y stock web.
 
@@ -5403,7 +6492,7 @@ export default function AdminProductsPage() {
 
               }
 
-              className="h-12 rounded-full bg-black px-7 text-sm font-medium text-white transition hover:bg-neutral-800"
+              className="h-11 rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
 
             >
 
@@ -5443,7 +6532,7 @@ export default function AdminProductsPage() {
 
         )}
 
-        <section className="rounded-[2rem] border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+        <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
 
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 
@@ -5505,7 +6594,7 @@ export default function AdminProductsPage() {
 
                 placeholder="Buscar por SKU, nombre, marca..."
 
-                className="h-11 min-w-0 flex-1 rounded-full border border-black/10 bg-white px-5 text-sm outline-none transition placeholder:text-neutral-300 focus:border-black md:w-[340px]"
+                className="h-11 min-w-0 flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition placeholder:text-neutral-400 focus:border-black md:w-[340px]"
 
               />
 
@@ -5525,7 +6614,7 @@ export default function AdminProductsPage() {
 
                 }
 
-                className="h-11 shrink-0 rounded-full border border-black/10 px-5 text-xs font-medium text-neutral-600 transition hover:border-black hover:text-black disabled:opacity-40"
+                className="h-11 shrink-0 rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
 
               >
 
@@ -5543,7 +6632,7 @@ export default function AdminProductsPage() {
 
         </section>
 
-        <section className="overflow-hidden rounded-[2rem] border border-black/5 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
 
           {loading ? (
 
@@ -6907,7 +7996,7 @@ export default function AdminProductsPage() {
 
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-3 backdrop-blur-sm sm:p-5">
 
-          <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] bg-[#f7f6f3] shadow-2xl">
+          <div className="max-h-[94vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] bg-[#f7f6f3] shadow-2xl">
 
             <form
 
@@ -7527,11 +8616,25 @@ export default function AdminProductsPage() {
 
                 <section className="rounded-[1.6rem] border border-black/5 bg-white p-5 sm:p-6">
 
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 
-                    Clasificación
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
 
-                  </p>
+                      Clasificación
+
+                    </p>
+
+                    {technicalPreset && (
+
+                      <span className="text-[10px] text-neutral-400">
+
+                        Se completa automáticamente según la familia técnica.
+
+                      </span>
+
+                    )}
+
+                  </div>
 
                   <div className="mt-5 grid gap-5 sm:grid-cols-3">
 
@@ -7561,9 +8664,7 @@ export default function AdminProductsPage() {
 
                         ) =>
 
-                          setField(
-
-                            "category_id",
+                          handleCategoryChange(
 
                             event
 
@@ -7817,6 +8918,359 @@ export default function AdminProductsPage() {
 
                 </section>
 
+                {technicalPreset && (
+
+                  <section className="overflow-hidden rounded-[1.6rem] border border-black/5 bg-white">
+
+                    <div className="flex flex-col gap-3 border-b border-black/5 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+
+                      <div className="flex flex-wrap items-center gap-2">
+
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+
+                          Configuración técnica · {technicalPreset.label}
+
+                        </p>
+
+                        {technicalPreset.orderOnly && (
+
+                          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700">
+
+                            A pedido
+
+                          </span>
+
+                        )}
+
+                      </div>
+
+                      <div className="text-right">
+                        <span className="block text-[10px] font-medium text-neutral-400">
+                          Abet Laminati · {technicalPreset.collectionName}
+                        </span>
+                        {selectedProjectFamily?.id && (
+                          <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                            Familia BD · {getProjectFamilyCode(selectedProjectFamily)}
+                          </span>
+                        )}
+                      </div>
+
+                    </div>
+
+                    <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+
+                      <div className="space-y-6 p-5 sm:p-6">
+
+                        {technicalPreset.orderMessage && (
+
+                          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3.5">
+
+                            <div className="flex items-start gap-3">
+
+                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-400 text-[11px] font-semibold text-emerald-700">
+
+                                i
+
+                              </span>
+
+                              <div>
+
+                                <p className="text-xs font-semibold text-emerald-800">
+
+                                  {technicalPreset.description}
+
+                                </p>
+
+                                <p className="mt-1 text-[11px] leading-5 text-emerald-700/80">
+
+                                  {technicalPreset.orderMessage}
+
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                          </div>
+
+                        )}
+
+                        {(technicalPreset.application || technicalPreset.core) && (
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+
+                            {technicalPreset.application && (
+
+                              <div>
+
+                                <FieldLabel>
+
+                                  Aplicación
+
+                                </FieldLabel>
+
+                                <div className="flex h-12 items-center rounded-2xl border border-neutral-200 bg-neutral-50 px-4 text-sm font-medium text-neutral-700">
+
+                                  {technicalPreset.application}
+
+                                </div>
+
+                              </div>
+
+                            )}
+
+                            {technicalPreset.core && (
+
+                              <div>
+
+                                <FieldLabel>
+
+                                  Núcleo
+
+                                </FieldLabel>
+
+                                <div className="flex h-12 items-center justify-between rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-700">
+
+                                  <span>{technicalPreset.core}</span>
+
+                                  <span className="h-5 w-5 rounded-full border border-black/5 bg-[#805d36]" />
+
+                                </div>
+
+                              </div>
+
+                            )}
+
+                          </div>
+
+                        )}
+
+                        <div>
+
+                          <FieldLabel required>
+
+                            Formato
+
+                          </FieldLabel>
+
+                          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+
+                            {technicalPreset.formats.map(
+                              (
+                                option
+                              ) => (
+
+                                <div
+
+                                  key={option.value}
+
+                                  className="relative flex h-12 items-center justify-center rounded-xl border border-emerald-600 bg-emerald-50 px-4 pr-10 text-sm font-semibold text-emerald-800 shadow-[0_0_0_1px_rgba(5,150,105,.08)]"
+
+                                  title="Formato disponible para este producto"
+
+                                >
+
+                                  {option.label}
+
+                                  <span className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+
+                                    ✓
+
+                                  </span>
+
+                                </div>
+
+                              )
+                            )}
+
+                          </div>
+
+                        </div>
+
+                        {technicalPreset.finishes?.length > 0 && (
+
+                          <div>
+
+                            <FieldLabel required>
+
+                              Acabado
+
+                            </FieldLabel>
+
+                            <div className="grid gap-2 sm:grid-cols-3">
+
+                              {technicalPreset.finishes.map(
+                                (
+                                  finish
+                                ) => (
+
+                                  <div
+
+                                    key={finish}
+
+                                    className="relative flex h-11 items-center justify-center rounded-xl border border-emerald-600 bg-emerald-50 px-4 pr-10 text-sm font-semibold text-emerald-800"
+
+                                    title="Acabado disponible para este producto"
+
+                                  >
+
+                                    {finish}
+
+                                    <span className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+
+                                      ✓
+
+                                    </span>
+
+                                  </div>
+
+                                )
+                              )}
+
+                            </div>
+
+                          </div>
+
+                        )}
+
+                        <div>
+
+                          <FieldLabel required>
+
+                            Espesor
+
+                          </FieldLabel>
+
+                          <div className="flex flex-wrap gap-2">
+
+                            {technicalPreset.thicknesses.map(
+                              (
+                                thickness
+                              ) => (
+
+                                <div
+
+                                  key={thickness}
+
+                                  className="relative min-w-[82px] rounded-full border border-emerald-600 bg-emerald-50 px-3 py-2 pr-8 text-center text-xs font-semibold text-emerald-800"
+
+                                  title="Espesor disponible para este producto"
+
+                                >
+
+                                  {thickness} mm
+
+                                  <span className="absolute right-2 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-bold text-white">
+
+                                    ✓
+
+                                  </span>
+
+                                </div>
+
+                              )
+                            )}
+
+                          </div>
+
+                          <p className="mt-3 text-[11px] leading-5 text-neutral-400">
+                            Todas las opciones técnicas pertenecen a la familia de proyecto y quedan habilitadas automáticamente. La combinación final se define en la cotización del proyecto.
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      <aside className="border-t border-black/5 bg-neutral-50/60 p-5 sm:p-6 lg:border-l lg:border-t-0">
+
+                        <div className="overflow-hidden rounded-2xl border border-black/5 bg-white">
+
+                          {technicalPreviewUrl ? (
+
+                            <img
+
+                              src={technicalPreviewUrl}
+
+                              alt={`Vista previa ${form.name || technicalPreset.label}`}
+
+                              className="aspect-[16/9] w-full object-cover"
+
+                            />
+
+                          ) : (
+
+                            <div className="flex aspect-[16/9] items-center justify-center bg-gradient-to-br from-neutral-100 to-neutral-50 px-6 text-center">
+
+                              <div>
+
+                                <p className="text-xs font-semibold text-neutral-600">
+
+                                  Vista previa del producto
+
+                                </p>
+
+                                <p className="mt-1 text-[10px] leading-5 text-neutral-400">
+
+                                  Al agregar una imagen del producto se mostrará aquí.
+
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                          )}
+
+                        </div>
+
+                        <div className="mt-4 rounded-2xl border border-black/5 bg-white p-4">
+
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+
+                            Disponibilidad técnica
+
+                          </p>
+
+                          <div className="mt-4 space-y-4">
+
+                            <div className="grid grid-cols-3 gap-3">
+
+                              <div>
+                                <p className="text-[10px] text-neutral-400">Formatos</p>
+                                <p className="mt-0.5 text-lg font-semibold text-neutral-900">{technicalPreset.formats.length}</p>
+                              </div>
+
+                              <div>
+                                <p className="text-[10px] text-neutral-400">Acabados</p>
+                                <p className="mt-0.5 text-lg font-semibold text-neutral-900">{technicalPreset.finishes?.length || 0}</p>
+                              </div>
+
+                              <div>
+                                <p className="text-[10px] text-neutral-400">Espesores</p>
+                                <p className="mt-0.5 text-lg font-semibold text-neutral-900">{technicalPreset.thicknesses.length}</p>
+                              </div>
+
+                            </div>
+
+                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-3">
+                              <p className="text-xs font-semibold text-emerald-800">Todas las opciones disponibles</p>
+                              <p className="mt-1 text-[10px] leading-5 text-emerald-700">
+                                El producto se guarda como PROJECT_ONLY y utiliza la familia técnica {getProjectFamilyCode(selectedProjectFamily) || PROJECT_FAMILY_CODE_BY_TECHNICAL_FAMILY[technicalFamily]}. Formato, acabado y espesor se especifican al preparar la cotización del proyecto.
+                              </p>
+                            </div>
+
+                          </div>
+
+                        </div>
+
+                      </aside>
+
+                    </div>
+
+                  </section>
+
+                )}
+
                 <section className="rounded-[1.6rem] border border-black/5 bg-white p-5 sm:p-6">
 
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
@@ -7827,6 +9281,17 @@ export default function AdminProductsPage() {
 
                   <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
+                    {technicalPreset ? (
+                      <div className="sm:col-span-2 lg:col-span-2 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-4">
+                        <p className="text-sm font-semibold text-emerald-800">
+                          Producto a pedido · Sin precio
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-emerald-700">
+                          MEG y Labgrade no tienen precio de venta directo. El valor se define según formato, acabado, espesor y condiciones de cada cotización de proyecto.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
                     <label>
 
                       <FieldLabel>
@@ -7922,6 +9387,9 @@ export default function AdminProductsPage() {
                       />
 
                     </label>
+
+                      </>
+                    )}
 
                     <label>
 
@@ -8067,7 +9535,7 @@ export default function AdminProductsPage() {
 
                 </section>
 
-                <section className="rounded-[1.6rem] border border-black/5 bg-white p-5 sm:p-6">
+                                <section className="rounded-[1.6rem] border border-black/5 bg-white p-5 sm:p-6">
 
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
 
@@ -8076,6 +9544,10 @@ export default function AdminProductsPage() {
                   </p>
 
                   <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+                    {!technicalPreset && (
+
+                      <>
 
                     <label>
 
@@ -8221,6 +9693,10 @@ export default function AdminProductsPage() {
 
                     </label>
 
+                      </>
+
+                    )}
+
                     <label>
 
                       <FieldLabel>
@@ -8310,6 +9786,8 @@ export default function AdminProductsPage() {
                       />
 
                     </label>
+
+                    {!technicalPreset && (
 
                     <label>
 
@@ -8532,6 +10010,8 @@ export default function AdminProductsPage() {
                       )}
 
                     </label>
+
+                    )}
 
                     <label>
 

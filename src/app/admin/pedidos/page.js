@@ -80,22 +80,24 @@ export default function AdminPedidosPage() {
   const orders = Array.isArray(result?.orders) ? result.orders : [];
 
   return (
-    <main className="min-h-screen bg-[#f7f6f4] px-4 py-7 text-neutral-950 sm:px-7 lg:px-10">
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        <header className="relative overflow-hidden rounded-[28px] border border-neutral-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#e45e59] via-[#c56b9e] to-[#6953af]" />
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-neutral-400">LAMINATI · BACKOFFICE</p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight">Gestión de pedidos</h1>
-              <p className="mt-1 text-sm text-neutral-500">Pedidos online y del Showroom · búsqueda por número, cliente o SKU.</p></div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/admin/dashboard" className="inline-flex h-11 items-center rounded-full border border-neutral-200 px-5 text-sm font-medium hover:bg-neutral-50">Dashboard</Link>
-              <button type="button" onClick={() => setReload((n) => n + 1)} disabled={loading} className="h-11 rounded-full bg-black px-5 text-sm font-medium text-white disabled:opacity-50">Actualizar</button>
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 text-neutral-950 sm:px-6 lg:px-8">
+      <div className="space-y-5">
+        <header className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+          <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">Laminati · Backoffice</p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">Gestión de pedidos</h1>
+              <p className="mt-1 text-sm text-neutral-500">Pedidos online y del Showroom · búsqueda por número, cliente o SKU.</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Link href="/admin/dashboard" className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50">Dashboard</Link>
+              <button type="button" onClick={() => setReload((n) => n + 1)} disabled={loading} className="h-11 rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50">Actualizar</button>
             </div>
           </div>
         </header>
 
-        <form onSubmit={submit} className="rounded-[26px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7">
+        <form onSubmit={submit} className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
           <h2 className="mb-5 text-base font-semibold">Buscar y filtrar</h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="sm:col-span-2"><Field label="Número, cliente, RUT o código de laminado"><input value={form.search} onChange={(e) => setField("search", e.target.value)} maxLength={120} placeholder="Ej. LMT-..., 668R, Apple Tree..." className={controlClass} /></Field></div>
@@ -113,7 +115,7 @@ export default function AdminPedidosPage() {
           </div>
         </form>
 
-        <section className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 px-5 py-5 sm:px-7">
             <h2 className="text-lg font-semibold">Pedidos registrados</h2>
             <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">{loading ? "Consultando..." : `${pagination?.total ?? 0} resultados`}</span>

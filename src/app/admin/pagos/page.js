@@ -453,7 +453,7 @@ function SummaryCard({
   helper,
 }) {
   return (
-    <div className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)]">
       <div className="flex items-center gap-4">
         <div
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${iconClass}`}
@@ -462,10 +462,10 @@ function SummaryCard({
         </div>
 
         <div>
-          <p className="text-xs text-neutral-500">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
             {title}
           </p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950">
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-black">
             {value}
           </p>
           {helper ? (
@@ -561,7 +561,7 @@ function Dialog({
   return (
     <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl sm:p-8">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
           {eyebrow}
         </p>
         <h2 className="mt-3 text-2xl font-medium tracking-[-0.035em] text-neutral-950">
@@ -1961,20 +1961,22 @@ export default function AdminPaymentsDocumentsPage() {
     );
 
   return (
-    <main className="min-h-screen bg-[#f7f6f4] px-4 py-7 text-neutral-950 sm:px-7 lg:px-8">
-      <div className="mx-auto max-w-[1600px]">
+    <main className="mx-auto w-full max-w-[1500px] px-4 py-6 text-neutral-950 sm:px-6 lg:px-8">
+      <div>
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
           <div className="min-w-0 space-y-5">
-            <header className="rounded-[28px] border border-neutral-200 bg-white px-6 py-6 shadow-sm sm:px-8">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+            <header className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+              <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+              <div className="px-6 py-6 sm:px-7">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
                 {isSeller
                   ? "Laminati · Ventas"
-                  : "Laminati · Administración"}
+                  : "Laminati · Backoffice"}
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-neutral-950">
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
                 Pagos y documentos
               </h1>
-              <p className="mt-2 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-neutral-500">
                 Unifica transferencias, pagos online y documentos tributarios en una sola vista.
               </p>
 
@@ -2007,6 +2009,7 @@ export default function AdminPaymentsDocumentsPage() {
                   )
                 )}
               </div>
+                          </div>
             </header>
 
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -2046,7 +2049,7 @@ export default function AdminPaymentsDocumentsPage() {
               />
             </section>
 
-            <section className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-sm">
+            <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
               <div className="grid gap-3 border-b border-neutral-100 p-4 lg:grid-cols-[minmax(0,1fr)_190px_190px]">
                 <label className="relative block">
                   <Icon
@@ -2405,7 +2408,7 @@ export default function AdminPaymentsDocumentsPage() {
           </div>
 
           <aside className="xl:sticky xl:top-6 xl:self-start">
-            <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
               {!selected ? (
                 <div className="py-16 text-center text-sm text-neutral-400">
                   Selecciona un pedido para ver su detalle.

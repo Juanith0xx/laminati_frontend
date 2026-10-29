@@ -106,17 +106,17 @@ function StatCard({ label, value, detail, tone = "neutral" }) {
   };
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+    <article className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
         {label}
       </p>
-      <p className={`mt-2 text-2xl font-semibold ${tones[tone] || tones.neutral}`}>
+      <p className={`mt-2 text-3xl font-semibold tracking-tight ${tones[tone] || tones.neutral}`}>
         {value}
       </p>
       {detail ? (
-        <p className="mt-1 text-[10px] text-neutral-400">{detail}</p>
+        <p className="mt-1 text-xs text-neutral-500">{detail}</p>
       ) : null}
-    </div>
+    </article>
   );
 }
 
@@ -229,17 +229,18 @@ export default function AdminSessionHistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50/70 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-[1500px] space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+        <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+        <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-              Administración · Seguridad
+            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+              Laminati · Backoffice
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl">
-              Historial de Sesiones
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
+              Historial de sesiones
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
+            <p className="mt-1 max-w-3xl text-sm text-neutral-500">
               Auditoría de inicios de sesión, intentos fallidos y cierres de sesión registrados en Laminatiword.
             </p>
           </div>
@@ -248,11 +249,12 @@ export default function AdminSessionHistoryPage() {
             type="button"
             onClick={() => loadHistory(pagination.page || 1)}
             disabled={loading}
-            className="h-10 rounded-xl border border-neutral-200 bg-white px-4 text-xs font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-100 disabled:opacity-50"
+            className="h-11 rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
           >
-            Actualizar
+            {loading ? "Actualizando..." : "Actualizar"}
           </button>
-        </header>
+        </div>
+      </section>
 
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <StatCard
@@ -283,13 +285,13 @@ export default function AdminSessionHistoryPage() {
           />
         </section>
 
-        <section className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+        <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
           <form
             onSubmit={applySearch}
             className="grid gap-3 xl:grid-cols-[minmax(220px,1.4fr)_repeat(5,minmax(130px,.8fr))_auto] xl:items-end"
           >
             <label className="space-y-1.5">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+              <span className="text-xs font-semibold text-neutral-700">
                 Usuario, correo o IP
               </span>
               <div className="flex gap-2">
@@ -297,11 +299,11 @@ export default function AdminSessionHistoryPage() {
                   value={searchInput}
                   onChange={(event) => setSearchInput(event.target.value)}
                   placeholder="Buscar..."
-                  className="h-10 min-w-0 flex-1 rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none transition focus:border-black"
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
                 />
                 <button
                   type="submit"
-                  className="h-10 rounded-xl bg-black px-4 text-xs font-semibold text-white transition hover:bg-neutral-800"
+                  className="h-11 rounded-xl bg-black px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800 hover:!text-white"
                 >
                   Buscar
                 </button>
@@ -309,7 +311,7 @@ export default function AdminSessionHistoryPage() {
             </label>
 
             <label className="space-y-1.5">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+              <span className="text-xs font-semibold text-neutral-700">
                 Evento
               </span>
               <select
@@ -320,7 +322,7 @@ export default function AdminSessionHistoryPage() {
                     event_type: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
               >
                 <option value="ALL">Todos</option>
                 <option value="LOGIN_SUCCESS">Inicio exitoso</option>
@@ -330,7 +332,7 @@ export default function AdminSessionHistoryPage() {
             </label>
 
             <label className="space-y-1.5">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+              <span className="text-xs font-semibold text-neutral-700">
                 Resultado
               </span>
               <select
@@ -341,7 +343,7 @@ export default function AdminSessionHistoryPage() {
                     success: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
               >
                 <option value="ALL">Todos</option>
                 <option value="true">Exitoso</option>
@@ -350,7 +352,7 @@ export default function AdminSessionHistoryPage() {
             </label>
 
             <label className="space-y-1.5">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+              <span className="text-xs font-semibold text-neutral-700">
                 Dispositivo
               </span>
               <select
@@ -361,7 +363,7 @@ export default function AdminSessionHistoryPage() {
                     device_type: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
               >
                 <option value="ALL">Todos</option>
                 <option value="DESKTOP">Desktop</option>
@@ -371,7 +373,7 @@ export default function AdminSessionHistoryPage() {
             </label>
 
             <label className="space-y-1.5">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+              <span className="text-xs font-semibold text-neutral-700">
                 Desde
               </span>
               <input
@@ -383,12 +385,12 @@ export default function AdminSessionHistoryPage() {
                     date_from: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
               />
             </label>
 
             <label className="space-y-1.5">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+              <span className="text-xs font-semibold text-neutral-700">
                 Hasta
               </span>
               <input
@@ -400,7 +402,7 @@ export default function AdminSessionHistoryPage() {
                     date_to: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs outline-none focus:border-black"
+                className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black"
               />
             </label>
 
@@ -408,7 +410,7 @@ export default function AdminSessionHistoryPage() {
               type="button"
               onClick={clearFilters}
               disabled={!hasFilters && !searchInput}
-              className="h-10 rounded-xl border border-neutral-200 px-4 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
+              className="h-11 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
             >
               Limpiar
             </button>
@@ -416,18 +418,18 @@ export default function AdminSessionHistoryPage() {
         </section>
 
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         ) : null}
 
-        <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-2 border-b border-neutral-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
+          <div className="flex flex-col gap-2 border-b border-neutral-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
-              <h2 className="text-sm font-semibold text-neutral-950">
+              <h2 className="text-lg font-semibold text-black">
                 Eventos registrados
               </h2>
-              <p className="mt-0.5 text-[10px] text-neutral-400">
+              <p className="mt-0.5 text-xs text-neutral-500">
                 {Number(pagination.total || 0)} registro{Number(pagination.total || 0) === 1 ? "" : "s"}
               </p>
             </div>
@@ -454,7 +456,7 @@ export default function AdminSessionHistoryPage() {
               <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full min-w-[1050px] border-collapse text-left">
                   <thead className="bg-neutral-50/80">
-                    <tr className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                    <tr className="text-xs font-semibold text-neutral-700">
                       <th className="px-5 py-3">Fecha</th>
                       <th className="px-5 py-3">Usuario</th>
                       <th className="px-5 py-3">Evento</th>
@@ -568,7 +570,7 @@ export default function AdminSessionHistoryPage() {
                 type="button"
                 onClick={() => loadHistory(Math.max(1, Number(pagination.page || 1) - 1))}
                 disabled={loading || Number(pagination.page || 1) <= 1}
-                className="h-9 rounded-xl border border-neutral-200 px-4 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
+                className="h-10 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
               >
                 Anterior
               </button>
@@ -576,14 +578,13 @@ export default function AdminSessionHistoryPage() {
                 type="button"
                 onClick={() => loadHistory(Number(pagination.page || 1) + 1)}
                 disabled={loading || Number(pagination.page || 1) >= Number(pagination.total_pages || 1)}
-                className="h-9 rounded-xl border border-neutral-200 px-4 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
+                className="h-10 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
               >
                 Siguiente
               </button>
             </div>
           </div>
         </section>
-      </div>
-    </div>
+    </main>
   );
 }

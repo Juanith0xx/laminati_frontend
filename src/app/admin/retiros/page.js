@@ -1038,20 +1038,21 @@ export default function AdminRetirosPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-72px)] bg-[#f5f4f1] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1500px] space-y-7">
-        <section className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="space-y-5">
+        <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+          <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                Backoffice Laminati
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                Laminati · Backoffice
               </p>
 
-              <h1 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-neutral-950 sm:text-4xl">
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
                 Retiros y lector QR
               </h1>
 
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-neutral-500">
+              <p className="mt-1 max-w-3xl text-sm text-neutral-500">
                 Prepara los pedidos, visualiza el QR asociado a la compra
                 y valida la entrega con la cámara del equipo.
               </p>
@@ -1061,7 +1062,7 @@ export default function AdminRetirosPage() {
               {isAdmin ? (
                 <Link
                   href="/admin"
-                  className="flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-black"
+                  className="flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-black"
                 >
                   Carga de imágenes
                 </Link>
@@ -1069,14 +1070,14 @@ export default function AdminRetirosPage() {
 
               <Link
                 href="/admin/pagos"
-                className="flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-black"
+                className="flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-black"
               >
                 Pagos
               </Link>
 
               <Link
                 href="/"
-                className="flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-black"
+                className="flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-black"
               >
                 Ver tienda
               </Link>
@@ -1086,7 +1087,7 @@ export default function AdminRetirosPage() {
                 onClick={
                   handleLogout
                 }
-                className="flex h-11 items-center justify-center rounded-full bg-black px-5 text-xs font-medium text-white transition hover:bg-neutral-800"
+                className="flex h-11 items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
               >
                 Cerrar sesión
               </button>
@@ -1110,7 +1111,7 @@ export default function AdminRetirosPage() {
           </section>
         )}
 
-        <section className="rounded-[2rem] border border-black/5 bg-white p-3 shadow-sm">
+        <section className="rounded-[26px] border border-black/5 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,.04)]">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -1162,7 +1163,7 @@ export default function AdminRetirosPage() {
         {activeTab ===
         "ORDERS" ? (
           <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="overflow-hidden rounded-[2rem] border border-black/5 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
               <div className="border-b border-neutral-100 px-6 py-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
                   Pedidos pagados

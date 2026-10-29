@@ -19,10 +19,10 @@ import {
 } from "@/services/showroom.service";
 
 const INPUT =
-  "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100";
+  "h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-black/20 focus:ring-4 focus:ring-black/[.04]";
 
 const LABEL =
-  "mb-1.5 block text-[11px] font-semibold text-neutral-600";
+  "mb-2 block text-xs font-semibold text-neutral-700";
 
 const ABET_BRAND =
   "ABET LAMINATI";
@@ -541,7 +541,7 @@ function Section({
   action,
 }) {
   return (
-    <section className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           {eyebrow ? (
@@ -613,7 +613,7 @@ function LineEditor({
     };
 
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4 sm:p-5">
+    <article className="rounded-[22px] border border-black/5 bg-neutral-50/70 p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -621,7 +621,7 @@ function LineEditor({
           </span>
 
           <select
-            className="rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm font-medium"
+            className="h-10 rounded-full border border-black/10 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
             value={
               line.line_type
             }
@@ -1062,7 +1062,7 @@ function LineEditor({
         </Field>
 
         <Field label="Total línea">
-          <div className="flex min-h-[42px] items-center rounded-xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-900">
+          <div className="flex min-h-11 items-center rounded-2xl border border-black/10 bg-white px-3.5 text-sm font-semibold text-neutral-900">
             {money(
               total
             )}
@@ -1081,7 +1081,7 @@ function LineEditor({
         !isProduct
       ) &&
       line.italy_price_usd ? (
-        <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+        <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-3.5 py-3 text-xs text-emerald-800">
           {isProduct
             ? "Valor Italia de esta línea: "
             : "Valor Italia de este concepto: "}
@@ -2161,39 +2161,42 @@ export default function ProjectQuotationEditor({
     loading
   ) {
     return (
-      <div className="p-8 text-sm text-neutral-500">
-        Cargando cotización de proyecto...
-      </div>
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="rounded-[26px] border border-black/5 bg-white p-6 text-sm text-neutral-500 shadow-[0_1px_2px_rgba(0,0,0,.04)]">
+          Cargando cotización de proyecto...
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f5f2] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1500px]">
-        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+        <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+        <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-              Laminati · Cotizaciones · Proyecto
+            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+              Laminati · Backoffice
             </p>
 
-            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-neutral-950">
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
               {editing
                 ? "Editar cotización de proyecto"
                 : "Nueva cotización de proyecto"}
             </h1>
 
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-500">
               Los productos pueden venir del catálogo o ingresarse manualmente. El Precio Italia se guarda como snapshot privado para Gerencia Italia.
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={() =>
                 router.back()
               }
-              className="rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-neutral-700"
+              className="h-11 rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
             >
               Cancelar
             </button>
@@ -2206,7 +2209,7 @@ export default function ProjectQuotationEditor({
               onClick={
                 save
               }
-              className="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="h-11 rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving
                 ? "Guardando..."
@@ -2215,15 +2218,16 @@ export default function ProjectQuotationEditor({
                   : "Crear cotización"}
             </button>
           </div>
-        </header>
+        </div>
+      </section>
 
         {error ? (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-600">
+          <div className="rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-600 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
             {error}
           </div>
         ) : null}
 
-        <div className="space-y-5">
+      <div className="space-y-5">
           <Section
             eyebrow="Proyecto"
             title="Datos de la cotización"
@@ -2334,11 +2338,11 @@ export default function ProjectQuotationEditor({
                           type
                         )
                       }
-                      className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                      className={`h-11 rounded-2xl border px-4 text-sm font-semibold transition ${
                         documentType ===
                         type
                           ? "border-black bg-black text-white"
-                          : "border-neutral-200 bg-white text-neutral-700"
+                          : "border-black/10 bg-white text-neutral-700 hover:bg-neutral-50"
                       }`}
                     >
                       {type ===
@@ -2351,7 +2355,7 @@ export default function ProjectQuotationEditor({
               </div>
             </div>
 
-            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-[22px] border border-black/5 bg-neutral-50/70 p-4">
               <input
                 type="checkbox"
                 className="mt-1 h-4 w-4"
@@ -2411,7 +2415,7 @@ export default function ProjectQuotationEditor({
 
               {customerResults.length >
               0 ? (
-                <div className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl">
+                <div className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-[22px] border border-black/10 bg-white p-2 shadow-xl">
                   {customerResults.map(
                     (
                       item,
@@ -2429,7 +2433,7 @@ export default function ProjectQuotationEditor({
                             item
                           )
                         }
-                        className="block w-full rounded-xl px-4 py-3 text-left hover:bg-neutral-50"
+                        className="block w-full rounded-2xl px-4 py-3 text-left transition hover:bg-neutral-50"
                       >
                         <strong className="block text-sm text-neutral-900">
                           {item.name ||
@@ -2659,7 +2663,7 @@ export default function ProjectQuotationEditor({
                           product.id ||
                           product.product_id
                         }
-                        className="flex items-center justify-between gap-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+                        className="flex items-center justify-between gap-4 rounded-[20px] border border-black/5 bg-neutral-50/70 px-4 py-3"
                       >
                         <div>
                           <strong className="block text-sm text-neutral-900">
@@ -2686,7 +2690,7 @@ export default function ProjectQuotationEditor({
                               product
                             )
                           }
-                          className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold"
+                          className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
                         >
                           Agregar
                         </button>
@@ -2710,7 +2714,7 @@ export default function ProjectQuotationEditor({
                       "PRODUCT"
                     )
                   }
-                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium"
+                  className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
                 >
                   + Producto manual
                 </button>
@@ -2722,7 +2726,7 @@ export default function ProjectQuotationEditor({
                       "SERVICE"
                     )
                   }
-                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium"
+                  className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
                 >
                   + Servicio
                 </button>
@@ -2734,7 +2738,7 @@ export default function ProjectQuotationEditor({
                       "OTHER"
                     )
                   }
-                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium"
+                  className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
                 >
                   + Otro
                 </button>
@@ -2832,8 +2836,7 @@ export default function ProjectQuotationEditor({
               </div>
             </Section>
           </div>
-        </div>
       </div>
-    </div>
+    </main>
   );
 }

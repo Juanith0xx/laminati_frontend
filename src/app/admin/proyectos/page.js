@@ -262,31 +262,34 @@ export default function AdminProjectsPage() {
 
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+        <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+        <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-neutral-400">
-            Contenido
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+            Laminati · Backoffice
           </p>
 
-          <h1 className="mt-1 text-3xl font-semibold tracking-[-0.045em] text-black sm:text-4xl">
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
             Proyectos
           </h1>
 
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
+          <p className="mt-1 max-w-2xl text-sm text-neutral-500">
             Administra la vitrina de proyectos, fotografías, materiales utilizados y publicación pública.
           </p>
         </div>
 
         <Link
           href="/admin/proyectos/nuevo"
-          className="inline-flex w-fit items-center rounded-full bg-black px-5 py-3 text-sm font-semibold !text-white shadow-sm transition hover:bg-neutral-800"
+          className="inline-flex h-11 w-fit items-center rounded-full bg-black px-5 text-sm font-semibold !text-white shadow-sm transition hover:bg-neutral-800"
         >
           + Nuevo proyecto
         </Link>
-      </div>
+        </div>
+      </section>
 
-      <div className="mt-7 grid gap-3 rounded-[22px] border border-neutral-200 bg-white p-4 shadow-sm md:grid-cols-[1.4fr_0.7fr_0.7fr]">
+      <section className="grid gap-4 rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6 md:grid-cols-[1.4fr_0.7fr_0.7fr]">
         <input
           value={
             search
@@ -369,27 +372,27 @@ export default function AdminProjectsPage() {
             )
           )}
         </select>
-      </div>
+      </section>
 
-      <div className="mt-5 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-neutral-400">
           {total} {total === 1 ? "proyecto" : "proyectos"}
         </p>
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       ) : null}
 
       {loading ? (
-        <div className="mt-5 rounded-[22px] border border-neutral-200 bg-white px-6 py-16 text-center text-sm text-neutral-400">
+        <div className="rounded-[26px] border border-black/5 bg-white px-6 py-16 text-center text-sm text-neutral-400">
           Cargando proyectos...
         </div>
       ) : projects.length ===
         0 ? (
-        <div className="mt-5 rounded-[22px] border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
+        <div className="rounded-[26px] border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
           <p className="text-lg font-semibold text-black">
             No hay proyectos para mostrar
           </p>
@@ -399,7 +402,7 @@ export default function AdminProjectsPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-5 grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           {projects.map(
             (
               project
@@ -408,7 +411,7 @@ export default function AdminProjectsPage() {
                 key={
                   project.id
                 }
-                className="group overflow-hidden rounded-[22px] border border-neutral-200 bg-white shadow-sm"
+                className="group overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]"
               >
                 <div className="grid min-h-[220px] sm:grid-cols-[220px_1fr]">
                   <div className="relative min-h-[210px] bg-neutral-100">
@@ -699,6 +702,6 @@ export default function AdminProjectsPage() {
           </div>
         </div>
       ) : null}
-    </div>
+    </main>
   );
 }

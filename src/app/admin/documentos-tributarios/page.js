@@ -220,13 +220,13 @@ function SummaryCard({
   helper,
 }) {
   return (
-    <article className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm">
+    <article className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
             {title}
           </p>
-          <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-neutral-950">
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-black">
             {value}
           </p>
           <p className="mt-1 text-xs text-neutral-400">
@@ -595,18 +595,20 @@ export default function TaxDocumentsHistoryPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f7f6f4] px-4 py-7 text-neutral-950 sm:px-7 lg:px-8">
-      <div className="mx-auto max-w-[1600px]">
+    <main className="mx-auto w-full max-w-[1500px] px-4 py-6 text-neutral-950 sm:px-6 lg:px-8">
+      <div>
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
           <div className="min-w-0 space-y-5">
-            <header className="rounded-[28px] border border-neutral-200 bg-white px-6 py-6 shadow-sm sm:px-8">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                Laminati · Administración
+            <header className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+              <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+              <div className="px-6 py-6 sm:px-7">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                Laminati · Backoffice
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-neutral-950">
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
                 Documentos tributarios
               </h1>
-              <p className="mt-2 max-w-3xl text-sm text-neutral-500">
+              <p className="mt-1 max-w-3xl text-sm text-neutral-500">
                 Histórico consolidado de facturas y boletas emitidas desde Laminatiword y directamente desde Relbase.
               </p>
 
@@ -634,6 +636,7 @@ export default function TaxDocumentsHistoryPage() {
                   </button>
                 ))}
               </div>
+                          </div>
             </header>
 
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -681,7 +684,7 @@ export default function TaxDocumentsHistoryPage() {
               />
             </section>
 
-            <section className="rounded-[26px] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+            <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:p-6">
               <div className="grid gap-4 xl:grid-cols-[minmax(280px,1.4fr)_160px_160px_minmax(280px,1fr)_150px] xl:items-end">
                 <label className="block">
                   <span className="mb-2 block text-[11px] font-semibold text-neutral-700">
@@ -698,7 +701,7 @@ export default function TaxDocumentsHistoryPage() {
                         setQuery(event.target.value)
                       }
                       placeholder="Buscar folio, cliente, RUT u orden..."
-                      className="h-12 w-full rounded-2xl border border-neutral-200 bg-white pl-11 pr-4 text-sm text-neutral-900 shadow-[0_1px_2px_rgba(0,0,0,0.03)] outline-none transition placeholder:text-neutral-400 hover:border-neutral-300 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/5"
+                      className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-11 pr-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-black"
                     />
                   </span>
                 </label>
@@ -716,7 +719,7 @@ export default function TaxDocumentsHistoryPage() {
                       setPage(1);
                       setSelectedId(null);
                     }}
-                    className="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-800 outline-none transition hover:border-neutral-300 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/5"
+                    className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm text-neutral-800 outline-none transition focus:border-black"
                   >
                     <option value="ALL">
                       Todos los orígenes
@@ -743,7 +746,7 @@ export default function TaxDocumentsHistoryPage() {
                       setPage(1);
                       setSelectedId(null);
                     }}
-                    className="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-800 outline-none transition hover:border-neutral-300 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/5"
+                    className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm text-neutral-800 outline-none transition focus:border-black"
                   >
                     <option value="ALL">
                       Todos los estados
@@ -827,7 +830,7 @@ export default function TaxDocumentsHistoryPage() {
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-sm">
+            <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3 sm:px-5">
                 <p className="text-xs text-neutral-400">
                   {integer(pagination.total)} documentos encontrados
@@ -1048,7 +1051,7 @@ export default function TaxDocumentsHistoryPage() {
           </div>
 
           <aside className="xl:sticky xl:top-24 xl:self-start">
-            <section className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-sm">
+            <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
               <div className="border-b border-neutral-100 px-5 py-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
                   Detalle tributario
