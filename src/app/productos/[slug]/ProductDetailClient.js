@@ -1426,6 +1426,28 @@ product?.brand ||
 .toLowerCase() ===
 "karikal";
 
+const isKisafixAdhesive =
+
+(
+String(
+product?.brand_slug ||
+product?.brand ||
+""
+)
+.trim()
+.toLowerCase() ===
+"kisafix"
+) &&
+(
+String(
+product?.category ||
+""
+)
+.trim()
+.toLowerCase() ===
+"adhesivos"
+);
+
 /* =========================================*
 
 *     DESCRIPCIÓN*
@@ -3797,6 +3819,26 @@ tier.unit_price
 
 *                =============================== */}
 
+{isKisafixAdhesive ? (
+
+<div className="mt-4">
+
+<img
+
+src="/images/origins/made-in-brasil.png"
+
+alt="Made in Brasil"
+
+className="h-auto w-[150px] object-contain sm:w-[165px]"
+
+loading="eager"
+
+/>
+
+</div>
+
+) : (
+
 <div className="mt-4 flex items-center gap-4">
 
 <span className="text-xs font-medium text-neutral-500">
@@ -3836,6 +3878,8 @@ loading="eager"
 )}
 
 </div>
+
+)}
 
 <p className="mt-3 text-xs font-semibold leading-5 text-red-600">
 
