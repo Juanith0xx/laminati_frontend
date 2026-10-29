@@ -3881,11 +3881,15 @@ loading="eager"
 
 )}
 
+{!isKisafixAdhesive && (
+
 <p className="mt-3 text-xs font-semibold leading-5 text-red-600">
 
 {toneNotice}
 
 </p>
+
+)}
 
 </div>
 
