@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -134,14 +133,9 @@ export default function Footer() {
               className="inline-block"
               aria-label="Ir al inicio"
             >
-              <Image
-                src="/images/logo-laminati-world.png"
-                alt="Laminati World"
-                width={2047}
-                height={655}
-                priority={false}
-                className="h-auto w-[215px] max-w-full sm:w-[230px]"
-              />
+              <span className="text-xl font-semibold tracking-tight text-neutral-950 sm:text-2xl">
+                Laminati Chile SPA.
+              </span>
             </Link>
 
             <p className="mt-6 max-w-sm text-sm leading-6 text-neutral-500">
@@ -300,7 +294,7 @@ export default function Footer() {
 
         <div className="mt-10 flex flex-col gap-3 border-t border-neutral-100 pt-5 text-xs text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © 2026 Laminati World.
+            © 2026 Laminati Chile SPA.
           </p>
 
           <p>
