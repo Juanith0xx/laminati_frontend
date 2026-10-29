@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -28,11 +29,9 @@ const CONTACT_ADDRESS_REFERENCE =
   "Al costado de Construmart de Departamental";
 
 const CONTACT_MAP_URL =
-  "https://www.google.com/maps/search/?api=1&query=Av.%20Santa%20Rosa%205413%2C%20San%20Miguel%2C%20Chile";
+  "https://www.google.com/maps/search/?api=1&query=Av.%20Santa%20Rosa%205415%2C%20San%20Miguel%2C%20Chile";
 
-function MailIcon({
-  className = "",
-}) {
+function MailIcon({ className = "" }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -44,21 +43,13 @@ function MailIcon({
       className={className}
       aria-hidden="true"
     >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="14"
-        rx="2.5"
-      />
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
       <path d="m4 7 8 6 8-6" />
     </svg>
   );
 }
 
-function PhoneIcon({
-  className = "",
-}) {
+function PhoneIcon({ className = "" }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -75,9 +66,7 @@ function PhoneIcon({
   );
 }
 
-function MapPinIcon({
-  className = "",
-}) {
+function MapPinIcon({ className = "" }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -90,18 +79,31 @@ function MapPinIcon({
       aria-hidden="true"
     >
       <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
-      <circle
-        cx="12"
-        cy="10"
-        r="2.6"
-      />
+      <circle cx="12" cy="10" r="2.6" />
     </svg>
   );
 }
 
-function ContactIcon({
-  children,
-}) {
+function ShieldLockIcon({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 3 20 6v5c0 5.2-3.4 8.6-8 10-4.6-1.4-8-4.8-8-10V6l8-3Z" />
+      <rect x="9" y="11" width="6" height="5" rx="1" />
+      <path d="M10.5 11V9.5a1.5 1.5 0 0 1 3 0V11" />
+    </svg>
+  );
+}
+
+function ContactIcon({ children }) {
   return (
     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/[0.06] bg-neutral-50 text-neutral-700">
       {children}
@@ -110,16 +112,13 @@ function ContactIcon({
 }
 
 export default function Footer() {
-  const pathname =
-    usePathname();
+  const pathname = usePathname();
 
   if (
     HIDDEN_PREFIXES.some(
       (prefix) =>
         pathname === prefix ||
-        pathname.startsWith(
-          `${prefix}/`
-        )
+        pathname.startsWith(`${prefix}/`)
     )
   ) {
     return null;
@@ -128,16 +127,24 @@ export default function Footer() {
   return (
     <footer className="mx-auto mt-12 w-full max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-8">
       <div className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-white px-6 py-8 shadow-[0_1px_2px_rgba(0,0,0,.03)] sm:px-8 lg:px-10">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.55fr_.7fr_.7fr_.7fr]">
-          <div>
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.55fr_.7fr_.7fr_.7fr] lg:gap-0">
+          <div className="lg:pr-10">
             <Link
               href="/"
-              className="text-sm font-semibold uppercase tracking-[0.36em] text-neutral-950"
+              className="inline-block"
+              aria-label="Ir al inicio"
             >
-              Laminati 
+              <Image
+                src="/images/logo-laminati-world.png"
+                alt="Laminati World"
+                width={2047}
+                height={655}
+                priority={false}
+                className="h-auto w-[215px] max-w-full sm:w-[230px]"
+              />
             </Link>
 
-            <p className="mt-4 max-w-sm text-sm leading-6 text-neutral-500">
+            <p className="mt-6 max-w-sm text-sm leading-6 text-neutral-500">
               Representantes oficiales de Abet Laminati · Distribución Karikal.
             </p>
 
@@ -207,7 +214,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div>
+          <div className="lg:border-l lg:border-neutral-100 lg:px-10">
             <p className="text-xs font-semibold text-neutral-950">
               Productos
             </p>
@@ -229,7 +236,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div>
+          <div className="lg:border-l lg:border-neutral-100 lg:px-10">
             <p className="text-xs font-semibold text-neutral-950">
               Empresa
             </p>
@@ -249,9 +256,10 @@ export default function Footer() {
                 Contacto
               </Link>
             </div>
+
           </div>
 
-          <div>
+          <div className="lg:border-l lg:border-neutral-100 lg:pl-10">
             <p className="text-xs font-semibold text-neutral-950">
               Ayuda
             </p>
@@ -271,12 +279,28 @@ export default function Footer() {
                 Cotizaciones y soporte
               </Link>
             </div>
+
+            <div className="mt-16 w-full">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-900/[0.06] bg-emerald-50/70 text-emerald-700">
+                  <ShieldLockIcon className="h-[18px] w-[18px]" />
+                </span>
+
+                <p className="text-sm font-semibold text-neutral-950">
+                  Compra segura
+                </p>
+              </div>
+
+              <p className="mt-2 max-w-[210px] text-xs leading-5 text-neutral-500">
+                Protegemos tus datos durante todo el proceso de compra.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 border-t border-neutral-100 pt-5 text-xs text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-3 border-t border-neutral-100 pt-5 text-xs text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © 2026 Laminati.
+            © 2026 Laminati World.
           </p>
 
           <p>

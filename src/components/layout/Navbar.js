@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
@@ -925,25 +927,21 @@ export default function Navbar() {
           {/* LOGO */}
 
           <Link
-
             href="/"
-
+            aria-label="Ir al inicio"
             onMouseEnter={() =>
-
-              setProductsOpen(
-
-                false
-
-              )
-
+              setProductsOpen(false)
             }
-
-            className="text-xl font-semibold tracking-[0.12em] sm:text-2xl"
-
+            className="flex shrink-0 items-center"
           >
-
-            LAMINATI
-
+            <Image
+              src="/images/logo-laminati-world.png"
+              alt="Laminati World"
+              width={600}
+              height={180}
+              priority
+              className="h-auto w-[125px] object-contain sm:w-[140px] md:w-[155px] lg:w-[175px] xl:w-[190px]"
+            />
           </Link>
 
           {/* =====================================
