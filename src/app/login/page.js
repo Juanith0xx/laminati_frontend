@@ -65,7 +65,6 @@ export default function LoginPage() {
 
       if (
         !response?.success ||
-        !response?.token ||
         !response?.user
       ) {
         throw new Error(
