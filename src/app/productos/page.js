@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getProducts } from "@/services/products.service";
+import CollectionComingSoon from "@/components/catalog/CollectionComingSoon";
 
 function formatSlugLabel(value = "") {
   return value
@@ -919,6 +920,16 @@ export default async function ProductsPage({ searchParams }) {
         )
       : [];
 
+  const showKarikalComingSoon =
+    String(
+      query.brand ||
+      ""
+    )
+      .trim()
+      .toLowerCase() ===
+      "karikal" &&
+    products.length === 0;
+
   return (
     <main className="bg-white">
       <div className="mx-auto max-w-[1900px] px-5 pb-20 pt-10 sm:px-8 lg:px-10 lg:pb-28 lg:pt-14">
@@ -984,6 +995,15 @@ export default async function ProductsPage({ searchParams }) {
           <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-5 text-sm text-red-700">
             {errorMessage}
           </div>
+        ) : showKarikalComingSoon ? (
+          <CollectionComingSoon
+            brand="Karikal"
+            logo="/images/brands/karikal-logo.png"
+            title="Colección en preparación"
+            description="Estamos preparando nuestra selección de superficies Karikal para incorporarla próximamente al catálogo."
+            productsHref="/colecciones"
+            contactHref="/contacto"
+          />
         ) : products.length === 0 ? (
           <div className="rounded-2xl border border-black/5 bg-neutral-50 px-6 py-12 text-center">
             <p className="text-sm font-medium text-neutral-700">
