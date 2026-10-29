@@ -407,6 +407,30 @@ function IconClose({
   );
 }
 
+function IconChevron({
+  className = "",
+  direction = "left",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {direction === "right" ? (
+        <path d="m9 6 6 6-6 6" />
+      ) : (
+        <path d="m15 6-6 6 6 6" />
+      )}
+    </svg>
+  );
+}
+
 function IconDashboard({
   className = "",
 }) {
@@ -619,6 +643,9 @@ function NavigationItem({
   item,
   pathname,
   onNavigate,
+  collapsed = false,
+  onShowTooltip = null,
+  onHideTooltip = null,
 }) {
   const excluded =
     Array.isArray(item.excludePaths) &&
@@ -641,40 +668,88 @@ function NavigationItem({
 
   const Icon = item.icon;
 
+  const handleMouseEnter =
+    (event) => {
+      if (
+        collapsed &&
+        onShowTooltip
+      ) {
+        onShowTooltip(
+          item.label,
+          event.currentTarget
+        );
+      }
+    };
+
   return (
     <Link
       href={item.href}
       onClick={onNavigate}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={
+        collapsed
+          ? onHideTooltip
+          : undefined
+      }
+      onFocus={handleMouseEnter}
+      onBlur={
+        collapsed
+          ? onHideTooltip
+          : undefined
+      }
       aria-current={
         active
           ? "page"
           : undefined
       }
-      className={`group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition ${
+      aria-label={
+        collapsed
+          ? item.label
+          : undefined
+      }
+      className={`group relative flex items-center text-sm transition-all duration-200 ${
+        collapsed
+          ? "mx-auto h-11 w-11 justify-center rounded-xl p-0"
+          : "min-h-11 gap-3 rounded-xl px-3.5 py-2.5"
+      } ${
         active
-          ? "bg-black shadow-sm"
+          ? "bg-black text-white shadow-sm"
           : "text-neutral-600 hover:bg-neutral-100 hover:text-black"
       }`}
     >
       <span
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${
-          active
-            ? "bg-white/10 !text-white"
-            : "bg-neutral-100 text-neutral-500 group-hover:bg-white group-hover:text-black"
-        }`}
-      >
-        <Icon className="h-[17px] w-[17px]" />
-      </span>
-
-      <span
-        className={`font-medium ${
+        className={`flex shrink-0 items-center justify-center transition ${
+          collapsed
+            ? "h-9 w-9 rounded-[10px] bg-transparent"
+            : "h-8 w-8 rounded-lg"
+        } ${
           active
             ? "!text-white"
-            : "text-neutral-600 group-hover:text-black"
+            : collapsed
+              ? "text-neutral-500 group-hover:text-black"
+              : "bg-neutral-100 text-neutral-500 group-hover:bg-white group-hover:text-black"
         }`}
       >
-        {item.label}
+        <Icon
+          className={
+            collapsed
+              ? "h-[18px] w-[18px]"
+              : "h-[17px] w-[17px]"
+          }
+        />
       </span>
+
+      {!collapsed && (
+        <span
+          className={`font-medium ${
+            active
+              ? "!text-white"
+              : "text-neutral-600 group-hover:text-black"
+          }`}
+        >
+          {item.label}
+        </span>
+      )}
     </Link>
   );
 }
@@ -688,64 +763,141 @@ function SidebarContent({
   onLogout,
   navigation,
   role,
+  collapsed = false,
+  onToggleCollapse = null,
+  onShowTooltip = null,
+  onHideTooltip = null,
 }) {
+  const profileActive =
+    pathname === "/admin/perfil";
+
+  const showCompactTooltip =
+    (label, target) => {
+      if (
+        collapsed &&
+        onShowTooltip
+      ) {
+        onShowTooltip(
+          label,
+          target
+        );
+      }
+    };
+
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-neutral-100 px-6 py-7">
-        <Link
-          href="/admin/dashboard"
-          onClick={
-            onNavigate
-          }
-          className="block"
+      <div
+        className={`border-b border-neutral-100 transition-all duration-300 ${
+          collapsed
+            ? "px-2.5 py-3"
+            : "px-5 py-5"
+        }`}
+      >
+        <div
+          className={`flex ${
+            collapsed
+              ? "flex-col items-center gap-2"
+              : "items-start justify-between gap-3"
+          }`}
         >
-          <p className="text-[21px] font-semibold tracking-[0.22em] text-black">
-            LAMINATI
-          </p>
+          <Link
+            href="/admin/dashboard"
+            onClick={onNavigate}
+            className={
+              collapsed
+                ? "flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-neutral-50"
+                : "min-w-0 flex-1"
+            }
+            aria-label="Ir al dashboard"
+          >
+            {collapsed ? (
+              <img
+                src="/icon.png"
+                alt="Laminati World"
+                className="h-9 w-9 object-contain"
+                loading="eager"
+              />
+            ) : (
+              <img
+                src="/images/logo-laminati-world.png"
+                alt="Laminati World"
+                className="h-auto w-[160px] max-w-full object-contain"
+                loading="eager"
+              />
+            )}
+          </Link>
 
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+          {onToggleCollapse && (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className={`flex shrink-0 items-center justify-center border border-black/[0.08] bg-white text-neutral-600 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition hover:border-black/15 hover:bg-neutral-50 hover:text-black ${
+                collapsed
+                  ? "h-9 w-9 rounded-xl"
+                  : "h-9 w-9 rounded-full"
+              }`}
+              aria-label={
+                collapsed
+                  ? "Expandir menú administrativo"
+                  : "Ocultar menú administrativo"
+              }
+              title={
+                collapsed
+                  ? "Expandir menú"
+                  : "Ocultar menú"
+              }
+            >
+              <IconChevron
+                direction={
+                  collapsed
+                    ? "right"
+                    : "left"
+                }
+                className="h-4 w-4"
+              />
+            </button>
+          )}
+        </div>
+
+        {!collapsed && (
+          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
             {normalizeRole(role) === "VENDEDOR"
               ? "Perfil vendedor"
               : "Administración"}
           </p>
-        </Link>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5">
-        <nav className="space-y-6">
+      <div
+        className={`flex-1 overflow-y-auto py-4 transition-all duration-300 ${
+          collapsed
+            ? "admin-sidebar-scrollbar-hidden px-1.5"
+            : "px-4"
+        }`}
+      >
+        <nav className={collapsed ? "space-y-2.5" : "space-y-6"}>
           {navigation.map(
-            (
-              section
-            ) => (
+            (section) => (
               <div
-                key={
-                  section.title
-                }
+                key={section.title}
               >
-                <p className="mb-2.5 px-3 text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
-                  {
-                    section.title
-                  }
-                </p>
+                {!collapsed && (
+                  <p className="mb-2.5 px-3 text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                    {section.title}
+                  </p>
+                )}
 
-                <div className="space-y-1">
+                <div className={collapsed ? "space-y-1.5" : "space-y-1"}>
                   {section.items.map(
-                    (
-                      item
-                    ) => (
+                    (item) => (
                       <NavigationItem
-                        key={
-                          item.href
-                        }
-                        item={
-                          item
-                        }
-                        pathname={
-                          pathname
-                        }
-                        onNavigate={
-                          onNavigate
-                        }
+                        key={item.href}
+                        item={item}
+                        pathname={pathname}
+                        onNavigate={onNavigate}
+                        collapsed={collapsed}
+                        onShowTooltip={onShowTooltip}
+                        onHideTooltip={onHideTooltip}
                       />
                     )
                   )}
@@ -756,72 +908,133 @@ function SidebarContent({
         </nav>
       </div>
 
-      <div className="border-t border-neutral-100 p-4">
+      <div
+        className={`border-t border-neutral-100 transition-all duration-300 ${
+          collapsed
+            ? "space-y-1.5 p-1.5"
+            : "p-4"
+        }`}
+      >
         <Link
           href="/admin/perfil"
           onClick={onNavigate}
-          aria-current={
-            pathname === "/admin/perfil"
-              ? "page"
-              : undefined
+          onMouseEnter={(event) =>
+            showCompactTooltip(
+              "Mi perfil",
+              event.currentTarget
+            )
           }
-          className={`group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition ${
-            pathname === "/admin/perfil"
-              ? "bg-black shadow-sm"
+          onMouseLeave={collapsed ? onHideTooltip : undefined}
+          onFocus={(event) =>
+            showCompactTooltip(
+              "Mi perfil",
+              event.currentTarget
+            )
+          }
+          onBlur={collapsed ? onHideTooltip : undefined}
+          aria-current={profileActive ? "page" : undefined}
+          aria-label={collapsed ? "Mi perfil" : undefined}
+          className={`group flex items-center text-sm transition-all duration-200 ${
+            collapsed
+              ? "mx-auto h-11 w-11 justify-center rounded-xl p-0"
+              : "min-h-11 gap-3 rounded-xl px-3.5 py-2.5"
+          } ${
+            profileActive
+              ? "bg-black text-white shadow-sm"
               : "text-neutral-600 hover:bg-neutral-100 hover:text-black"
           }`}
         >
           <span
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${
-              pathname === "/admin/perfil"
-                ? "bg-white/10 !text-white"
-                : "bg-neutral-100 text-neutral-500 group-hover:bg-white group-hover:text-black"
+            className={`flex shrink-0 items-center justify-center transition ${
+              collapsed
+                ? "h-9 w-9 rounded-[10px] bg-transparent"
+                : "h-8 w-8 rounded-lg"
+            } ${
+              profileActive
+                ? "!text-white"
+                : collapsed
+                  ? "text-neutral-500 group-hover:text-black"
+                  : "bg-neutral-100 text-neutral-500 group-hover:bg-white group-hover:text-black"
             }`}
           >
-            <IconProfile className="h-[17px] w-[17px]" />
+            <IconProfile className={collapsed ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} />
           </span>
 
-          <span
-            className={`font-medium ${
-              pathname === "/admin/perfil"
-                ? "!text-white"
-                : "text-neutral-600 group-hover:text-black"
-            }`}
-          >
-            Mi perfil
-          </span>
+          {!collapsed && (
+            <span className={`font-medium ${profileActive ? "!text-white" : "text-neutral-600 group-hover:text-black"}`}>
+              Mi perfil
+            </span>
+          )}
         </Link>
 
         <Link
           href="/"
-          onClick={
-            onNavigate
+          onClick={onNavigate}
+          onMouseEnter={(event) =>
+            showCompactTooltip(
+              "Ver tienda",
+              event.currentTarget
+            )
           }
-          className="group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-neutral-600 transition hover:bg-neutral-100 hover:text-black"
+          onMouseLeave={collapsed ? onHideTooltip : undefined}
+          onFocus={(event) =>
+            showCompactTooltip(
+              "Ver tienda",
+              event.currentTarget
+            )
+          }
+          onBlur={collapsed ? onHideTooltip : undefined}
+          aria-label={collapsed ? "Ver tienda" : undefined}
+          className={`group flex items-center text-sm text-neutral-600 transition-all duration-200 hover:bg-neutral-100 hover:text-black ${
+            collapsed
+              ? "mx-auto h-11 w-11 justify-center rounded-xl p-0"
+              : "min-h-11 gap-3 rounded-xl px-3.5 py-2.5"
+          }`}
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 transition group-hover:bg-white group-hover:text-black">
-            <IconStore className="h-[17px] w-[17px]" />
+          <span className={`flex shrink-0 items-center justify-center text-neutral-500 transition group-hover:text-black ${collapsed ? "h-9 w-9 rounded-[10px] bg-transparent" : "h-8 w-8 rounded-lg bg-neutral-100 group-hover:bg-white"}`}>
+            <IconStore className={collapsed ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} />
           </span>
 
-          <span className="font-medium">
-            Ver tienda
-          </span>
+          {!collapsed && (
+            <span className="font-medium">
+              Ver tienda
+            </span>
+          )}
         </Link>
 
         <button
           type="button"
-          onClick={
-            onLogout
+          onClick={onLogout}
+          onMouseEnter={(event) =>
+            showCompactTooltip(
+              "Cerrar sesión",
+              event.currentTarget
+            )
           }
-          className="group mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm text-neutral-600 transition hover:bg-red-50 hover:text-red-700"
+          onMouseLeave={collapsed ? onHideTooltip : undefined}
+          onFocus={(event) =>
+            showCompactTooltip(
+              "Cerrar sesión",
+              event.currentTarget
+            )
+          }
+          onBlur={collapsed ? onHideTooltip : undefined}
+          aria-label={collapsed ? "Cerrar sesión" : undefined}
+          className={`group flex w-full items-center text-left text-sm text-neutral-600 transition-all duration-200 hover:bg-red-50 hover:text-red-700 ${
+            collapsed
+              ? "mx-auto h-11 w-11 justify-center rounded-xl p-0"
+              : "mt-1 min-h-11 gap-3 rounded-xl px-3.5 py-2.5"
+          }`}
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 transition group-hover:bg-white group-hover:text-red-600">
-            <IconLogout className="h-[17px] w-[17px]" />
+          <span className={`flex shrink-0 items-center justify-center text-neutral-500 transition group-hover:text-red-600 ${collapsed ? "h-9 w-9 rounded-[10px] bg-transparent" : "h-8 w-8 rounded-lg bg-neutral-100 group-hover:bg-white"}`}>
+            <IconLogout className={collapsed ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} />
           </span>
 
-          <span className="font-medium">
-            Cerrar sesión
-          </span>
+          {!collapsed && (
+            <span className="font-medium">
+              Cerrar sesión
+            </span>
+          )}
         </button>
       </div>
     </div>
@@ -845,10 +1058,72 @@ export default function AdminSidebar() {
     useState(false);
 
   const [
+    desktopCollapsed,
+    setDesktopCollapsed,
+  ] =
+    useState(false);
+
+  const [
+    desktopTooltip,
+    setDesktopTooltip,
+  ] = useState(null);
+
+  const [
     currentRole,
     setCurrentRole,
   ] =
     useState("");
+
+  useEffect(() => {
+    try {
+      const stored =
+        window.localStorage.getItem(
+          "laminati-admin-sidebar-collapsed"
+        );
+
+      setDesktopCollapsed(
+        stored === "1"
+      );
+    } catch {
+      setDesktopCollapsed(
+        false
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const root =
+      document.documentElement;
+
+    root.dataset.adminSidebarCollapsed =
+      desktopCollapsed
+        ? "true"
+        : "false";
+
+    root.style.setProperty(
+      "--admin-sidebar-width",
+      desktopCollapsed
+        ? "72px"
+        : "280px"
+    );
+
+    try {
+      window.localStorage.setItem(
+        "laminati-admin-sidebar-collapsed",
+        desktopCollapsed
+          ? "1"
+          : "0"
+      );
+    } catch {
+      // El sidebar funciona aunque localStorage no esté disponible.
+    }
+
+    return () => {
+      delete root.dataset.adminSidebarCollapsed;
+    };
+  }, [
+    desktopCollapsed,
+  ]);
 
   useEffect(() => {
     const syncRole = () => {
@@ -959,6 +1234,42 @@ export default function AdminSidebar() {
       ]
     );
 
+  const showDesktopTooltip =
+    (label, target) => {
+      if (
+        !desktopCollapsed ||
+        !target
+      ) {
+        return;
+      }
+
+      const rect =
+        target.getBoundingClientRect();
+
+      setDesktopTooltip({
+        label,
+        top:
+          rect.top +
+          rect.height / 2,
+      });
+    };
+
+  const hideDesktopTooltip =
+    () => {
+      setDesktopTooltip(null);
+    };
+
+  const toggleDesktopSidebar =
+    () => {
+      setDesktopTooltip(null);
+      setDesktopCollapsed(
+        (
+          current
+        ) =>
+          !current
+      );
+    };
+
   const handleLogout =
     async () => {
       try {
@@ -987,7 +1298,44 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <aside className="fixed bottom-0 left-0 top-[72px] z-40 hidden w-[280px] border-r border-black/5 bg-white lg:block">
+      <style>{`
+        .admin-sidebar-scrollbar-hidden {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .admin-sidebar-scrollbar-hidden::-webkit-scrollbar {
+          display: none;
+        }
+
+        @media (min-width: 768px) {
+          [class~="md:pl-[280px]"],
+          [class~="lg:pl-[280px]"] {
+            padding-left: var(--admin-sidebar-width, 280px) !important;
+            transition: padding-left 300ms ease;
+          }
+
+          [class~="md:ml-[280px]"],
+          [class~="lg:ml-[280px]"] {
+            margin-left: var(--admin-sidebar-width, 280px) !important;
+            transition: margin-left 300ms ease;
+          }
+        }
+      `}</style>
+
+      <aside
+        data-admin-sidebar="desktop"
+        data-collapsed={
+          desktopCollapsed
+            ? "true"
+            : "false"
+        }
+        className={`fixed bottom-0 left-0 top-[72px] z-40 hidden border-r border-black/5 bg-white transition-[width] duration-300 ease-out md:block ${
+          desktopCollapsed
+            ? "w-[72px]"
+            : "w-[280px]"
+        }`}
+      >
         <SidebarContent
           pathname={
             pathname
@@ -1002,10 +1350,39 @@ export default function AdminSidebar() {
           role={
             currentRole
           }
+          collapsed={
+            desktopCollapsed
+          }
+          onToggleCollapse={
+            toggleDesktopSidebar
+          }
+          onShowTooltip={
+            showDesktopTooltip
+          }
+          onHideTooltip={
+            hideDesktopTooltip
+          }
         />
       </aside>
 
-      <div className="sticky top-[72px] z-30 border-b border-black/5 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+      {desktopCollapsed && desktopTooltip && (
+        <div
+          className="pointer-events-none fixed z-[90] hidden -translate-y-1/2 md:block"
+          style={{
+            left: "82px",
+            top: `${desktopTooltip.top}px`,
+          }}
+        >
+          <div className="relative whitespace-nowrap rounded-lg bg-neutral-950 px-3 py-2 text-xs font-semibold text-white shadow-xl transition-colors group-hover:bg-emerald-500 group-hover:text-white">
+            <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 bg-neutral-950" />
+            <span className="relative">
+              {desktopTooltip.label}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="sticky top-[72px] z-30 border-b border-black/5 bg-white/95 px-4 py-3 backdrop-blur md:hidden">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
@@ -1037,7 +1414,7 @@ export default function AdminSidebar() {
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-[100] lg:hidden">
+        <div className="fixed inset-0 z-[100] md:hidden">
           <button
             type="button"
             aria-label="Cerrar menú"
@@ -1080,6 +1457,9 @@ export default function AdminSidebar() {
               }
               role={
                 currentRole
+              }
+              collapsed={
+                false
               }
             />
           </aside>
