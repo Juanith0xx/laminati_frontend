@@ -10,6 +10,7 @@ import {
 import ConfirmDialog from "@/components/admin/price-lists/ConfirmDialog";
 import PriceListFormModal from "@/components/admin/price-lists/PriceListFormModal";
 import PriceListRuleModal from "@/components/admin/price-lists/PriceListRuleModal";
+import { apiRequest } from "@/services/api";
 
 import {
   deleteAdminPriceList,
@@ -84,6 +85,395 @@ function RefreshIcon(props) {
       <path d="M4 18v-5h5" />
       <path d="M18.5 9A7 7 0 0 0 6 6.5L4 9M5.5 15A7 7 0 0 0 18 17.5l2-2.5" />
     </svg>
+  );
+}
+
+function UserPlusIcon(props) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <path d="M19 8v6M16 11h6" />
+    </svg>
+  );
+}
+
+function CloseIcon(props) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+const ASSIGNABLE_PRICE_LIST_ROLES = new Set([
+  "CLIENTE",
+  "USUARIO_EMPRESA",
+]);
+
+function PriceListUsersModal({
+  open,
+  priceList,
+  assignedUsers = [],
+  onClose,
+  onSaved,
+}) {
+  const [users, setUsers] = useState([]);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [initialUserIds, setInitialUserIds] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const assignedUsersKey = useMemo(
+    () =>
+      assignedUsers
+        .map((user) => String(user.user_id || user.id || ""))
+        .filter(Boolean)
+        .sort()
+        .join("|"),
+    [assignedUsers]
+  );
+
+  useEffect(() => {
+    if (!open || !priceList?.id) return;
+
+    let active = true;
+
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        setSearch("");
+
+        const assignedIds = assignedUsersKey
+          ? assignedUsersKey.split("|")
+          : [];
+
+        setSelectedUserIds(assignedIds);
+        setInitialUserIds(assignedIds);
+
+        const assignedSet = new Set(assignedIds);
+        const allUsers = [];
+        let page = 1;
+        let totalPages = 1;
+
+        do {
+          const response = await apiRequest(
+            `/admin/users?status=ALL&page=${page}&limit=100`
+          );
+
+          const rows = Array.isArray(response?.data)
+            ? response.data
+            : [];
+
+          allUsers.push(...rows);
+
+          totalPages = Math.max(
+            1,
+            Number(response?.pagination?.total_pages || 1)
+          );
+
+          page += 1;
+        } while (page <= totalPages && page <= 50);
+
+        if (!active) return;
+
+        const eligibleUsers = allUsers
+          .filter((user) => {
+            const role = String(user?.role || "")
+              .trim()
+              .toUpperCase();
+
+            const isAssigned = assignedSet.has(
+              String(user?.id || "")
+            );
+
+            return (
+              (user?.is_active !== false &&
+                ASSIGNABLE_PRICE_LIST_ROLES.has(role)) ||
+              isAssigned
+            );
+          })
+          .sort((a, b) => {
+            const nameA = `${a?.first_name || ""} ${a?.last_name || ""}`
+              .trim()
+              .toLocaleLowerCase("es");
+            const nameB = `${b?.first_name || ""} ${b?.last_name || ""}`
+              .trim()
+              .toLocaleLowerCase("es");
+
+            return nameA.localeCompare(nameB, "es");
+          });
+
+        setUsers(eligibleUsers);
+      } catch (loadError) {
+        if (!active) return;
+        setUsers([]);
+        setError(
+          loadError?.message ||
+            "No fue posible cargar los usuarios disponibles."
+        );
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      active = false;
+    };
+  }, [open, priceList?.id, assignedUsersKey]);
+
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    if (!term) return users;
+
+    return users.filter((user) =>
+      [
+        user.first_name,
+        user.last_name,
+        user.email,
+        user.rut,
+        user.company_name,
+      ].some((value) =>
+        String(value || "").toLowerCase().includes(term)
+      )
+    );
+  }, [users, search]);
+
+  const selectedSet = useMemo(
+    () => new Set(selectedUserIds.map(String)),
+    [selectedUserIds]
+  );
+
+  const toggleUser = (userId) => {
+    const normalizedId = String(userId || "");
+    if (!normalizedId || saving) return;
+
+    setSelectedUserIds((current) => {
+      const exists = current.some(
+        (id) => String(id) === normalizedId
+      );
+
+      return exists
+        ? current.filter((id) => String(id) !== normalizedId)
+        : [...current, normalizedId];
+    });
+  };
+
+  const handleSave = async () => {
+    if (!priceList?.id || saving) return;
+
+    const initialSet = new Set(initialUserIds.map(String));
+    const desiredSet = new Set(selectedUserIds.map(String));
+
+    const toRemove = [...initialSet].filter(
+      (userId) => !desiredSet.has(userId)
+    );
+    const toAssign = [...desiredSet].filter(
+      (userId) => !initialSet.has(userId)
+    );
+
+    try {
+      setSaving(true);
+      setError("");
+
+      for (const userId of toRemove) {
+        await apiRequest(
+          `/admin/users/${encodeURIComponent(userId)}/price-list`,
+          { method: "DELETE" }
+        );
+      }
+
+      for (const userId of toAssign) {
+        await apiRequest(
+          `/admin/users/${encodeURIComponent(userId)}/price-list`,
+          {
+            method: "PUT",
+            body: {
+              price_list_id: priceList.id,
+            },
+          }
+        );
+      }
+
+      await onSaved?.();
+      onClose?.();
+    } catch (saveError) {
+      setError(
+        saveError?.message ||
+          "No fue posible guardar las asignaciones de usuarios."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-5 sm:px-6">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+              Lista de precios
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-black">
+              Asignar usuarios
+            </h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              {priceList?.name || "Lista seleccionada"}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            aria-label="Cerrar"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:bg-neutral-50 disabled:opacity-40"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+            Cada usuario puede tener una sola lista de precios. Si seleccionas un usuario que ya posee otra lista, esta asignación la reemplazará.
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por nombre, correo, RUT o empresa..."
+              className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition focus:border-black sm:max-w-md"
+            />
+
+            <span className="shrink-0 rounded-full bg-neutral-100 px-3 py-1.5 text-[11px] font-semibold text-neutral-600">
+              {selectedUserIds.length} seleccionado(s)
+            </span>
+          </div>
+
+          {error && (
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="mt-5 space-y-2">
+              {[1, 2, 3, 4].map((item) => (
+                <div
+                  key={item}
+                  className="h-20 animate-pulse rounded-2xl bg-neutral-100"
+                />
+              ))}
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-neutral-200 px-5 py-10 text-center text-sm text-neutral-500">
+              No hay usuarios disponibles para mostrar.
+            </div>
+          ) : (
+            <div className="mt-5 space-y-2">
+              {filteredUsers.map((user) => {
+                const userId = String(user.id || "");
+                const checked = selectedSet.has(userId);
+                const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+
+                return (
+                  <label
+                    key={userId}
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3.5 transition ${
+                      checked
+                        ? "border-black bg-neutral-50"
+                        : "border-neutral-200 bg-white hover:border-neutral-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleUser(userId)}
+                      disabled={saving}
+                      className="mt-1 h-4 w-4 accent-black"
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-neutral-900">
+                          {fullName || user.email || "Usuario"}
+                        </p>
+                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+                          {user.role || "Usuario"}
+                        </span>
+                        {user.is_active === false && (
+                          <span className="rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-red-600">
+                            Inactivo
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-0.5 truncate text-xs text-neutral-500">
+                        {user.email || "Sin correo"}
+                        {user.rut ? ` · ${user.rut}` : ""}
+                      </p>
+
+                      {user.company_name && (
+                        <p className="mt-1 truncate text-[11px] text-neutral-400">
+                          {user.company_name}
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col-reverse gap-2 border-t border-neutral-100 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="h-11 rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-40"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-40"
+          >
+            <UserPlusIcon className="h-4 w-4" />
+            {saving ? "Guardando..." : "Guardar asignaciones"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -166,6 +556,7 @@ export default function AdminPriceListsPage() {
     target: null,
   });
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [usersModalOpen, setUsersModalOpen] = useState(false);
 
   const loadLists = useCallback(async (preferredId = "") => {
     try {
@@ -337,6 +728,11 @@ export default function AdminPriceListsPage() {
 
   const handleRuleSaved = async () => {
     setMessage("Regla de descuento guardada correctamente.");
+    await refreshAll(selectedId);
+  };
+
+  const handleUserAssignmentsSaved = async () => {
+    setMessage("Asignaciones de usuarios actualizadas correctamente.");
     await refreshAll(selectedId);
   };
 
@@ -614,6 +1010,14 @@ export default function AdminPriceListsPage() {
                   <div className="flex shrink-0 flex-wrap gap-2">
                     <button
                       type="button"
+                      onClick={() => setUsersModalOpen(true)}
+                      className="inline-flex h-11 items-center gap-2 rounded-full bg-black px-4 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                    >
+                      <UserPlusIcon className="h-4 w-4" />
+                      Asignar usuarios
+                    </button>
+                    <button
+                      type="button"
                       onClick={openEditList}
                       className="inline-flex h-11 items-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
                     >
@@ -768,9 +1172,14 @@ export default function AdminPriceListsPage() {
                         {assignedUsers.length} usuario(s)
                       </h3>
                     </div>
-                    <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Se administra desde Usuarios en la etapa 3
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setUsersModalOpen(true)}
+                      className="inline-flex h-10 items-center gap-2 rounded-full border border-black/10 bg-white px-4 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                    >
+                      <UserPlusIcon className="h-3.5 w-3.5" />
+                      Gestionar usuarios
+                    </button>
                   </div>
 
                   {assignedUsers.length === 0 ? (
@@ -832,6 +1241,14 @@ export default function AdminPriceListsPage() {
           })
         }
         onSaved={handleRuleSaved}
+      />
+
+      <PriceListUsersModal
+        open={usersModalOpen}
+        priceList={selectedPriceList}
+        assignedUsers={assignedUsers}
+        onClose={() => setUsersModalOpen(false)}
+        onSaved={handleUserAssignmentsSaved}
       />
 
       <ConfirmDialog
