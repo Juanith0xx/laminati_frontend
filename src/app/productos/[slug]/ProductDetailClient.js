@@ -1450,6 +1450,22 @@ product?.category ||
 
 /* =========================================*
 
+*     CATEGORÍA ADHESIVOS*
+*     - Sólo controla la ficha técnica*
+*  ========================================= */
+
+const isAdhesiveProduct =
+
+String(
+product?.category ||
+""
+)
+.trim()
+.toLowerCase() ===
+"adhesivos";
+
+/* =========================================*
+
 *     DESCRIPCIÓN*
 
 *  ========================================= */
@@ -4215,6 +4231,9 @@ stockText
 
 )}
 
+{!isAdhesiveProduct && (
+
+<>
 {
 /* =================================*
 
@@ -4326,6 +4345,10 @@ product.finish
 )}
 
 </div>
+
+</>
+
+)}
 
 {
 /* =================================*
