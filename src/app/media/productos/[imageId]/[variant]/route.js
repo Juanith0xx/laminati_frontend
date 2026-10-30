@@ -12,14 +12,25 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const getApiBaseUrl = () => {
-  const value =
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.API_URL ||
-    DEFAULT_LOCAL_API_URL;
+  const candidates = [
+    process.env.API_SERVER_URL,
+    process.env.API_URL,
+    process.env.NEXT_PUBLIC_API_URL,
+  ];
 
-  return String(value)
-    .trim()
-    .replace(/\/+$/, "");
+  for (const candidate of candidates) {
+    const value = String(
+      candidate || ""
+    )
+      .trim()
+      .replace(/\/+$/, "");
+
+    if (/^https?:\/\//i.test(value)) {
+      return value;
+    }
+  }
+
+  return DEFAULT_LOCAL_API_URL;
 };
 
 const proxyProductImage = async (
