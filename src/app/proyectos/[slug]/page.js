@@ -104,18 +104,26 @@ export async function generateMetadata({
       ?.image_url ||
     null;
 
+  const canonical =
+    `/proyectos/${project.slug}`;
+
   return {
     title,
     description,
 
     alternates: {
-      canonical:
-        `/proyectos/${project.slug}`,
+      canonical,
     },
 
     openGraph: {
       title,
       description,
+      url:
+        canonical,
+      siteName:
+        "Laminati Chile",
+      locale:
+        "es_CL",
       type:
         "article",
       ...(image
@@ -127,6 +135,22 @@ export async function generateMetadata({
                 alt:
                   project.title,
               },
+            ],
+          }
+        : {}),
+    },
+
+    twitter: {
+      card:
+        image
+          ? "summary_large_image"
+          : "summary",
+      title,
+      description,
+      ...(image
+        ? {
+            images: [
+              image,
             ],
           }
         : {}),

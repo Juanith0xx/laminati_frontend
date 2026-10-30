@@ -2,6 +2,33 @@ import Link from "next/link";
 import { getProducts } from "@/services/products.service";
 import CollectionComingSoon from "@/components/catalog/CollectionComingSoon";
 
+export const metadata = {
+  title:
+    "Laminados HPL, MEG, superficies y adhesivos | Laminati Chile",
+  description:
+    "Explora el catálogo Laminati Chile: laminados HPL Abet Laminati, MEG, superficies para arquitectura y mobiliario, y adhesivos profesionales Kisafix.",
+  alternates: {
+    canonical: "/productos",
+  },
+  openGraph: {
+    title:
+      "Laminados HPL, MEG, superficies y adhesivos | Laminati Chile",
+    description:
+      "Catálogo de laminados HPL Abet Laminati, MEG, superficies y adhesivos profesionales disponibles en Laminati Chile.",
+    url: "/productos",
+    siteName: "Laminati Chile",
+    locale: "es_CL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title:
+      "Laminados HPL, MEG, superficies y adhesivos | Laminati Chile",
+    description:
+      "Catálogo Laminati Chile: HPL Abet Laminati, MEG, superficies y adhesivos profesionales.",
+  },
+};
+
 function formatSlugLabel(value = "") {
   return value
     .split("-")
@@ -10,9 +37,17 @@ function formatSlugLabel(value = "") {
     .join(" ");
 }
 
+function serializeJsonLd(value) {
+  return JSON.stringify(value).replace(
+    /</g,
+    "\\u003c"
+  );
+}
+
 function buildPaginationHref(
   params,
-  page
+  page,
+  basePath = "/productos"
 ) {
   const searchParams =
     new URLSearchParams();
@@ -76,8 +111,8 @@ function buildPaginationHref(
     searchParams.toString();
 
   return query
-    ? `/productos?${query}`
-    : "/productos";
+    ? `${basePath}?${query}`
+    : basePath;
 }
 
 function getPaginationItems(
@@ -758,11 +793,29 @@ function getLabgradeGroups(
     );
 }
 
-export default async function ProductsPage({ searchParams }) {
+export default async function ProductsPage({
+  searchParams,
+  routeConfig = null,
+}) {
   const params = await searchParams;
 
   const application =
     params?.application || "";
+
+  const fixedQuery =
+    routeConfig?.query || {};
+
+  const catalogLimit =
+    Math.min(
+      Math.max(
+        Number.parseInt(
+          routeConfig?.limit,
+          10
+        ) || 30,
+        1
+      ),
+      100
+    );
 
   const currentPage =
     Math.max(
@@ -775,29 +828,44 @@ export default async function ProductsPage({ searchParams }) {
 
   const query = {
     /*
-     * En navegación HPL usamos:
-     * ?category=hpl&brand=abet-laminati&application=meg
-     *
-     * El producto está guardado en la subcategoría MEG,
-     * por lo que `application` prevalece como categoría
-     * efectiva para la consulta pública.
+     * Las landings SEO fijan sus filtros mediante
+     * routeConfig.query. El catálogo general mantiene
+     * el comportamiento actual basado en searchParams.
      */
     category:
-      application ||
-      params?.category ||
-      "",
-    brand: params?.brand || "",
-    collection: params?.collection || "",
-    finish: params?.finish || "",
-    search: params?.search || "",
-    sort: params?.sort || "featured",
+      fixedQuery.category !== undefined
+        ? fixedQuery.category
+        : (
+            application ||
+            params?.category ||
+            ""
+          ),
+    brand:
+      fixedQuery.brand !== undefined
+        ? fixedQuery.brand
+        : (params?.brand || ""),
+    collection:
+      fixedQuery.collection !== undefined
+        ? fixedQuery.collection
+        : (params?.collection || ""),
+    finish:
+      fixedQuery.finish !== undefined
+        ? fixedQuery.finish
+        : (params?.finish || ""),
+    search:
+      fixedQuery.search !== undefined
+        ? fixedQuery.search
+        : (params?.search || ""),
+    sort:
+      fixedQuery.sort !== undefined
+        ? fixedQuery.sort
+        : (params?.sort || "featured"),
+    in_stock:
+      fixedQuery.in_stock !== undefined
+        ? fixedQuery.in_stock
+        : (params?.in_stock || ""),
     page: currentPage,
-
-    /*
-     * 30 productos por página:
-     * 6 columnas × 5 filas en escritorio 2xl.
-     */
-    limit: 30,
+    limit: catalogLimit,
   };
 
   let products = [];
@@ -839,11 +907,15 @@ export default async function ProductsPage({ searchParams }) {
       ? formatSlugLabel(query.brand)
       : "");
 
-  const pageTitle = collectionTitle
-    ? collectionTitle
-    : brandTitle
-      ? brandTitle
-      : "Productos";
+  const pageTitle =
+    routeConfig?.heading ||
+    (
+      collectionTitle
+        ? collectionTitle
+        : brandTitle
+          ? brandTitle
+          : "Productos"
+    );
 
   const totalPages =
     Number(
@@ -869,7 +941,7 @@ export default async function ProductsPage({ searchParams }) {
       ? (
           activePage - 1
         ) *
-          30 +
+          catalogLimit +
         1
       : 0;
 
@@ -877,7 +949,7 @@ export default async function ProductsPage({ searchParams }) {
     totalProducts > 0
       ? Math.min(
           activePage *
-            30,
+            catalogLimit,
           totalProducts
         )
       : 0;
@@ -887,6 +959,138 @@ export default async function ProductsPage({ searchParams }) {
       activePage,
       totalPages
     );
+
+  const paginationBasePath =
+    routeConfig?.path ||
+    "/productos";
+
+  const paginationSourceParams =
+    routeConfig
+      ? {}
+      : params;
+
+  const structuredData =
+    routeConfig
+      ? (() => {
+          const siteUrl =
+            "https://laminati.cl";
+
+          const pageSuffix =
+            activePage > 1
+              ? `?page=${activePage}`
+              : "";
+
+          const currentUrl =
+            `${siteUrl}${routeConfig.path}${pageSuffix}`;
+
+          const breadcrumbEntries = [
+            {
+              name: "Inicio",
+              path: "/",
+            },
+            {
+              name: "Productos",
+              path: "/productos",
+            },
+            ...(
+              Array.isArray(
+                routeConfig.breadcrumbs
+              )
+                ? routeConfig.breadcrumbs
+                : []
+            ),
+          ];
+
+          const collectionPage = {
+            "@context":
+              "https://schema.org",
+            "@type":
+              "CollectionPage",
+            "@id":
+              `${currentUrl}#collection`,
+            url:
+              currentUrl,
+            name:
+              routeConfig.heading,
+            description:
+              routeConfig.description,
+            inLanguage:
+              "es-CL",
+            publisher: {
+              "@id":
+                `${siteUrl}/#organization`,
+            },
+          };
+
+          const breadcrumbList = {
+            "@context":
+              "https://schema.org",
+            "@type":
+              "BreadcrumbList",
+            itemListElement:
+              breadcrumbEntries.map(
+                (
+                  item,
+                  index
+                ) => ({
+                  "@type":
+                    "ListItem",
+                  position:
+                    index + 1,
+                  name:
+                    item.name,
+                  item:
+                    `${siteUrl}${item.path}`,
+                })
+              ),
+          };
+
+          const itemList =
+            products.length > 0
+              ? {
+                  "@context":
+                    "https://schema.org",
+                  "@type":
+                    "ItemList",
+                  name:
+                    routeConfig.heading,
+                  numberOfItems:
+                    totalProducts ||
+                    products.length,
+                  itemListElement:
+                    products.map(
+                      (
+                        product,
+                        index
+                      ) => ({
+                        "@type":
+                          "ListItem",
+                        position:
+                          (
+                            activePage -
+                            1
+                          ) *
+                            catalogLimit +
+                          index +
+                          1,
+                        url:
+                          `${siteUrl}/productos/${encodeURIComponent(
+                            product.slug
+                          )}`,
+                        name:
+                          product.name,
+                      })
+                    ),
+                }
+              : null;
+
+          return [
+            collectionPage,
+            breadcrumbList,
+            itemList,
+          ].filter(Boolean);
+        })()
+      : [];
 
   const isLabgradeCollection =
     products.some(
@@ -921,6 +1125,7 @@ export default async function ProductsPage({ searchParams }) {
       : [];
 
   const showKarikalComingSoon =
+    !routeConfig &&
     String(
       query.brand ||
       ""
@@ -931,7 +1136,26 @@ export default async function ProductsPage({ searchParams }) {
     products.length === 0;
 
   return (
-    <main className="bg-white">
+    <>
+      {structuredData.map(
+        (
+          item,
+          index
+        ) => (
+          <script
+            key={`catalog-jsonld-${index}`}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html:
+                serializeJsonLd(
+                  item
+                ),
+            }}
+          />
+        )
+      )}
+
+      <main className="bg-white">
       <div className="mx-auto max-w-[1900px] px-5 pb-20 pt-10 sm:px-8 lg:px-10 lg:pb-28 lg:pt-14">
         <div className="mb-8 sm:mb-10">
           <nav className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
@@ -951,17 +1175,49 @@ export default async function ProductsPage({ searchParams }) {
               Productos
             </Link>
 
-            {brandTitle && (
+            {routeConfig ? (
+              (routeConfig.breadcrumbs || []).map(
+                (
+                  item,
+                  index
+                ) => (
+                  <span
+                    key={`${item.path}-${index}`}
+                    className="contents"
+                  >
+                    <span>/</span>
+                    {index <
+                    routeConfig.breadcrumbs.length -
+                      1 ? (
+                      <Link
+                        href={item.path}
+                        className="transition-colors hover:text-neutral-950"
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <span>
+                        {item.name}
+                      </span>
+                    )}
+                  </span>
+                )
+              )
+            ) : (
               <>
-                <span>/</span>
-                <span>{brandTitle}</span>
-              </>
-            )}
+                {brandTitle && (
+                  <>
+                    <span>/</span>
+                    <span>{brandTitle}</span>
+                  </>
+                )}
 
-            {collectionTitle && (
-              <>
-                <span>/</span>
-                <span>{collectionTitle}</span>
+                {collectionTitle && (
+                  <>
+                    <span>/</span>
+                    <span>{collectionTitle}</span>
+                  </>
+                )}
               </>
             )}
           </nav>
@@ -970,12 +1226,18 @@ export default async function ProductsPage({ searchParams }) {
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                Colección
+                {routeConfig?.eyebrow || "Colección"}
               </p>
 
               <h1 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-neutral-950 sm:text-4xl">
                 {pageTitle}
               </h1>
+
+              {routeConfig?.intro && (
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-neutral-500 sm:text-[15px] sm:leading-7">
+                  {routeConfig.intro}
+                </p>
+              )}
             </div>
 
             {pagination?.total !== undefined && (
@@ -1160,8 +1422,9 @@ export default async function ProductsPage({ searchParams }) {
 
                     <Link
                       href={buildPaginationHref(
-                        params,
-                        activePage - 1
+                        paginationSourceParams,
+                        activePage - 1,
+                        paginationBasePath
                       )}
                       className="
                         inline-flex
@@ -1237,8 +1500,9 @@ export default async function ProductsPage({ searchParams }) {
                         <Link
                           key={item}
                           href={buildPaginationHref(
-                            params,
-                            item
+                            paginationSourceParams,
+                            item,
+                            paginationBasePath
                           )}
                           aria-current={
                             isActive
@@ -1262,8 +1526,9 @@ export default async function ProductsPage({ searchParams }) {
 
                     <Link
                       href={buildPaginationHref(
-                        params,
-                        activePage + 1
+                        paginationSourceParams,
+                        activePage + 1,
+                        paginationBasePath
                       )}
                       className="
                         inline-flex
@@ -1323,6 +1588,7 @@ export default async function ProductsPage({ searchParams }) {
           </>
         )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }

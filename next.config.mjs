@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 
+import {
+  seoRedirects,
+} from "./seo-redirects.mjs";
+
 const API_PROXY_TARGET =
   process.env.API_PROXY_TARGET;
 
@@ -26,20 +30,8 @@ const securityHeaders = [
 const nextConfig = {
   reactCompiler: true,
 
-  /*
-   * Evita exponer innecesariamente
-   * que el frontend utiliza Next.js.
-   */
   poweredByHeader: false,
 
-  /*
-   * Headers generales de seguridad.
-   *
-   * No agregamos CSP todavía.
-   * Primero debemos levantar el inventario de
-   * scripts, imágenes y recursos externos para
-   * no romper catálogo, checkout o integraciones.
-   */
   async headers() {
     return [
       {
@@ -47,6 +39,10 @@ const nextConfig = {
         headers: securityHeaders,
       },
     ];
+  },
+
+  async redirects() {
+    return seoRedirects;
   },
 
   async rewrites() {
