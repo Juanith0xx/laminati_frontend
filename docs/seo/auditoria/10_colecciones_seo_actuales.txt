@@ -1,0 +1,8 @@
+/productos/laminados/colours-mate
+/productos/laminados/colours-textures
+/productos/laminados/digital-circus-ettore-sottsass
+/productos/laminados/digitalia-karim-rashid
+/productos/laminados/legni-maderas
+/productos/laminados/parade-giulio-iacchetti
+/productos/laminados/polaris-extramate
+/productos/laminados/serigrafia-alessandro-mendini

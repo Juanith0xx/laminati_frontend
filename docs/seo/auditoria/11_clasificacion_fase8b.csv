@@ -1,0 +1,84 @@
+old_url,old_path,classification,destination,reason,candidate_original,confidence_original
+https://laminati.cl/mas-vendidos,/mas-vendidos,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/contactenos,/contactenos,REDIRECT_SEGURO,/contacto,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/brands,/brands,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/novedades,/novedades,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/productos-rebajados,/productos-rebajados,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/proveedor,/proveedor,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/tiendas,/tiendas,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/3-coleccion-en-chile,/3-coleccion-en-chile,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/4-colours-mate,/4-colours-mate,REDIRECT_SEGURO,/productos/laminados/colours-mate,Equivalente actual confirmado en frontend,https://laminati.cl/productos/caoba-5071-acabado-mate,0.2
+https://laminati.cl/5-colours-lucida-brillante,/5-colours-lucida-brillante,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/alma-blanca-nube-brillante,0.17
+https://laminati.cl/6-coleccion-italia,/6-coleccion-italia,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/7-laminados-decorativos,/7-laminados-decorativos,REDIRECT_SEGURO,/productos/laminados,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/8-stratificato,/8-stratificato,REDIRECT_SEGURO,/productos?category=hpl&brand=abet-laminati&application=stratificato,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/9-inspiracion,/9-inspiracion,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/10-meg-paneles-para-fachadas-ventiladas,/10-meg-paneles-para-fachadas-ventiladas,REDIRECT_SEGURO,/productos/meg,Equivalente actual confirmado en frontend,https://laminati.cl/productos/bianco-meg,0.17
+https://laminati.cl/11-digital-print,/11-digital-print,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/13-complementos,/13-complementos,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/14-tapacantos,/14-tapacantos,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/15-colours-textures,/15-colours-textures,REDIRECT_SEGURO,/productos/laminados/colours-textures,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/16-legni-maderas,/16-legni-maderas,REDIRECT_SEGURO,/productos/laminados/legni-maderas,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/17-evanescence,/17-evanescence,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/18-rocks,/18-rocks,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/19-metalli-efect,/19-metalli-efect,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/metalli-954,0.33
+https://laminati.cl/20-metalli-brush,/20-metalli-brush,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/metalli-954,0.33
+https://laminati.cl/21-metalli-lucida,/21-metalli-lucida,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/metalli-954,0.33
+https://laminati.cl/22-full-colour,/22-full-colour,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/23-full-wood,/23-full-wood,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/smoked-wood,0.33
+https://laminati.cl/24-diplos,/24-diplos,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/25-digitalia-karim-rashid,/25-digitalia-karim-rashid,REDIRECT_SEGURO,/productos/laminados/digitalia-karim-rashid,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/26-drops,/26-drops,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/27-fluo,/27-fluo,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/28-digital-circus-ettore-sottsass,/28-digital-circus-ettore-sottsass,REDIRECT_SEGURO,/productos/laminados/digital-circus-ettore-sottsass,Equivalente actual confirmado en frontend,https://laminati.cl/productos/bacterio-1201-b-y-ettore-sottsass,0.33
+https://laminati.cl/29-febo-ugo-nespolo,/29-febo-ugo-nespolo,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/30-serigrafia-alessandro-mendini,/30-serigrafia-alessandro-mendini,REDIRECT_SEGURO,/productos/laminados/serigrafia-alessandro-mendini,Equivalente actual confirmado en frontend,https://laminati.cl/productos/serigrafia-1239-alessandro-mendini,0.75
+https://laminati.cl/31-serigrafia-2008-paola-navone,/31-serigrafia-2008-paola-navone,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/serigrafia-1239-alessandro-mendini,0.14
+https://laminati.cl/32-parade-giulio-iacchetti,/32-parade-giulio-iacchetti,REDIRECT_SEGURO,/productos/laminados/parade-giulio-iacchetti,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/33-polaris-extramate,/33-polaris-extramate,REDIRECT_SEGURO,/productos/laminados/polaris-extramate,Equivalente actual confirmado en frontend,https://laminati.cl/productos/polaris-rosso-mattone-831-acabado-extramate,0.33
+https://laminati.cl/34-ofertas,/34-ofertas,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/38-lamishield,/38-lamishield,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/39-cubiertas-de-laboratorio,/39-cubiertas-de-laboratorio,REDIRECT_SEGURO,/productos/labgrade,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/40-cubiertas-de-cocina,/40-cubiertas-de-cocina,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/43-cubiertas-de-cocina,/43-cubiertas-de-cocina,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/47-catalogos,/47-catalogos,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/50-catalogo-chile,/50-catalogo-chile,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/53-revista-meg-informacion-tecnica,/53-revista-meg-informacion-tecnica,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,https://laminati.cl/productos/bianco-meg,0.2
+https://laminati.cl/54-revista-stratificato-informacion-tecnica,/54-revista-stratificato-informacion-tecnica,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/60-divisiones-de-bano,/60-divisiones-de-bano,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/61-colours-textures,/61-colours-textures,REDIRECT_SEGURO,/productos/laminados/colours-textures,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/62-legni-light,/62-legni-light,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/63-legni-dark-abet-wood,/63-legni-dark-abet-wood,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/bamboo-dark,0.2
+https://laminati.cl/64-polaris,/64-polaris,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/polaris-agave-1947,0.33
+https://laminati.cl/65-full-colour-hr-laq-fluo,/65-full-colour-hr-laq-fluo,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/66-patagonia-fabriek-rocks,/66-patagonia-fabriek-rocks,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/67-revista-stratificato-informacion-tecnica,/67-revista-stratificato-informacion-tecnica,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/71-news-,/71-news-,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/72-paola-navone-mc-donalds-paris,/72-paola-navone-mc-donalds-paris,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/73-karim-rashid-digital-nature,/73-karim-rashid-digital-nature,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/74-mondo-mendini-groninger-museum,/74-mondo-mendini-groninger-museum,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/proust-5835-alessandro-mendini,0.14
+https://laminati.cl/75-porque-usar-abet-laminati-,/75-porque-usar-abet-laminati-,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/76-citta-immaginaria-paola-navone,/76-citta-immaginaria-paola-navone,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/77-adam-nathaniel-digital-print,/77-adam-nathaniel-digital-print,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/79-karim-rashid-digitalia,/79-karim-rashid-digitalia,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/80-coleccion-diplos-presentacion-fuorisalone,/80-coleccion-diplos-presentacion-fuorisalone,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/81-polaris-salone-triennale,/81-polaris-salone-triennale,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/polaris-agave-1947,0.2
+https://laminati.cl/84-abet-world,/84-abet-world,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/85-salone-del-mobile-2019,/85-salone-del-mobile-2019,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/87-ettore-sottsass-there-is-a-planet,/87-ettore-sottsass-there-is-a-planet,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/bacterio-1201-b-y-ettore-sottsass,0.29
+https://laminati.cl/88-bethan-laura-wood-marqueteria,/88-bethan-laura-wood-marqueteria,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",https://laminati.cl/productos/smoked-wood,0.2
+https://laminati.cl/90-adhesivos,/90-adhesivos,REDIRECT_SEGURO,/productos/adhesivos,Equivalente actual confirmado en frontend,,0.0
+https://laminati.cl/91-melamina,/91-melamina,SIN_EQUIVALENTE,,Contenido o sección antigua que no existe en la web actual y no posee equivalente real,,0.0
+https://laminati.cl/92-preventa,/92-preventa,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/93-karikal,/93-karikal,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/94-quincalleria,/94-quincalleria,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/95-tiradores,/95-tiradores,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/96-tiradores-forza,/96-tiradores-forza,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/97-tiradores-madrid,/97-tiradores-madrid,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/98-tiradores-colombia,/98-tiradores-colombia,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/99-tiradores-balin,/99-tiradores-balin,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/100-corredera-telescopica,/100-corredera-telescopica,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/101-corredera-telescopica-cierre-suave,/101-corredera-telescopica-cierre-suave,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/102-brazo-elevador,/102-brazo-elevador,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/103-bisagras-cierre-suave,/103-bisagras-cierre-suave,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0
+https://laminati.cl/104-corredera-oculta,/104-corredera-oculta,SIN_EQUIVALENTE,,"Contenido, coleccion o linea antigua sin equivalente confirmado en la web actual",,0.0

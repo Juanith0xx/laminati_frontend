@@ -604,4 +604,15 @@ export const seoRedirects = [
     destination: "/productos/smoked-wood",
     permanent: true,
   },
+
+  {
+    source: "/contactenos",
+    destination: "/contacto",
+    permanent: true,
+  },
+  {
+    source: "/8-stratificato",
+    destination: "/productos?category=hpl&brand=abet-laminati&application=stratificato",
+    permanent: true,
+  },
 ];
