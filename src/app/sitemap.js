@@ -342,6 +342,11 @@ export default async function sitemap() {
       changeFrequency: "weekly",
       priority: 0.8,
     }),
+    buildEntry({
+      url: `${SITE_URL}/contacto`,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    }),
   ];
 
   const [

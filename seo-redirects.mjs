@@ -606,6 +606,17 @@ export const seoRedirects = [
   },
 
   {
+    source: "/3-coleccion-en-chile",
+    destination: "/productos/laminados",
+    permanent: true,
+  },
+  {
+    source: "/content/6-museo",
+    destination: "/nosotros",
+    permanent: true,
+  },
+
+  {
     source: "/contactenos",
     destination: "/contacto",
     permanent: true,

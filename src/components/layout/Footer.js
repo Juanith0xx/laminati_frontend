@@ -218,7 +218,28 @@ export default function Footer() {
                 className="block transition hover:text-black"
                 href="/productos"
               >
-                Laminados
+                Todos los productos
+              </Link>
+
+              <Link
+                className="block transition hover:text-black"
+                href="/productos/laminados"
+              >
+                Laminados HPL
+              </Link>
+
+              <Link
+                className="block transition hover:text-black"
+                href="/productos/meg"
+              >
+                MEG · Fachadas ventiladas
+              </Link>
+
+              <Link
+                className="block transition hover:text-black"
+                href="/productos/labgrade"
+              >
+                Labgrade · Laboratorio
               </Link>
 
               <Link
@@ -236,6 +257,13 @@ export default function Footer() {
             </p>
 
             <div className="mt-4 space-y-2.5 text-sm text-neutral-500">
+              <Link
+                className="block transition hover:text-black"
+                href="/proyectos"
+              >
+                Proyectos
+              </Link>
+
               <Link
                 className="block transition hover:text-black"
                 href="/nosotros"
