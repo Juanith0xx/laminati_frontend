@@ -329,6 +329,33 @@ function IconUsers({
 }
 
 
+function IconContacts({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="14"
+        rx="2.5"
+      />
+      <path d="m4 7 8 6 8-6" />
+    </svg>
+  );
+}
+
+
 function IconSessions({
   className = "",
 }) {
@@ -582,6 +609,14 @@ const NAVIGATION = [
     title:
       "Administración",
     items: [
+      {
+        label:
+          "Contactos",
+        href:
+          "/admin/contactos",
+        icon:
+          IconContacts,
+      },
       {
         label:
           "Usuarios",
