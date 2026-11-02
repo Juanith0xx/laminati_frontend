@@ -1,4 +1,5 @@
 import { Poppins } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WhatsAppBubble from "@/components/public/WhatsAppBubble";
@@ -95,6 +96,11 @@ export default function RootLayout({ children }) {
         <Footer />
         <WhatsAppBubble />
       </body>
+      {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
+        <GoogleAnalytics
+          gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
+        />
+      ) : null}
     </html>
   );
 }
