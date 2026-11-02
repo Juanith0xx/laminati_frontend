@@ -860,6 +860,8 @@ export default function AdminPaymentsDocumentsPage() {
   const isSeller =
     normalize(currentRole) === "VENDEDOR";
 
+  const [viewMode, setViewMode] =
+    useState("DOCUMENTS");
   const [channel, setChannel] =
     useState("ALL");
   const [query, setQuery] =
@@ -1079,6 +1081,21 @@ export default function AdminPaymentsDocumentsPage() {
       .toLowerCase();
 
     return channelRows.filter((row) => {
+      if (
+        viewMode === "DOCUMENTS" &&
+        !row.tax_document_id
+      ) {
+        return false;
+      }
+
+      if (
+        viewMode === "PAYMENTS" &&
+        !row.payment_status &&
+        !row.proof
+      ) {
+        return false;
+      }
+
       if (search) {
         const searchable = [
           row.order_number,
@@ -1098,33 +1115,89 @@ export default function AdminPaymentsDocumentsPage() {
       }
 
       if (statusFilter !== "ALL") {
-        if (
-          statusFilter === "PAID" &&
-          paymentLabel(
-            row.payment_status
-          ) !== "Pagado"
-        ) {
-          return false;
-        }
+        if (viewMode === "DOCUMENTS") {
+          const currentDteLabel =
+            dteLabel(row);
 
-        if (
-          statusFilter === "PENDING" &&
-          paymentLabel(
-            row.payment_status
-          ) !== "Pendiente"
-        ) {
-          return false;
-        }
+          if (
+            statusFilter ===
+              "DTE_ACCEPTED" &&
+            currentDteLabel !==
+              "Aceptado"
+          ) {
+            return false;
+          }
 
-        if (
-          statusFilter === "INCIDENT" &&
-          paymentLabel(
-            row.payment_status
-          ) !== "Rechazado" &&
-          dteLabel(row) !==
-            "Incidencia"
-        ) {
-          return false;
+          if (
+            statusFilter ===
+              "DTE_SENT" &&
+            currentDteLabel !==
+              "Enviado SII"
+          ) {
+            return false;
+          }
+
+          if (
+            statusFilter ===
+              "DTE_ISSUED" &&
+            currentDteLabel !==
+              "Emitido"
+          ) {
+            return false;
+          }
+
+          if (
+            statusFilter ===
+              "DTE_PENDING" &&
+            ![
+              "Pendiente",
+              "En emisión",
+            ].includes(
+              currentDteLabel
+            )
+          ) {
+            return false;
+          }
+
+          if (
+            statusFilter ===
+              "DTE_INCIDENT" &&
+            currentDteLabel !==
+              "Incidencia"
+          ) {
+            return false;
+          }
+        } else {
+          if (
+            statusFilter === "PAID" &&
+            paymentLabel(
+              row.payment_status
+            ) !== "Pagado"
+          ) {
+            return false;
+          }
+
+          if (
+            statusFilter ===
+              "PENDING" &&
+            paymentLabel(
+              row.payment_status
+            ) !== "Pendiente"
+          ) {
+            return false;
+          }
+
+          if (
+            statusFilter ===
+              "INCIDENT" &&
+            paymentLabel(
+              row.payment_status
+            ) !== "Rechazado" &&
+            dteLabel(row) !==
+              "Incidencia"
+          ) {
+            return false;
+          }
         }
       }
 
@@ -1155,6 +1228,7 @@ export default function AdminPaymentsDocumentsPage() {
     query,
     statusFilter,
     documentFilter,
+    viewMode,
   ]);
 
   const totalPages = Math.max(
@@ -1195,13 +1269,31 @@ export default function AdminPaymentsDocumentsPage() {
         ) === "Pagado"
     );
 
-    const dtes = base.filter(
+    const emittedDtes = base.filter(
       (row) =>
         [
           "Emitido",
           "Enviado SII",
           "Aceptado",
         ].includes(dteLabel(row))
+    );
+
+    const acceptedDtes = base.filter(
+      (row) =>
+        dteLabel(row) ===
+        "Aceptado"
+    );
+
+    const sentDtes = base.filter(
+      (row) =>
+        dteLabel(row) ===
+        "Enviado SII"
+    );
+
+    const dteIncidents = base.filter(
+      (row) =>
+        dteLabel(row) ===
+        "Incidencia"
     );
 
     const incidents = base.filter(
@@ -1212,6 +1304,9 @@ export default function AdminPaymentsDocumentsPage() {
         dteLabel(row) ===
           "Incidencia"
     );
+
+    const emittedCount =
+      emittedDtes.length;
 
     return {
       pending: pending.length,
@@ -1226,7 +1321,29 @@ export default function AdminPaymentsDocumentsPage() {
           sum + Number(row.total || 0),
         0
       ),
-      dtes: dtes.length,
+      dtes: emittedCount,
+      acceptedDtes:
+        acceptedDtes.length,
+      sentDtes:
+        sentDtes.length,
+      dteIncidents:
+        dteIncidents.length,
+      acceptedPercentage:
+        emittedCount > 0
+          ? Math.round(
+              (acceptedDtes.length /
+                emittedCount) *
+                100
+            )
+          : 0,
+      sentPercentage:
+        emittedCount > 0
+          ? Math.round(
+              (sentDtes.length /
+                emittedCount) *
+                100
+            )
+          : 0,
       incidents: incidents.length,
       incidentAmount: incidents.reduce(
         (sum, row) =>
@@ -1968,89 +2085,145 @@ export default function AdminPaymentsDocumentsPage() {
             <header className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
               <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
               <div className="px-6 py-6 sm:px-7">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
-                {isSeller
-                  ? "Laminati · Ventas"
-                  : "Laminati · Backoffice"}
-              </p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
-                Pagos y documentos
-              </h1>
-              <p className="mt-1 text-sm text-neutral-500">
-                Unifica transferencias, pagos online y documentos tributarios en una sola vista.
-              </p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                  {isSeller
+                    ? "Laminati · Ventas"
+                    : "Laminati · Backoffice"}
+                </p>
+                <h1 className="mt-1 text-3xl font-semibold tracking-tight text-black">
+                  Pagos y documentos
+                </h1>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Administra pagos, facturas y boletas desde una vista más clara.
+                </p>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                {[
-                  ["ALL", "Todos", null],
-                  ["SHOWROOM", "Showroom", "store"],
-                  ["ONLINE", "Online", "cart"],
-                ].map(
-                  ([id, label, icon]) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        setChannel(id);
-                        setPage(1);
-                        setSelectedKey(null);
-                      }}
-                      className={`inline-flex h-10 items-center gap-2 rounded-full px-5 text-xs font-medium transition ${
-                        channel === id
-                          ? "bg-black text-white"
-                          : "border border-neutral-200 bg-white text-neutral-700 hover:border-black"
-                      }`}
-                    >
-                      {icon ? (
-                        <Icon name={icon} />
-                      ) : null}
-                      {label}
-                    </button>
-                  )
-                )}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {[
+                    ["ALL", "Todos", null],
+                    ["PAYMENTS", "Pagos", "bank"],
+                    [
+                      "DOCUMENTS",
+                      "Documentos tributarios",
+                      "document",
+                    ],
+                  ].map(
+                    ([id, label, icon]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          setViewMode(id);
+                          setStatusFilter(
+                            "ALL"
+                          );
+                          setDocumentFilter(
+                            "ALL"
+                          );
+                          setPage(1);
+                          setSelectedKey(
+                            null
+                          );
+                        }}
+                        className={`inline-flex h-10 items-center gap-2 rounded-full px-5 text-xs font-medium transition ${
+                          viewMode === id
+                            ? "bg-black text-white shadow-sm"
+                            : "border border-neutral-200 bg-white text-neutral-700 hover:border-black"
+                        }`}
+                      >
+                        {icon ? (
+                          <Icon
+                            name={icon}
+                          />
+                        ) : null}
+                        {label}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
-                          </div>
             </header>
 
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <SummaryCard
-                icon="clock"
-                iconClass="bg-orange-50 text-orange-600"
-                title="Pendientes"
-                value={summary.pending}
-                helper={money(
-                  summary.pendingAmount
-                )}
-              />
-              <SummaryCard
-                icon="check"
-                iconClass="bg-emerald-50 text-emerald-600"
-                title="Pagados"
-                value={summary.paid}
-                helper={money(
-                  summary.paidAmount
-                )}
-              />
-              <SummaryCard
-                icon="document"
-                iconClass="bg-blue-50 text-blue-600"
-                title="DTE emitidos"
-                value={summary.dtes}
-                helper="Facturas y boletas"
-              />
-              <SummaryCard
-                icon="alert"
-                iconClass="bg-rose-50 text-rose-600"
-                title="Con incidencia"
-                value={summary.incidents}
-                helper={money(
-                  summary.incidentAmount
-                )}
-              />
+              {viewMode ===
+              "DOCUMENTS" ? (
+                <>
+                  <SummaryCard
+                    icon="document"
+                    iconClass="bg-blue-50 text-blue-600"
+                    title="Emitidos"
+                    value={summary.dtes}
+                    helper="Facturas y boletas"
+                  />
+                  <SummaryCard
+                    icon="check"
+                    iconClass="bg-emerald-50 text-emerald-600"
+                    title="Aceptados"
+                    value={
+                      summary.acceptedDtes
+                    }
+                    helper={`${summary.acceptedPercentage}% del total`}
+                  />
+                  <SummaryCard
+                    icon="document"
+                    iconClass="bg-teal-50 text-teal-600"
+                    title="Enviados al SII"
+                    value={
+                      summary.sentDtes
+                    }
+                    helper={`${summary.sentPercentage}% del total`}
+                  />
+                  <SummaryCard
+                    icon="alert"
+                    iconClass="bg-rose-50 text-rose-600"
+                    title="Con incidencia"
+                    value={
+                      summary.dteIncidents
+                    }
+                    helper="Documentos por revisar"
+                  />
+                </>
+              ) : (
+                <>
+                  <SummaryCard
+                    icon="clock"
+                    iconClass="bg-orange-50 text-orange-600"
+                    title="Pendientes"
+                    value={summary.pending}
+                    helper={money(
+                      summary.pendingAmount
+                    )}
+                  />
+                  <SummaryCard
+                    icon="check"
+                    iconClass="bg-emerald-50 text-emerald-600"
+                    title="Pagados"
+                    value={summary.paid}
+                    helper={money(
+                      summary.paidAmount
+                    )}
+                  />
+                  <SummaryCard
+                    icon="document"
+                    iconClass="bg-blue-50 text-blue-600"
+                    title="DTE emitidos"
+                    value={summary.dtes}
+                    helper="Facturas y boletas"
+                  />
+                  <SummaryCard
+                    icon="alert"
+                    iconClass="bg-rose-50 text-rose-600"
+                    title="Con incidencia"
+                    value={summary.incidents}
+                    helper={money(
+                      summary.incidentAmount
+                    )}
+                  />
+                </>
+              )}
             </section>
 
             <section className="overflow-hidden rounded-[26px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
-              <div className="grid gap-3 border-b border-neutral-100 p-4 lg:grid-cols-[minmax(0,1fr)_190px_190px]">
+              <div className="grid gap-3 border-b border-neutral-100 p-4 lg:grid-cols-[minmax(0,1fr)_170px_170px_150px]">
                 <label className="relative block">
                   <Icon
                     name="search"
@@ -2059,11 +2232,20 @@ export default function AdminPaymentsDocumentsPage() {
                   <input
                     value={query}
                     onChange={(event) => {
-                      setQuery(event.target.value);
+                      setQuery(
+                        event.target.value
+                      );
                       setPage(1);
-                      setSelectedKey(null);
+                      setSelectedKey(
+                        null
+                      );
                     }}
-                    placeholder="Buscar por número de pedido, cliente, RUT o folio..."
+                    placeholder={
+                      viewMode ===
+                      "DOCUMENTS"
+                        ? "Buscar por cliente, RUT, folio o pedido..."
+                        : "Buscar por número de pedido, cliente, RUT o folio..."
+                    }
                     className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-11 pr-4 text-sm outline-none transition focus:border-black"
                   />
                 </label>
@@ -2071,37 +2253,71 @@ export default function AdminPaymentsDocumentsPage() {
                 <select
                   value={statusFilter}
                   onChange={(event) => {
-                      setStatusFilter(event.target.value);
-                      setPage(1);
-                      setSelectedKey(null);
-                    }}
+                    setStatusFilter(
+                      event.target.value
+                    );
+                    setPage(1);
+                    setSelectedKey(
+                      null
+                    );
+                  }}
                   className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-black"
                 >
-                  <option value="ALL">
-                    Todos los estados
-                  </option>
-                  <option value="PAID">
-                    Pagados
-                  </option>
-                  <option value="PENDING">
-                    Pendientes
-                  </option>
-                  <option value="INCIDENT">
-                    Con incidencia
-                  </option>
+                  {viewMode ===
+                  "DOCUMENTS" ? (
+                    <>
+                      <option value="ALL">
+                        Estado SII
+                      </option>
+                      <option value="DTE_ACCEPTED">
+                        Aceptado
+                      </option>
+                      <option value="DTE_SENT">
+                        Enviado al SII
+                      </option>
+                      <option value="DTE_ISSUED">
+                        Emitido
+                      </option>
+                      <option value="DTE_PENDING">
+                        Pendiente / en emisión
+                      </option>
+                      <option value="DTE_INCIDENT">
+                        Con incidencia
+                      </option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="ALL">
+                        Todos los estados
+                      </option>
+                      <option value="PAID">
+                        Pagados
+                      </option>
+                      <option value="PENDING">
+                        Pendientes
+                      </option>
+                      <option value="INCIDENT">
+                        Con incidencia
+                      </option>
+                    </>
+                  )}
                 </select>
 
                 <select
                   value={documentFilter}
                   onChange={(event) => {
-                      setDocumentFilter(event.target.value);
-                      setPage(1);
-                      setSelectedKey(null);
-                    }}
+                    setDocumentFilter(
+                      event.target.value
+                    );
+                    setPage(1);
+                    setSelectedKey(
+                      null
+                    );
+                  }}
                   className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-black"
                 >
                   <option value="ALL">
-                    Todos los documentos
+                    Tipo DTE
                   </option>
                   <option value="FACTURA">
                     Facturas
@@ -2109,8 +2325,35 @@ export default function AdminPaymentsDocumentsPage() {
                   <option value="BOLETA">
                     Boletas
                   </option>
-                  <option value="NONE">
-                    Sin DTE
+                  {viewMode !==
+                  "DOCUMENTS" ? (
+                    <option value="NONE">
+                      Sin DTE
+                    </option>
+                  ) : null}
+                </select>
+
+                <select
+                  value={channel}
+                  onChange={(event) => {
+                    setChannel(
+                      event.target.value
+                    );
+                    setPage(1);
+                    setSelectedKey(
+                      null
+                    );
+                  }}
+                  className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-black"
+                >
+                  <option value="ALL">
+                    Origen
+                  </option>
+                  <option value="SHOWROOM">
+                    Showroom
+                  </option>
+                  <option value="ONLINE">
+                    Online
                   </option>
                 </select>
               </div>
@@ -2137,6 +2380,296 @@ export default function AdminPaymentsDocumentsPage() {
                 </div>
               ) : (
                 <>
+                  {viewMode ===
+                  "DOCUMENTS" ? (
+                    <>
+                      <div className="hidden overflow-x-auto md:block">
+                        <table className="w-full min-w-[940px] border-collapse text-left">
+                          <thead>
+                            <tr className="border-b border-neutral-100 bg-neutral-50/60 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
+                              <th className="px-4 py-3">
+                                Documento
+                              </th>
+                              <th className="px-4 py-3">
+                                Cliente
+                              </th>
+                              <th className="px-4 py-3">
+                                Folio
+                              </th>
+                              <th className="px-4 py-3">
+                                Pedido
+                              </th>
+                              <th className="px-4 py-3">
+                                Estado SII
+                              </th>
+                              <th className="px-4 py-3 text-right">
+                                Total
+                              </th>
+                              <th className="px-4 py-3 text-right">
+                                Acciones
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedRows.map(
+                              (row) => {
+                                const dte =
+                                  dteLabel(
+                                    row
+                                  );
+                                const canView =
+                                  Boolean(
+                                    row.tax_document_id &&
+                                      [
+                                        "Emitido",
+                                        "Enviado SII",
+                                        "Aceptado",
+                                      ].includes(
+                                        dte
+                                      )
+                                  );
+
+                                return (
+                                  <tr
+                                    key={
+                                      row.key
+                                    }
+                                    onClick={() =>
+                                      setSelectedKey(
+                                        row.key
+                                      )
+                                    }
+                                    className={`cursor-pointer border-b border-neutral-100 transition hover:bg-emerald-50/30 ${
+                                      selectedKey ===
+                                      row.key
+                                        ? "bg-emerald-50/50"
+                                        : "bg-white"
+                                    }`}
+                                  >
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-3">
+                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                                          <Icon
+                                            name="document"
+                                            className="h-4 w-4"
+                                          />
+                                        </span>
+                                        <div>
+                                          <p className="text-xs font-semibold text-neutral-950">
+                                            {documentLabel(
+                                              row.document_type
+                                            )}
+                                          </p>
+                                          <p className="mt-1 text-[10px] text-neutral-400">
+                                            {dateTime(
+                                              row.issued_at ||
+                                                row.created_at
+                                            )}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <p className="text-xs font-medium text-neutral-900">
+                                        {
+                                          row.customer_name
+                                        }
+                                      </p>
+                                      <p className="mt-1 max-w-[190px] truncate text-[10px] text-neutral-400">
+                                        {row.email ||
+                                          row.customer_rut ||
+                                          "—"}
+                                      </p>
+                                    </td>
+                                    <td className="px-4 py-3 text-xs font-semibold text-neutral-900">
+                                      {row.folio ||
+                                        "—"}
+                                    </td>
+                                    <td className="px-4 py-3 text-xs font-medium text-neutral-700">
+                                      {
+                                        row.order_number
+                                      }
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <StatusPill
+                                        kind={
+                                          dte ===
+                                            "Aceptado" ||
+                                          dte ===
+                                            "Enviado SII" ||
+                                          dte ===
+                                            "Emitido"
+                                            ? "success"
+                                            : dte ===
+                                              "Incidencia"
+                                            ? "danger"
+                                            : dte ===
+                                              "En emisión"
+                                            ? "warning"
+                                            : "neutral"
+                                        }
+                                      >
+                                        {
+                                          dte
+                                        }
+                                      </StatusPill>
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-semibold text-neutral-950">
+                                      {money(
+                                        row.total
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            !canView ||
+                                            taxActionLoading ===
+                                              "open"
+                                          }
+                                          onClick={(
+                                            event
+                                          ) => {
+                                            event.stopPropagation();
+                                            void openTaxDocument(
+                                              row
+                                            );
+                                          }}
+                                          className="inline-flex h-8 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 text-[10px] font-semibold text-neutral-700 transition hover:border-black disabled:cursor-not-allowed disabled:opacity-35"
+                                        >
+                                          <Icon
+                                            name="eye"
+                                            className="h-3.5 w-3.5"
+                                          />
+                                          Ver
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            !canView ||
+                                            taxActionLoading ===
+                                              "download"
+                                          }
+                                          onClick={(
+                                            event
+                                          ) => {
+                                            event.stopPropagation();
+                                            void downloadTaxDocument(
+                                              row
+                                            );
+                                          }}
+                                          className="inline-flex h-8 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 text-[10px] font-semibold text-neutral-700 transition hover:border-black disabled:cursor-not-allowed disabled:opacity-35"
+                                        >
+                                          <Icon
+                                            name="download"
+                                            className="h-3.5 w-3.5"
+                                          />
+                                          PDF
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="divide-y divide-neutral-100 md:hidden">
+                        {paginatedRows.map(
+                          (row) => {
+                            const dte =
+                              dteLabel(
+                                row
+                              );
+
+                            return (
+                              <button
+                                key={
+                                  row.key
+                                }
+                                type="button"
+                                onClick={() =>
+                                  setSelectedKey(
+                                    row.key
+                                  )
+                                }
+                                className={`block w-full p-4 text-left transition ${
+                                  selectedKey ===
+                                  row.key
+                                    ? "bg-emerald-50/50"
+                                    : "bg-white"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex min-w-0 items-start gap-3">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                                      <Icon
+                                        name="document"
+                                        className="h-4 w-4"
+                                      />
+                                    </span>
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-semibold text-neutral-950">
+                                        {documentLabel(
+                                          row.document_type
+                                        )}
+                                      </p>
+                                      <p className="mt-1 text-xs text-neutral-500">
+                                        Folio{" "}
+                                        {row.folio ||
+                                          "pendiente"}
+                                      </p>
+                                      <p className="mt-1 truncate text-xs text-neutral-400">
+                                        {
+                                          row.customer_name
+                                        }
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <p className="shrink-0 text-sm font-semibold">
+                                    {money(
+                                      row.total
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                  <StatusPill
+                                    kind={
+                                      dte ===
+                                        "Aceptado" ||
+                                      dte ===
+                                        "Enviado SII" ||
+                                      dte ===
+                                        "Emitido"
+                                        ? "success"
+                                        : dte ===
+                                          "Incidencia"
+                                        ? "danger"
+                                        : dte ===
+                                          "En emisión"
+                                        ? "warning"
+                                        : "neutral"
+                                    }
+                                  >
+                                    {dte}
+                                  </StatusPill>
+                                  <span className="text-[10px] text-neutral-400">
+                                    {
+                                      row.order_number
+                                    }
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
                   <div className="hidden overflow-x-auto md:block">
                     <table className="w-full min-w-[980px] border-collapse text-left">
                       <thead>
@@ -2361,6 +2894,9 @@ export default function AdminPaymentsDocumentsPage() {
                     )}
                   </div>
 
+                    </>
+                  )}
+
                   <div className="flex flex-col gap-3 border-t border-neutral-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-neutral-400">
                       Mostrando {Math.min(
@@ -2448,7 +2984,7 @@ export default function AdminPaymentsDocumentsPage() {
 
                   <div className="mt-5 rounded-[20px] border border-neutral-200 p-4">
                     <h3 className="text-sm font-semibold text-neutral-950">
-                      Información general
+                      Información del pedido
                     </h3>
 
                     <dl className="mt-4 space-y-3 text-xs">
@@ -2537,7 +3073,9 @@ export default function AdminPaymentsDocumentsPage() {
                     </dl>
                   </div>
 
-                  {selected.proof ? (
+                  {selected.proof &&
+                  viewMode !==
+                    "DOCUMENTS" ? (
                     <div className="mt-4 rounded-[20px] border border-neutral-200 p-4">
                       <h3 className="text-sm font-semibold text-neutral-950">
                         Comprobante de pago
@@ -2620,10 +3158,32 @@ export default function AdminPaymentsDocumentsPage() {
                   ) : null}
 
                   <div className="mt-4 rounded-[20px] border border-neutral-200 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-neutral-950">
-                        Documento tributario
-                      </h3>
+                    <h3 className="text-sm font-semibold text-neutral-950">
+                      Documento tributario
+                    </h3>
+
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 p-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                          <Icon
+                            name="document"
+                            className="h-5 w-5"
+                          />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-semibold text-neutral-950">
+                            {documentLabel(
+                              selected.document_type
+                            )}
+                          </p>
+                          <p className="mt-1 text-[10px] text-neutral-400">
+                            {selected.folio
+                              ? `Folio ${selected.folio}`
+                              : "Folio pendiente"}
+                          </p>
+                        </div>
+                      </div>
+
                       <StatusPill
                         kind={
                           selectedDteLabel ===
@@ -2646,18 +3206,30 @@ export default function AdminPaymentsDocumentsPage() {
                       </StatusPill>
                     </div>
 
-                    <div className="mt-4 rounded-xl bg-neutral-50 p-3">
-                      <p className="text-xs font-medium text-neutral-950">
-                        {documentLabel(
-                          selected.document_type
-                        )}
-                      </p>
-                      <p className="mt-1 text-[10px] text-neutral-400">
-                        {selected.folio
-                          ? `N.º ${selected.folio}`
-                          : "Folio pendiente"}
-                      </p>
-                    </div>
+                    <dl className="mt-4 space-y-3 border-y border-neutral-100 py-4 text-xs">
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-neutral-400">
+                          Fecha de emisión
+                        </dt>
+                        <dd className="text-right font-medium text-neutral-800">
+                          {selected.issued_at
+                            ? dateTime(
+                                selected.issued_at
+                              )
+                            : "Pendiente"}
+                        </dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-neutral-400">
+                          Total
+                        </dt>
+                        <dd className="text-right text-sm font-semibold text-neutral-950">
+                          {money(
+                            selected.total
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
 
                     {selectedCanViewDte ? (
                       <>
@@ -2681,6 +3253,14 @@ export default function AdminPaymentsDocumentsPage() {
                           {taxActionLoading ===
                           "open"
                             ? "Abriendo..."
+                            : normalize(
+                                selected.document_type
+                              ) === "FACTURA"
+                            ? "Ver factura"
+                            : normalize(
+                                selected.document_type
+                              ) === "BOLETA"
+                            ? "Ver boleta"
                             : "Ver documento"}
                         </button>
 
