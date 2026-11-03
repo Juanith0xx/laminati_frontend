@@ -23,6 +23,11 @@ const moneyFormatter = new Intl.NumberFormat("es-CL", {
 const money = (value) =>
   moneyFormatter.format(Number(value || 0));
 
+const isValidEmail = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    String(value || "").trim()
+  );
+
 
 function formatDate(value) {
   if (!value) return "—";
@@ -104,6 +109,10 @@ export default function QuotationDetailPage() {
   const [amountReceived, setAmountReceived] = useState("");
   const [externalReference, setExternalReference] = useState("");
   const [dteValidation, setDteValidation] = useState(null);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [sendToContact, setSendToContact] = useState(true);
+  const [sendToAdditional, setSendToAdditional] = useState(false);
+  const [additionalEmail, setAdditionalEmail] = useState("");
 
   const quotation = data?.quotation || null;
   const items = data?.items || [];
@@ -208,16 +217,90 @@ export default function QuotationDetailPage() {
     }
   };
 
+  const openEmailModal = () => {
+    setError("");
+    setMessage("");
+    setSendToContact(true);
+    setSendToAdditional(false);
+    setAdditionalEmail("");
+    setEmailModalOpen(true);
+  };
+
+  const closeEmailModal = () => {
+    if (actionLoading === "email") {
+      return;
+    }
+
+    setEmailModalOpen(false);
+  };
+
   const sendEmail = async () => {
+    const contactEmail =
+      String(quotation?.email || "")
+        .trim()
+        .toLowerCase();
+
+    const normalizedAdditionalEmail =
+      String(additionalEmail || "")
+        .trim()
+        .toLowerCase();
+
+    if (!sendToContact && !sendToAdditional) {
+      setError(
+        "Selecciona al menos un destinatario para enviar la cotización."
+      );
+      return;
+    }
+
+    if (
+      sendToContact &&
+      !isValidEmail(contactEmail)
+    ) {
+      setError(
+        "El correo de contacto guardado en la cotización no es válido."
+      );
+      return;
+    }
+
+    if (
+      sendToAdditional &&
+      !isValidEmail(
+        normalizedAdditionalEmail
+      )
+    ) {
+      setError(
+        "Ingresa un correo adicional válido."
+      );
+      return;
+    }
+
     try {
       setActionLoading("email");
       setError("");
       setMessage("");
-      const response = await sendQuotationEmail(quotationId);
+
+      const response =
+        await sendQuotationEmail(
+          quotationId,
+          {
+            send_to_contact:
+              sendToContact,
+            additional_email:
+              sendToAdditional
+                ? normalizedAdditionalEmail
+                : null,
+          }
+        );
+
       setMessage(
         response?.message ||
           "Cotización enviada correctamente."
       );
+
+      setEmailModalOpen(false);
+      setAdditionalEmail("");
+      setSendToAdditional(false);
+
       await load();
     } catch (err) {
       setError(
@@ -884,7 +967,7 @@ export default function QuotationDetailPage() {
 
               <button
                 type="button"
-                onClick={sendEmail}
+                onClick={openEmailModal}
                 disabled={
                   Boolean(actionLoading) ||
                   ["CANCELLED", "CONVERTED"].includes(
@@ -967,6 +1050,126 @@ export default function QuotationDetailPage() {
               </div>
             </div>
             <iframe src={`${pdfUrl}#toolbar=1&navpanes=0&view=FitH`} title={quotation.quote_number} className="min-h-0 flex-1 border-0 bg-neutral-100" />
+          </div>
+        </div>
+      )}
+
+      {emailModalOpen && (
+        <div className="fixed inset-0 z-[165] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                  Enviar cotización
+                </p>
+                <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-neutral-950">
+                  Seleccionar destinatarios
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-neutral-500">
+                  Envía la cotización al correo de contacto, a otro correo o a ambos.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeEmailModal}
+                disabled={actionLoading === "email"}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/10 text-lg text-neutral-500 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-black/10 p-4 transition hover:border-black/20">
+                <input
+                  type="checkbox"
+                  checked={sendToContact}
+                  onChange={(event) =>
+                    setSendToContact(
+                      event.target.checked
+                    )
+                  }
+                  className="mt-1 h-4 w-4 accent-black"
+                />
+
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-neutral-950">
+                    Correo de contacto
+                  </span>
+                  <span className="mt-1 block break-all text-sm text-neutral-500">
+                    {quotation?.email ||
+                      "Sin correo de contacto"}
+                  </span>
+                </span>
+              </label>
+
+              <div className="rounded-2xl border border-black/10 p-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={sendToAdditional}
+                    onChange={(event) =>
+                      setSendToAdditional(
+                        event.target.checked
+                      )
+                    }
+                    className="mt-1 h-4 w-4 accent-black"
+                  />
+
+                  <span>
+                    <span className="block text-sm font-semibold text-neutral-950">
+                      Otro correo
+                    </span>
+                    <span className="mt-1 block text-sm text-neutral-500">
+                      Puedes enviar una copia a una dirección diferente.
+                    </span>
+                  </span>
+                </label>
+
+                {sendToAdditional && (
+                  <input
+                    type="email"
+                    value={additionalEmail}
+                    onChange={(event) =>
+                      setAdditionalEmail(
+                        event.target.value
+                      )
+                    }
+                    placeholder="correo@empresa.cl"
+                    autoComplete="email"
+                    className="mt-4 h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm text-neutral-800 outline-none transition focus:border-black"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeEmailModal}
+                disabled={actionLoading === "email"}
+                className="h-11 rounded-xl border border-black/10 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={sendEmail}
+                disabled={
+                  actionLoading === "email" ||
+                  (!sendToContact &&
+                    !sendToAdditional)
+                }
+                className="h-11 rounded-xl bg-black text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+              >
+                {actionLoading === "email"
+                  ? "Enviando..."
+                  : "Enviar cotización"}
+              </button>
+            </div>
           </div>
         </div>
       )}

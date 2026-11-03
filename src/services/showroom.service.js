@@ -537,7 +537,8 @@ export async function deleteQuotation(
 ========================================= */
 
 export async function sendQuotationEmail(
-  quotationId
+  quotationId,
+  payload = {}
 ) {
   return apiRequest(
     `/admin/pos/quotations/${encodeURIComponent(
@@ -545,6 +546,7 @@ export async function sendQuotationEmail(
     )}/email`,
     {
       method: "POST",
+      body: payload,
     }
   );
 }
