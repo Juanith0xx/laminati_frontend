@@ -28,6 +28,8 @@ const isValidEmail = (value) =>
     String(value || "").trim()
   );
 
+const MAX_EMAIL_RECIPIENTS = 10;
+
 
 function formatDate(value) {
   if (!value) return "—";
@@ -113,6 +115,7 @@ export default function QuotationDetailPage() {
   const [sendToContact, setSendToContact] = useState(true);
   const [sendToAdditional, setSendToAdditional] = useState(false);
   const [additionalEmail, setAdditionalEmail] = useState("");
+  const [additionalEmails, setAdditionalEmails] = useState([]);
 
   const quotation = data?.quotation || null;
   const items = data?.items || [];
@@ -217,17 +220,146 @@ export default function QuotationDetailPage() {
     }
   };
 
+  const normalizeEmail = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const getSelectedRecipientCount = (
+    emails = additionalEmails
+  ) => {
+    const contactEmail =
+      normalizeEmail(
+        quotation?.email
+      );
+
+    const uniqueRecipients =
+      new Set(
+        [
+          sendToContact &&
+          isValidEmail(
+            contactEmail
+          )
+            ? contactEmail
+            : null,
+          ...emails.map(
+            normalizeEmail
+          ),
+        ].filter(Boolean)
+      );
+
+    return uniqueRecipients.size;
+  };
+
+  const addAdditionalEmail = () => {
+    const email =
+      normalizeEmail(
+        additionalEmail
+      );
+
+    setError("");
+
+    if (!email) {
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError(
+        "Ingresa un correo adicional válido."
+      );
+      return;
+    }
+
+    const contactEmail =
+      normalizeEmail(
+        quotation?.email
+      );
+
+    const alreadyExists =
+      additionalEmails.some(
+        (item) =>
+          normalizeEmail(
+            item
+          ) === email
+      ) ||
+      (
+        sendToContact &&
+        contactEmail === email
+      );
+
+    if (alreadyExists) {
+      setError(
+        "Ese correo ya está agregado como destinatario."
+      );
+      return;
+    }
+
+    const nextEmails = [
+      ...additionalEmails,
+      email,
+    ];
+
+    if (
+      getSelectedRecipientCount(
+        nextEmails
+      ) >
+      MAX_EMAIL_RECIPIENTS
+    ) {
+      setError(
+        `Puedes enviar la cotización a un máximo de ${MAX_EMAIL_RECIPIENTS} destinatarios.`
+      );
+      return;
+    }
+
+    setAdditionalEmails(
+      nextEmails
+    );
+
+    setAdditionalEmail("");
+  };
+
+  const removeAdditionalEmail = (
+    email
+  ) => {
+    setAdditionalEmails(
+      (current) =>
+        current.filter(
+          (item) =>
+            normalizeEmail(
+              item
+            ) !==
+            normalizeEmail(
+              email
+            )
+        )
+    );
+  };
+
+  const handleAdditionalEmailKeyDown =
+    (event) => {
+      if (
+        event.key === "Enter"
+      ) {
+        event.preventDefault();
+        addAdditionalEmail();
+      }
+    };
+
   const openEmailModal = () => {
     setError("");
     setMessage("");
     setSendToContact(true);
     setSendToAdditional(false);
     setAdditionalEmail("");
+    setAdditionalEmails([]);
     setEmailModalOpen(true);
   };
 
   const closeEmailModal = () => {
-    if (actionLoading === "email") {
+    if (
+      actionLoading ===
+      "email"
+    ) {
       return;
     }
 
@@ -236,25 +368,54 @@ export default function QuotationDetailPage() {
 
   const sendEmail = async () => {
     const contactEmail =
-      String(quotation?.email || "")
-        .trim()
-        .toLowerCase();
-
-    const normalizedAdditionalEmail =
-      String(additionalEmail || "")
-        .trim()
-        .toLowerCase();
-
-    if (!sendToContact && !sendToAdditional) {
-      setError(
-        "Selecciona al menos un destinatario para enviar la cotización."
+      normalizeEmail(
+        quotation?.email
       );
-      return;
+
+    const pendingEmail =
+      normalizeEmail(
+        additionalEmail
+      );
+
+    let emailsToSend = [
+      ...additionalEmails.map(
+        normalizeEmail
+      ),
+    ];
+
+    if (
+      sendToAdditional &&
+      pendingEmail
+    ) {
+      if (
+        !isValidEmail(
+          pendingEmail
+        )
+      ) {
+        setError(
+          "Ingresa un correo adicional válido."
+        );
+        return;
+      }
+
+      emailsToSend.push(
+        pendingEmail
+      );
     }
+
+    emailsToSend = [
+      ...new Set(
+        emailsToSend.filter(
+          Boolean
+        )
+      ),
+    ];
 
     if (
       sendToContact &&
-      !isValidEmail(contactEmail)
+      !isValidEmail(
+        contactEmail
+      )
     ) {
       setError(
         "El correo de contacto guardado en la cotización no es válido."
@@ -263,19 +424,41 @@ export default function QuotationDetailPage() {
     }
 
     if (
-      sendToAdditional &&
-      !isValidEmail(
-        normalizedAdditionalEmail
-      )
+      !sendToContact &&
+      emailsToSend.length ===
+        0
     ) {
       setError(
-        "Ingresa un correo adicional válido."
+        "Selecciona al menos un destinatario para enviar la cotización."
+      );
+      return;
+    }
+
+    const recipients =
+      new Set([
+        ...(sendToContact
+          ? [
+              contactEmail,
+            ]
+          : []),
+        ...emailsToSend,
+      ]);
+
+    if (
+      recipients.size >
+      MAX_EMAIL_RECIPIENTS
+    ) {
+      setError(
+        `Puedes enviar la cotización a un máximo de ${MAX_EMAIL_RECIPIENTS} destinatarios.`
       );
       return;
     }
 
     try {
-      setActionLoading("email");
+      setActionLoading(
+        "email"
+      );
+
       setError("");
       setMessage("");
 
@@ -285,10 +468,8 @@ export default function QuotationDetailPage() {
           {
             send_to_contact:
               sendToContact,
-            additional_email:
-              sendToAdditional
-                ? normalizedAdditionalEmail
-                : null,
+            additional_emails:
+              emailsToSend,
           }
         );
 
@@ -299,6 +480,7 @@ export default function QuotationDetailPage() {
 
       setEmailModalOpen(false);
       setAdditionalEmail("");
+      setAdditionalEmails([]);
       setSendToAdditional(false);
 
       await load();
@@ -1110,37 +1292,105 @@ export default function QuotationDetailPage() {
                   <input
                     type="checkbox"
                     checked={sendToAdditional}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const checked =
+                        event.target.checked;
+
                       setSendToAdditional(
-                        event.target.checked
-                      )
-                    }
+                        checked
+                      );
+
+                      if (!checked) {
+                        setAdditionalEmail("");
+                        setAdditionalEmails([]);
+                      }
+                    }}
                     className="mt-1 h-4 w-4 accent-black"
                   />
 
                   <span>
                     <span className="block text-sm font-semibold text-neutral-950">
-                      Otro correo
+                      Otros correos
                     </span>
                     <span className="mt-1 block text-sm text-neutral-500">
-                      Puedes enviar una copia a una dirección diferente.
+                      Agrega una o más direcciones adicionales. Máximo {MAX_EMAIL_RECIPIENTS} destinatarios en total.
                     </span>
                   </span>
                 </label>
 
                 {sendToAdditional && (
-                  <input
-                    type="email"
-                    value={additionalEmail}
-                    onChange={(event) =>
-                      setAdditionalEmail(
-                        event.target.value
-                      )
-                    }
-                    placeholder="correo@empresa.cl"
-                    autoComplete="email"
-                    className="mt-4 h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm text-neutral-800 outline-none transition focus:border-black"
-                  />
+                  <div className="mt-4">
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input
+                        type="email"
+                        value={additionalEmail}
+                        onChange={(event) =>
+                          setAdditionalEmail(
+                            event.target.value
+                          )
+                        }
+                        onKeyDown={
+                          handleAdditionalEmailKeyDown
+                        }
+                        placeholder="correo@empresa.cl"
+                        autoComplete="email"
+                        className="h-11 min-w-0 flex-1 rounded-xl border border-black/10 px-3.5 text-sm text-neutral-800 outline-none transition focus:border-black"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={
+                          addAdditionalEmail
+                        }
+                        disabled={
+                          !String(
+                            additionalEmail ||
+                              ""
+                          ).trim() ||
+                          getSelectedRecipientCount() >=
+                            MAX_EMAIL_RECIPIENTS
+                        }
+                        className="h-11 shrink-0 rounded-xl bg-neutral-100 px-5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+
+                    {additionalEmails.length >
+                      0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {additionalEmails.map(
+                          (email) => (
+                            <span
+                              key={email}
+                              className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/10 bg-neutral-50 py-1.5 pl-3 pr-2 text-xs font-medium text-neutral-700"
+                            >
+                              <span className="max-w-[250px] truncate">
+                                {email}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeAdditionalEmail(
+                                    email
+                                  )
+                                }
+                                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-200 hover:text-neutral-900"
+                                aria-label={`Eliminar ${email}`}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )
+                        )}
+                      </div>
+                    )}
+
+                    <p className="mt-3 text-xs text-neutral-400">
+                      {getSelectedRecipientCount()} de {MAX_EMAIL_RECIPIENTS} destinatarios seleccionados.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
