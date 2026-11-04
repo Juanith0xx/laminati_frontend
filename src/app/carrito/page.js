@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { trackEvent } from "@/services/analytics.service";
 import { useCartStore } from "@/store/cartStore";
 
 const formatPrice = (value) => {
@@ -121,6 +123,8 @@ const formatPercent = (value) => {
 };
 
 export default function CartPage() {
+  const router = useRouter();
+
   const items = useCartStore((state) => state.items);
   const increaseItem = useCartStore((state) => state.increaseItem);
   const decreaseItem = useCartStore((state) => state.decreaseItem);
@@ -175,6 +179,47 @@ export default function CartPage() {
   );
 
   const totalProducts = items.length;
+
+  const handleCheckoutStart =
+    async () => {
+      try {
+        await Promise.race([
+          trackEvent(
+            "CHECKOUT_START",
+            {
+              page_path:
+                "/checkout",
+              metadata: {
+                source:
+                  "cart_checkout_cta",
+                item_count:
+                  totalProducts,
+                total_units:
+                  totalUnits,
+                total:
+                  Number(
+                    subtotal ||
+                      0
+                  ),
+                currency:
+                  "CLP",
+              },
+            }
+          ),
+          new Promise(
+            (resolve) =>
+              window.setTimeout(
+                resolve,
+                500
+              )
+          ),
+        ]);
+      } finally {
+        router.push(
+          "/checkout"
+        );
+      }
+    };
 
   if (items.length === 0) {
     return (
@@ -234,6 +279,9 @@ export default function CartPage() {
 
             <Link
               href="/productos"
+              style={{
+                color: "#ffffff",
+              }}
               className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-black px-7 text-sm font-medium text-white transition hover:bg-neutral-800"
             >
               Ver productos
@@ -624,12 +672,18 @@ export default function CartPage() {
                 </p>
               </div>
 
-              <Link
-                href="/checkout"
+              <button
+                type="button"
+                onClick={
+                  handleCheckoutStart
+                }
+                style={{
+                  color: "#ffffff",
+                }}
                 className="flex min-h-13 w-full items-center justify-center rounded-full bg-black px-6 py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800"
               >
                 Continuar con la compra
-              </Link>
+              </button>
 
               <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-4">
                 <div className="flex gap-3">
