@@ -168,7 +168,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
     query: {
       category: "laminados",
       collection: "legni-maderas",
-      in_stock: true,
       sort: "featured",
     },
     breadcrumbs: [
@@ -204,7 +203,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
     query: {
       category: "laminados",
       collection: "colours-mate",
-      in_stock: true,
       sort: "featured",
     },
     breadcrumbs: [
@@ -240,7 +238,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
     query: {
       category: "laminados",
       collection: "colours-textures",
-      in_stock: true,
       sort: "featured",
     },
     breadcrumbs: [
@@ -280,7 +277,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
         category: "laminados",
         collection:
           "digital-circus-ettore-sottsass",
-        in_stock: true,
         sort: "featured",
       },
       breadcrumbs: [
@@ -321,7 +317,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
         category: "laminados",
         collection:
           "digitalia-karim-rashid",
-        in_stock: true,
         sort: "featured",
       },
       breadcrumbs: [
@@ -363,7 +358,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
         category: "laminados",
         collection:
           "serigrafia-alessandro-mendini",
-        in_stock: true,
         sort: "featured",
       },
       breadcrumbs: [
@@ -405,7 +399,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
         category: "laminados",
         collection:
           "parade-giulio-iacchetti",
-        in_stock: true,
         sort: "featured",
       },
       breadcrumbs: [
@@ -444,7 +437,6 @@ export const LAMINADOS_COLLECTION_CONFIGS = {
       query: {
         category: "laminados",
         collection: "polaris-extramate",
-        in_stock: true,
         sort: "featured",
       },
       breadcrumbs: [
