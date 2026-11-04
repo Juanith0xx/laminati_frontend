@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { trackEvent } from "@/services/analytics.service";
 
 const HIDDEN_PREFIXES = [
   "/admin",
@@ -71,6 +72,16 @@ export default function WhatsAppBubble() {
 
   const handleClick = (event) => {
     event.preventDefault();
+
+    void trackEvent(
+      "WHATSAPP_CLICK",
+      {
+        metadata: {
+          source:
+            "floating_bubble",
+        },
+      }
+    );
 
     const currentUrl =
       typeof window !== "undefined"

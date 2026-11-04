@@ -4,6 +4,8 @@ import {
   getProducts,
 } from "@/services/products.service";
 
+import TrackedProductLink from "@/components/analytics/TrackedProductLink";
+
 function toNumber(
   value
 ) {
@@ -367,6 +369,27 @@ function getProductCode(
   );
 }
 
+function getCollectionSlug(
+  product
+) {
+  if (
+    typeof product?.collection ===
+    "object"
+  ) {
+    return (
+      product?.collection_slug ||
+      product?.collection?.slug ||
+      ""
+    );
+  }
+
+  return (
+    product?.collection_slug ||
+    product?.collection ||
+    ""
+  );
+}
+
 function OfferCard({
   product,
   offer,
@@ -384,8 +407,39 @@ function OfferCard({
   return (
     <article className="group flex h-full flex-col">
 
-      <Link
+      <TrackedProductLink
         href={`/productos/${product.slug}`}
+        productId={product?.id}
+        productCode={
+          getProductCode(
+            product
+          )
+        }
+        collectionSlug={
+          getCollectionSlug(
+            product
+          )
+        }
+        metadata={{
+          source:
+            "home_offer",
+          product_name:
+            product?.name ||
+            null,
+          product_slug:
+            product?.slug ||
+            null,
+          brand:
+            product?.brand ||
+            product?.brand_name ||
+            null,
+          finish:
+            product?.finish ||
+            null,
+          offer_type:
+            offer?.type ||
+            null,
+        }}
         className="relative block aspect-[4/5] overflow-hidden rounded-[1.65rem] bg-[#f3f2ee] ring-1 ring-emerald-200 transition duration-300 group-hover:-translate-y-1 group-hover:ring-emerald-300 group-hover:shadow-[0_18px_45px_rgba(0,0,0,0.09)]"
       >
 
@@ -415,7 +469,7 @@ function OfferCard({
           En oferta
         </span>
 
-      </Link>
+      </TrackedProductLink>
 
       <div className="flex flex-1 flex-col pt-4">
 
@@ -427,8 +481,39 @@ function OfferCard({
             "Laminados"}
         </p>
 
-        <Link
+        <TrackedProductLink
           href={`/productos/${product.slug}`}
+          productId={product?.id}
+          productCode={
+            getProductCode(
+              product
+            )
+          }
+          collectionSlug={
+            getCollectionSlug(
+              product
+            )
+          }
+          metadata={{
+            source:
+              "home_offer",
+            product_name:
+              product?.name ||
+              null,
+            product_slug:
+              product?.slug ||
+              null,
+            brand:
+              product?.brand ||
+              product?.brand_name ||
+              null,
+            finish:
+              product?.finish ||
+              null,
+            offer_type:
+              offer?.type ||
+              null,
+          }}
           className="mt-2 block"
         >
           <h3 className="min-h-[3rem] line-clamp-2 text-base font-semibold leading-6 tracking-[-0.02em] text-neutral-950 transition group-hover:text-emerald-800">
@@ -444,7 +529,7 @@ function OfferCard({
 
             {product.name}
           </h3>
-        </Link>
+        </TrackedProductLink>
 
         <div className="mt-3 min-h-[4.6rem]">
 
@@ -508,15 +593,46 @@ function OfferCard({
 
         </div>
 
-        <Link
+        <TrackedProductLink
           href={`/productos/${product.slug}`}
+          productId={product?.id}
+          productCode={
+            getProductCode(
+              product
+            )
+          }
+          collectionSlug={
+            getCollectionSlug(
+              product
+            )
+          }
+          metadata={{
+            source:
+              "home_offer",
+            product_name:
+              product?.name ||
+              null,
+            product_slug:
+              product?.slug ||
+              null,
+            brand:
+              product?.brand ||
+              product?.brand_name ||
+              null,
+            finish:
+              product?.finish ||
+              null,
+            offer_type:
+              offer?.type ||
+              null,
+          }}
           className="mt-auto inline-flex h-11 items-center justify-between rounded-full border border-neutral-200 px-4 text-xs font-semibold text-neutral-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
         >
           Ver oferta
           <span>
             →
           </span>
-        </Link>
+        </TrackedProductLink>
 
       </div>
 

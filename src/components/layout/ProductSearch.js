@@ -17,6 +17,10 @@ import {
   searchProductSuggestions,
 } from "@/services/search.service";
 
+import {
+  trackEvent,
+} from "@/services/analytics.service";
+
 /* =========================================
    FORMATEAR PRECIO
 ========================================= */
@@ -48,6 +52,9 @@ export default function ProductSearch({
   const router = useRouter();
 
   const inputRef = useRef(null);
+
+  const lastNoResultsTrackedRef =
+    useRef("");
 
   const [query, setQuery] =
     useState("");
@@ -164,6 +171,72 @@ export default function ProductSearch({
       return;
     }
 
+    const normalizedQuery =
+      query.trim();
+
+    if (normalizedQuery) {
+      void trackEvent(
+        "SEARCH",
+        {
+          search_term:
+            normalizedQuery,
+          metadata: {
+            source:
+              "navbar_search",
+            action:
+              "suggestion_selected",
+            result_count:
+              suggestions.length,
+            selected_product_id:
+              product?.id ||
+              null,
+            selected_product_code:
+              product?.internal_code ||
+              product?.sku ||
+              null,
+            selected_product_slug:
+              product?.slug ||
+              null,
+          },
+        }
+      );
+    }
+
+    void trackEvent(
+      "PRODUCT_CLICK",
+      {
+        product_id:
+          product?.id ||
+          null,
+        product_code:
+          product?.internal_code ||
+          product?.sku ||
+          null,
+        collection_slug:
+          product?.collection_slug ||
+          (
+            typeof product?.collection ===
+              "object"
+              ? product?.collection?.slug
+              : product?.collection
+          ) ||
+          null,
+        metadata: {
+          source:
+            "search_suggestion",
+          search_term:
+            normalizedQuery ||
+            null,
+          product_name:
+            product?.name ||
+            null,
+          product_slug:
+            product?.slug ||
+            null,
+        },
+      }
+    );
+
     onClose?.();
 
     router.push(
@@ -181,6 +254,47 @@ export default function ProductSearch({
 
     if (!normalizedQuery) {
       return;
+    }
+
+    void trackEvent(
+      "SEARCH",
+      {
+        search_term:
+          normalizedQuery,
+        metadata: {
+          source:
+            "navbar_search",
+          action:
+            "view_all_results",
+          result_count:
+            suggestions.length,
+        },
+      }
+    );
+
+    if (
+      suggestions.length === 0 &&
+      lastNoResultsTrackedRef.current !==
+        normalizedQuery
+    ) {
+      lastNoResultsTrackedRef.current =
+        normalizedQuery;
+
+      void trackEvent(
+        "SEARCH_NO_RESULTS",
+        {
+          search_term:
+            normalizedQuery,
+          metadata: {
+            source:
+              "navbar_search",
+            action:
+              "submitted_no_results",
+            result_count:
+              0,
+          },
+        }
+      );
     }
 
     onClose?.();
@@ -268,6 +382,64 @@ export default function ProductSearch({
     !error &&
     query.trim().length >= 2 &&
     suggestions.length === 0;
+
+  useEffect(() => {
+    if (!showNoResults) {
+      return;
+    }
+
+    const normalizedQuery =
+      query.trim();
+
+    if (
+      !normalizedQuery ||
+      lastNoResultsTrackedRef.current ===
+        normalizedQuery
+    ) {
+      return;
+    }
+
+    const timeout =
+      window.setTimeout(
+        () => {
+          if (
+            lastNoResultsTrackedRef.current ===
+              normalizedQuery
+          ) {
+            return;
+          }
+
+          lastNoResultsTrackedRef.current =
+            normalizedQuery;
+
+          void trackEvent(
+            "SEARCH_NO_RESULTS",
+            {
+              search_term:
+                normalizedQuery,
+              metadata: {
+                source:
+                  "navbar_search",
+                action:
+                  "no_results_shown",
+                result_count:
+                  0,
+              },
+            }
+          );
+        },
+        700
+      );
+
+    return () => {
+      window.clearTimeout(
+        timeout
+      );
+    };
+  }, [
+    showNoResults,
+    query,
+  ]);
 
   return (
     <div className="relative mx-auto w-full max-w-3xl">

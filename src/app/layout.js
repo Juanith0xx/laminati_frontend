@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { Poppins } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WhatsAppBubble from "@/components/public/WhatsAppBubble";
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import "./globals.css";
 
 const SITE_URL = "https://laminati.cl";
@@ -92,6 +94,9 @@ export default function RootLayout({ children }) {
           }}
         />
         <Navbar />
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
         {children}
         <Footer />
         <WhatsAppBubble />

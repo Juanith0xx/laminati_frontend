@@ -9,6 +9,8 @@ import {
 } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { trackEvent } from "@/services/analytics.service";
 
 
 const AUTO_PLAY_MS =
@@ -636,6 +638,9 @@ function CollectionVisual({
 export default function CollectionsCarousel({
   collections = [],
 }) {
+  const router =
+    useRouter();
+
   const viewportRef =
     useRef(null);
 
@@ -677,6 +682,124 @@ export default function CollectionsCarousel({
   const canMove =
     collections.length >
     visibleCount;
+
+  const handleCollectionClick =
+    useCallback(
+      async (
+        event,
+        collection
+      ) => {
+        if (
+          !collection?.slug
+        ) {
+          return;
+        }
+
+        const isModifiedClick =
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey;
+
+        /*
+         * Para Ctrl/Cmd/Shift + click dejamos que
+         * el navegador maneje la apertura normal.
+         * El click principal se controla para dar
+         * tiempo al endpoint interno de Analytics
+         * a recibir el evento antes de navegar.
+         */
+        if (
+          isModifiedClick
+        ) {
+          void trackEvent(
+            "COLLECTION_CLICK",
+            {
+              collection_slug:
+                collection.slug,
+              metadata: {
+                source:
+                  "home_collections",
+                collection_name:
+                  collection.name ||
+                  null,
+                brand:
+                  collection.brand ||
+                  "Abet Laminati",
+                product_count:
+                  Number(
+                    collection
+                      ?.product_count ||
+                    0
+                  ),
+              },
+            }
+          );
+
+          return;
+        }
+
+        event.preventDefault();
+
+        const href =
+          `/productos?collection=${encodeURIComponent(
+            collection.slug
+          )}`;
+
+        const trackingRequest =
+          Promise.resolve(
+            trackEvent(
+              "COLLECTION_CLICK",
+              {
+                collection_slug:
+                  collection.slug,
+                metadata: {
+                  source:
+                    "home_collections",
+                  collection_name:
+                    collection.name ||
+                    null,
+                  brand:
+                    collection.brand ||
+                    "Abet Laminati",
+                  product_count:
+                    Number(
+                      collection
+                        ?.product_count ||
+                      0
+                    ),
+                },
+              }
+            )
+          ).catch(
+            () => false
+          );
+
+        /*
+         * Normalmente localhost responde casi
+         * inmediatamente. En producción no
+         * bloqueamos la UX más de 250 ms.
+         * El fetch de Analytics usa keepalive.
+         */
+        await Promise.race([
+          trackingRequest,
+          new Promise(
+            (resolve) =>
+              window.setTimeout(
+                resolve,
+                250
+              )
+          ),
+        ]);
+
+        router.push(
+          href
+        );
+      },
+      [
+        router,
+      ]
+    );
 
   const scrollToIndex =
     useCallback(
@@ -1025,6 +1148,12 @@ export default function CollectionsCarousel({
                   href={`/productos?collection=${encodeURIComponent(
                     collection.slug
                   )}`}
+                  onClick={(event) =>
+                    handleCollectionClick(
+                      event,
+                      collection
+                    )
+                  }
                   className={`
                     group
                     relative

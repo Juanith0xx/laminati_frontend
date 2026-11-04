@@ -22,6 +22,12 @@ import {
 
 import {
 
+  trackEvent,
+
+} from "@/services/analytics.service";
+
+import {
+
   useCartStore,
 
 } from "@/store/cartStore";
@@ -2015,6 +2021,68 @@ export default function CheckoutPage() {
           );
 
         }
+
+        const orderNumber =
+          data?.order
+            ?.order_number ||
+          data?.order
+            ?.number ||
+          null;
+
+        const orderAnalyticsRequest =
+          Promise.resolve(
+            trackEvent(
+              "ORDER_CREATED",
+              {
+                metadata: {
+                  source:
+                    "checkout",
+
+                  order_id:
+                    orderId,
+
+                  order_number:
+                    orderNumber,
+
+                  item_count:
+                    items.length,
+
+                  total_units:
+                    totalUnits,
+
+                  total:
+                    Number(
+                      subtotal ||
+                        0
+                    ),
+
+                  currency:
+                    "CLP",
+
+                  payment_method:
+                    paymentMethod ||
+                    null,
+
+                  document_type:
+                    documentType ||
+                    null,
+                },
+              }
+            )
+          ).catch(
+            () => false
+          );
+
+        await Promise.race([
+          orderAnalyticsRequest,
+          new Promise(
+            (resolve) =>
+              window.setTimeout(
+                resolve,
+                250
+              )
+          ),
+        ]);
 
         if (
 

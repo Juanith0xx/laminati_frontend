@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProducts } from "@/services/products.service";
 import CollectionComingSoon from "@/components/catalog/CollectionComingSoon";
+import TrackedProductLink from "@/components/analytics/TrackedProductLink";
 
 export const metadata = {
   title:
@@ -517,10 +518,35 @@ function ProductCatalogCard({
                 "Producto Laminati";
 
               return (
-                <Link
+                <TrackedProductLink
                   key={product.id}
                   href={`/productos/${product.slug}`}
                   className="group block min-w-0"
+                  productId={product.id}
+                  productCode={
+                    product?.internal_code ||
+                    product?.sku ||
+                    code ||
+                    ""
+                  }
+                  collectionSlug={
+                    product?.collection_slug ||
+                    product?.collection ||
+                    ""
+                  }
+                  metadata={{
+                    product_name:
+                      productName,
+                    product_slug:
+                      product?.slug ||
+                      null,
+                    brand:
+                      product?.brand ||
+                      null,
+                    finish:
+                      product?.finish ||
+                      null,
+                  }}
                 >
                   <div
                     className={`relative aspect-[2/3] overflow-hidden rounded-[1.5rem] bg-[#f3f2ee] shadow-[0_5px_14px_rgba(0,0,0,0.08)] transition-shadow duration-300 ${
@@ -729,7 +755,7 @@ function ProductCatalogCard({
                         )}
                       </div>
                     )}
-                </Link>
+                </TrackedProductLink>
               );
             
 }

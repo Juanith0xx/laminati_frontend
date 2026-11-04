@@ -24,6 +24,10 @@ import {
 apiRequest,
 } from "@/services/api";
 
+import {
+trackEvent,
+} from "@/services/analytics.service";
+
 /* =========================================*
 
 *   FORMATEAR PRECIO CLP*
@@ -181,6 +185,67 @@ initialImage?.id ||
 null
 
 );
+
+/* =========================================*
+*     ANALYTICS · PRODUCT VIEW*
+*  ========================================= */
+useEffect(() => {
+
+if (
+!product?.id
+) {
+
+return;
+
+}
+
+void trackEvent(
+"PRODUCT_VIEW",
+{
+product_id:
+product.id,
+
+product_code:
+product.internal_code ||
+product.sku ||
+null,
+
+collection_slug:
+product.collection_slug ||
+product.collection ||
+null,
+
+metadata: {
+product_name:
+product.name ||
+null,
+
+product_slug:
+product.slug ||
+null,
+
+brand:
+product.brand ||
+null,
+
+finish:
+product.finish ||
+null,
+},
+}
+);
+
+}, [
+product?.id,
+product?.internal_code,
+product?.sku,
+product?.collection_slug,
+product?.collection,
+product?.name,
+product?.slug,
+product?.brand,
+product?.finish,
+]);
 
 /* =========================================*
 
@@ -1982,6 +2047,38 @@ return window.location.href;
 const handleShareWhatsApp =
 
 () => {
+
+void trackEvent(
+"WHATSAPP_CLICK",
+{
+product_id:
+product?.id ||
+null,
+
+product_code:
+product?.internal_code ||
+product?.sku ||
+null,
+
+collection_slug:
+product?.collection_slug ||
+product?.collection ||
+null,
+
+metadata: {
+source:
+"product_share",
+
+product_name:
+product?.name ||
+null,
+
+product_slug:
+product?.slug ||
+null,
+},
+}
+);
 
 const url =
 

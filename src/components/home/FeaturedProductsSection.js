@@ -4,6 +4,8 @@ import {
   getProducts,
 } from "@/services/products.service";
 
+import TrackedProductLink from "@/components/analytics/TrackedProductLink";
+
 function toNumber(
   value
 ) {
@@ -75,6 +77,27 @@ function getProductCode(
   );
 }
 
+function getCollectionSlug(
+  product
+) {
+  if (
+    typeof product?.collection ===
+    "object"
+  ) {
+    return (
+      product?.collection_slug ||
+      product?.collection?.slug ||
+      ""
+    );
+  }
+
+  return (
+    product?.collection_slug ||
+    product?.collection ||
+    ""
+  );
+}
+
 function getDisplayedPrice(
   product
 ) {
@@ -131,8 +154,36 @@ function FeaturedCard({
   return (
     <article className="group flex h-full flex-col">
 
-      <Link
+      <TrackedProductLink
         href={`/productos/${product.slug}`}
+        productId={product?.id}
+        productCode={
+          getProductCode(
+            product
+          )
+        }
+        collectionSlug={
+          getCollectionSlug(
+            product
+          )
+        }
+        metadata={{
+          source:
+            "home_featured",
+          product_name:
+            product?.name ||
+            null,
+          product_slug:
+            product?.slug ||
+            null,
+          brand:
+            product?.brand ||
+            product?.brand_name ||
+            null,
+          finish:
+            product?.finish ||
+            null,
+        }}
         className="relative block aspect-[4/5] w-full overflow-hidden rounded-[1.75rem] bg-[#f3f2ee] shadow-[0_8px_24px_rgba(0,0,0,0.055)] transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_42px_rgba(0,0,0,0.09)]"
       >
 
@@ -162,7 +213,7 @@ function FeaturedCard({
           ↗
         </span>
 
-      </Link>
+      </TrackedProductLink>
 
       <div className="flex flex-1 flex-col pt-4">
 
@@ -178,8 +229,36 @@ function FeaturedCard({
 
         </div>
 
-        <Link
+        <TrackedProductLink
           href={`/productos/${product.slug}`}
+          productId={product?.id}
+          productCode={
+            getProductCode(
+              product
+            )
+          }
+          collectionSlug={
+            getCollectionSlug(
+              product
+            )
+          }
+          metadata={{
+            source:
+              "home_featured",
+            product_name:
+              product?.name ||
+              null,
+            product_slug:
+              product?.slug ||
+              null,
+            brand:
+              product?.brand ||
+              product?.brand_name ||
+              null,
+            finish:
+              product?.finish ||
+              null,
+          }}
           className="mt-2 block"
         >
           <h3 className="min-h-[3rem] line-clamp-2 text-base font-semibold leading-6 tracking-[-0.02em] text-neutral-950 transition group-hover:text-neutral-600">
@@ -195,7 +274,7 @@ function FeaturedCard({
 
             {product.name}
           </h3>
-        </Link>
+        </TrackedProductLink>
 
         <div className="mt-3 min-h-[3.25rem]">
 
@@ -220,8 +299,36 @@ function FeaturedCard({
 
         </div>
 
-        <Link
+        <TrackedProductLink
           href={`/productos/${product.slug}`}
+          productId={product?.id}
+          productCode={
+            getProductCode(
+              product
+            )
+          }
+          collectionSlug={
+            getCollectionSlug(
+              product
+            )
+          }
+          metadata={{
+            source:
+              "home_featured",
+            product_name:
+              product?.name ||
+              null,
+            product_slug:
+              product?.slug ||
+              null,
+            brand:
+              product?.brand ||
+              product?.brand_name ||
+              null,
+            finish:
+              product?.finish ||
+              null,
+          }}
           style={{
             color:
               "#ffffff",
@@ -235,7 +342,7 @@ function FeaturedCard({
           <span className="!text-white">
             →
           </span>
-        </Link>
+        </TrackedProductLink>
 
       </div>
 
