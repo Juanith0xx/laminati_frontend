@@ -842,6 +842,13 @@ export default function QuotationsPage() {
               >
                 Nueva cotización de proyecto
               </Link>
+
+              <Link
+                href="/admin/cotizaciones/nueva/banos"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[#6A9800] bg-[#F4F9E8] px-5 text-sm font-semibold text-[#5F8900] transition hover:bg-[#6A9800] hover:!text-white"
+              >
+                Nueva cotización de baño
+              </Link>
             </div>
           </div>
         </section>
