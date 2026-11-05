@@ -480,6 +480,29 @@ function IconDashboard({
   );
 }
 
+function IconAnalytics({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M4 19V10" />
+      <path d="M10 19V5" />
+      <path d="M16 19v-7" />
+      <path d="M22 19V8" />
+      <path d="M3 19h20" />
+    </svg>
+  );
+}
+
 /* =========================================
    NAVEGACIÓN
 ========================================= */
@@ -492,6 +515,12 @@ const NAVIGATION = [
         href: "/admin/dashboard",
         exact: true,
         icon: IconDashboard,
+      },
+      {
+        label: "Analytics",
+        href: "/admin/analytics",
+        exact: true,
+        icon: IconAnalytics,
       },
     ],
   },
