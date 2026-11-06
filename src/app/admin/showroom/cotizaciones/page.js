@@ -1121,9 +1121,17 @@ export default function QuotationsPage() {
                       <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
                         {canEdit && (
                           <Link
-                            href={`/admin/cotizaciones/${quotation.id}/editar`}
+                            href={
+                              quotation.is_bathroom_quotation
+                                ? `/admin/cotizaciones/${quotation.id}/editar/banos`
+                                : `/admin/cotizaciones/${quotation.id}/editar`
+                            }
                             aria-label={`Editar cotización ${quotation.quote_number}`}
-                            title="Editar cotización"
+                            title={
+                              quotation.is_bathroom_quotation
+                                ? "Editar cotización de baño"
+                                : "Editar cotización"
+                            }
                             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-neutral-700 transition hover:border-black/20 hover:bg-neutral-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-black/15"
                           >
                             <EditIcon className="h-[18px] w-[18px]" />

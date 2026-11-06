@@ -1129,7 +1129,7 @@ export default function QuotationDetailPage() {
               {canEdit && (
                 <Link
                   href={`/admin/cotizaciones/${quotation.id}/editar`}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-black px-4 text-center text-xs font-semibold !text-white shadow-sm transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-black/20 sm:w-auto sm:min-w-[150px]"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full bg-black px-5 text-center text-sm font-semibold !text-white transition-colors hover:bg-[#679300] focus:outline-none focus:ring-2 focus:ring-black/15 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                   style={{ color: "#ffffff" }}
                 >
                   Editar cotización
@@ -1140,7 +1140,7 @@ export default function QuotationDetailPage() {
                 type="button"
                 onClick={openPdf}
                 disabled={actionLoading === "pdf"}
-                className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 text-center text-xs font-semibold text-neutral-800 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[190px]"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-black/10 bg-white px-5 text-center text-sm font-semibold text-black transition-colors hover:border-black hover:bg-black hover:text-white focus:outline-none focus:ring-2 focus:ring-black/10 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
               >
                 {actionLoading === "pdf"
                   ? "Abriendo..."
@@ -1156,7 +1156,7 @@ export default function QuotationDetailPage() {
                     quotation.status
                   )
                 }
-                className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-black px-4 text-center text-xs font-semibold !text-white shadow-sm transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-black/20 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[150px]"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-black px-5 text-center text-sm font-semibold !text-white transition-colors hover:bg-[#679300] focus:outline-none focus:ring-2 focus:ring-black/15 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                 style={{ color: "#ffffff" }}
               >
                 {actionLoading === "email"
@@ -1168,7 +1168,7 @@ export default function QuotationDetailPage() {
                 <button
                   type="button"
                   onClick={() => setConvertOpen(true)}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-neutral-900 px-4 text-center text-xs font-semibold !text-white shadow-sm transition hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-300 sm:w-auto sm:min-w-[150px]"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full bg-black px-5 text-center text-sm font-semibold !text-white transition-colors hover:bg-[#679300] focus:outline-none focus:ring-2 focus:ring-black/15 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                   style={{ color: "#ffffff" }}
                 >
                   Generar{" "}
@@ -1183,7 +1183,7 @@ export default function QuotationDetailPage() {
                   type="button"
                   onClick={retryTaxDocumentValidation}
                   disabled={Boolean(actionLoading)}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-center text-xs font-semibold text-amber-900 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[190px]"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-5 text-center text-sm font-semibold text-amber-900 transition-colors hover:border-amber-300 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                 >
                   {actionLoading === "dte-validation"
                     ? "Validando documento..."
@@ -1196,7 +1196,7 @@ export default function QuotationDetailPage() {
                   type="button"
                   onClick={cancel}
                   disabled={actionLoading === "cancel"}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-4 text-center text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[150px]"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full border border-red-200 bg-white px-5 text-center text-sm font-semibold text-red-600 transition-colors hover:border-red-600 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                 >
                   {actionLoading === "cancel"
                     ? "Cancelando..."

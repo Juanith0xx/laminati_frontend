@@ -45,6 +45,41 @@ export async function createBathroomQuotation(
 }
 
 /* =========================================
+   OBTENER COTIZACIÓN DE BAÑO EXISTENTE
+========================================= */
+export async function getBathroomQuotation(
+  quotationId
+) {
+  return apiRequest(
+    `/admin/pos/quotations/${encodeURIComponent(
+      quotationId
+    )}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+}
+
+/* =========================================
+   ACTUALIZAR COTIZACIÓN PROJECT DE BAÑO
+========================================= */
+export async function updateBathroomQuotation(
+  quotationId,
+  payload
+) {
+  return apiRequest(
+    `/admin/pos/quotations/${encodeURIComponent(
+      quotationId
+    )}/project`,
+    {
+      method: "PATCH",
+      body: payload,
+    }
+  );
+}
+
+/* =========================================
    PDF DE COTIZACIÓN
 ========================================= */
 export async function getBathroomQuotationPdfBlob(

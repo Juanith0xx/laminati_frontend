@@ -62,14 +62,15 @@ function IconProducts({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M4.5 7.5 12 3l7.5 4.5v9L12 21l-7.5-4.5v-9Z" />
-      <path d="m4.8 7.7 7.2 4.2 7.2-4.2M12 12v8.4" />
+      <path d="M12 3 20 7.5 12 12 4 7.5 12 3Z" />
+      <path d="M4 7.5V16.5L12 21 20 16.5V7.5" />
+      <path d="M12 12V21" />
     </svg>
   );
 }
@@ -82,14 +83,14 @@ function IconProjects({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H10l2 2h5.5A2.5 2.5 0 0 1 20 8.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6.5Z" />
-      <path d="M8 11h8M8 15h5" />
+      <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+      <path d="M8 12h8M8 16h5" />
     </svg>
   );
 }
@@ -102,52 +103,35 @@ function IconPayments({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="14"
-        rx="2.5"
-      />
+      <rect x="3" y="5" width="18" height="14" rx="3" />
       <path d="M3 9h18" />
       <path d="M7 15h4" />
-    </svg>
-  );
-}
-
-
-function IconShowroom({
-  className = "",
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M5 4h14l1 5H4l1-5Z" />
-      <path d="M5 9v11h14V9" />
-      <path d="M8 13h8M8 16h5" />
+      <circle cx="17" cy="14" r="1" />
     </svg>
   );
 }
 
 function IconOrders({ className = "" }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <rect x="4" y="3" width="16" height="18" rx="2.5" />
-      <path d="M8 8h8M8 12h8M8 16h4" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 3h12l2 4v14H4V7l2-4Z" />
+      <path d="M4 7h16" />
+      <path d="M9 11h6" />
     </svg>
   );
 }
@@ -160,17 +144,15 @@ function IconQuotations({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M6 3h9l3 3v15H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
-      <path d="M14 3v4h4" />
-      <path d="M8 11h8" />
-      <path d="M8 15h8" />
-      <path d="M8 19h5" />
+      <path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+      <path d="M14 3v5h5" />
+      <path d="M8 12h8M8 16h6" />
     </svg>
   );
 }
@@ -183,21 +165,15 @@ function IconPriceLists({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <rect
-        x="4"
-        y="3"
-        width="16"
-        height="18"
-        rx="2.5"
-      />
+      <path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
       <path d="M8 8h8M8 12h5M8 16h3" />
-      <path d="M15.5 14.5h2.5v2.5h-2.5z" />
+      <path d="M16.5 14.5v4M14.5 16.5h4" />
     </svg>
   );
 }
@@ -210,16 +186,16 @@ function IconTaxDocuments({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M6 3h9l3 3v15H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
-      <path d="M14 3v4h4" />
-      <path d="M8 11h8M8 15h5" />
-      <path d="M16 14.5v4M14.5 16.5h3" />
+      <path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+      <path d="M14 3v5h5" />
+      <path d="M8 12h5M8 16h4" />
+      <path d="M16 14v5M13.5 16.5h5" />
     </svg>
   );
 }
@@ -232,33 +208,15 @@ function IconQr({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <rect
-        x="3"
-        y="3"
-        width="7"
-        height="7"
-        rx="1"
-      />
-      <rect
-        x="14"
-        y="3"
-        width="7"
-        height="7"
-        rx="1"
-      />
-      <rect
-        x="3"
-        y="14"
-        width="7"
-        height="7"
-        rx="1"
-      />
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
       <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" />
     </svg>
   );
@@ -272,16 +230,80 @@ function IconStore({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M4 10v9h16v-9" />
-      <path d="M3 10 5.4 5h13.2L21 10" />
-      <path d="M3 10a3 3 0 0 0 5 2.2A3 3 0 0 0 12 12a3 3 0 0 0 4 .2A3 3 0 0 0 21 10" />
-      <path d="M9 19v-5h6v5" />
+      <path d="M4 10v10h16V10" />
+      <path d="M3 10 5 4h14l2 6" />
+      <path d="M3 10a3 3 0 0 0 5 2 3 3 0 0 0 4 0 3 3 0 0 0 4 0 3 3 0 0 0 5-2" />
+    </svg>
+  );
+}
+
+function IconShowroom({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M4 9h16v11H4z" />
+      <path d="M3 9 5 4h14l2 5" />
+      <path d="M7 13h4v7" />
+      <path d="M15 13h2" />
+    </svg>
+  );
+}
+
+function IconContacts({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="5" y="3" width="15" height="18" rx="2.5" />
+      <path d="M5 7H3M5 12H3M5 17H3" />
+      <circle cx="12.5" cy="9" r="2.5" />
+      <path d="M8.5 17a4 4 0 0 1 8 0" />
+    </svg>
+  );
+}
+
+function IconSessions({
+  className = "",
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+      <path d="M8 3.8 5.5 5.7" />
     </svg>
   );
 }
@@ -294,14 +316,14 @@ function IconProfile({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
       <circle cx="12" cy="8" r="4" />
-      <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+      <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
     </svg>
   );
 }
@@ -314,66 +336,15 @@ function IconUsers({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-
-function IconContacts({
-  className = "",
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="14"
-        rx="2.5"
-      />
-      <path d="m4 7 8 6 8-6" />
-    </svg>
-  );
-}
-
-
-function IconSessions({
-  className = "",
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 8v4l2.5 1.5" />
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M4.5 4.5 7 7" />
-      <path d="M19.5 4.5 17 7" />
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
+      <path d="M16 5.5a3.5 3.5 0 0 1 0 6.5M17.5 15.5a5 5 0 0 1 3 4.5" />
     </svg>
   );
 }
@@ -386,14 +357,15 @@ function IconLogout({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
       <path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" />
-      <path d="M14 8l4 4-4 4M18 12H9" />
+      <path d="m15 8 4 4-4 4" />
+      <path d="M19 12H9" />
     </svg>
   );
 }
@@ -466,16 +438,16 @@ function IconDashboard({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <rect x="3" y="3" width="8" height="8" rx="1.5" />
-      <rect x="13" y="3" width="8" height="5" rx="1.5" />
-      <rect x="13" y="10" width="8" height="11" rx="1.5" />
-      <rect x="3" y="13" width="8" height="8" rx="1.5" />
+      <rect x="3" y="3" width="7" height="7" rx="2" />
+      <rect x="14" y="3" width="7" height="5" rx="2" />
+      <rect x="14" y="12" width="7" height="9" rx="2" />
+      <rect x="3" y="14" width="7" height="7" rx="2" />
     </svg>
   );
 }
@@ -488,17 +460,16 @@ function IconAnalytics({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M4 19V10" />
-      <path d="M10 19V5" />
-      <path d="M16 19v-7" />
-      <path d="M22 19V8" />
-      <path d="M3 19h20" />
+      <path d="M4 19V13" />
+      <path d="M10 19V9" />
+      <path d="M16 19V5" />
+      <path d="M22 19H2" />
     </svg>
   );
 }
@@ -556,16 +527,6 @@ const NAVIGATION = [
           "/admin/proyectos-cotizados",
         icon:
           IconProjects,
-      },
-      {
-        label:
-          "Nueva cotización de proyecto",
-        href:
-          "/admin/cotizaciones/nueva/proyecto",
-        exact:
-          true,
-        icon:
-          IconQuotations,
       },
       {
         label: "Pedidos",
@@ -672,7 +633,6 @@ const SELLER_ALLOWED_PATHS = new Set([
   "/admin/dashboard",
   "/admin/showroom",
   "/admin/showroom/cotizaciones",
-  "/admin/cotizaciones/nueva/proyecto",
   "/admin/proyectos-cotizados",
   "/admin/pedidos",
   "/admin/pagos",
@@ -854,42 +814,25 @@ function SidebarContent({
         className={`border-b border-neutral-100 transition-all duration-300 ${
           collapsed
             ? "px-2.5 py-3"
-            : "px-5 py-5"
+            : "px-4 py-4"
         }`}
       >
         <div
-          className={`flex ${
+          className={`flex items-center ${
             collapsed
-              ? "flex-col items-center gap-2"
-              : "items-start justify-between gap-3"
+              ? "justify-center"
+              : "justify-between gap-3"
           }`}
         >
-          <Link
-            href="/admin/dashboard"
-            onClick={onNavigate}
-            className={
-              collapsed
-                ? "flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-neutral-50"
-                : "min-w-0 flex-1"
-            }
-            aria-label="Ir al dashboard"
-          >
-            {collapsed ? (
-              <img
-                src="/icon.png"
-                alt="Laminati World"
-                className="h-9 w-9 object-contain"
-                loading="eager"
-              />
-            ) : (
-              <img
-                src="/images/logo-laminati-world.png"
-                alt="Laminati World"
-                className="h-auto w-[160px] max-w-full object-contain"
-                loading="eager"
-              />
-            )}
-          </Link>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+                {normalizeRole(role) === "VENDEDOR"
+                  ? "Perfil vendedor"
+                  : "Administración"}
+              </p>
+            </div>
+          )}
 
           {onToggleCollapse && (
             <button
@@ -922,14 +865,6 @@ function SidebarContent({
             </button>
           )}
         </div>
-
-        {!collapsed && (
-          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-            {normalizeRole(role) === "VENDEDOR"
-              ? "Perfil vendedor"
-              : "Administración"}
-          </p>
-        )}
       </div>
 
       <div
