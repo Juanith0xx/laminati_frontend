@@ -352,8 +352,10 @@ export async function POST(
       ? body.metadata
       : {};
 
+  const visitorHash = getAnonymousVisitorHash(request, secret);
+
   const payload = {
-    visitor_hash: getAnonymousVisitorHash(request, secret),
+    visitor_hash: visitorHash,
     session_key:
       body.session_key,
     event_type:
@@ -386,6 +388,8 @@ export async function POST(
       ),
     metadata: {
       ...metadata,
+      // Diagnostico sin almacenar la IP ni la huella en analytics_events.
+      rate_limit_hash_available: Boolean(visitorHash),
       location_source:
         (process.env.VERCEL === "1" && request.headers.get("x-vercel-ip-country"))
           ? "vercel_ip"

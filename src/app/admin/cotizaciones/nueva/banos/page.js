@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   createBathroomQuotation,
@@ -1425,6 +1426,7 @@ function SheetPreview({
 ========================================= */
 
 export default function BathroomQuotationPage() {
+  const router = useRouter();
   const [
     projectName,
     setProjectName,
@@ -1561,6 +1563,11 @@ export default function BathroomQuotationPage() {
     quotationResult,
     setQuotationResult,
   ] = useState(null);
+
+  const [
+    quotationSuccessOpen,
+    setQuotationSuccessOpen,
+  ] = useState(false);
 
   useEffect(
     () => {
@@ -2546,8 +2553,28 @@ export default function BathroomQuotationPage() {
           },
         });
 
-      setQuotationResult(
-        response
+      const createdQuotation =
+        response?.quotation ||
+        response?.data?.quotation ||
+        response?.data?.data?.quotation ||
+        (response?.id
+          ? response
+          : null);
+
+      if (!createdQuotation) {
+        throw new Error(
+          "La cotización fue procesada, pero el backend no devolvió sus datos"
+        );
+      }
+
+      setQuotationResult({
+        ...(response || {}),
+        quotation:
+          createdQuotation,
+      });
+
+      setQuotationSuccessOpen(
+        true
       );
     } catch (requestError) {
       setQuotationError(
@@ -2560,6 +2587,16 @@ export default function BathroomQuotationPage() {
         false
       );
     }
+  }
+
+  function handleGoToQuotations() {
+    setQuotationSuccessOpen(
+      false
+    );
+
+    router.push(
+      "/admin/showroom/cotizaciones"
+    );
   }
 
   async function handleOpenPdf() {
@@ -4103,6 +4140,104 @@ export default function BathroomQuotationPage() {
           )}
         </div>
       </div>
+
+      {quotationSuccessOpen &&
+        quotationResult?.quotation && (
+          <div
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/55 px-4 backdrop-blur-[4px]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bathroom-quotation-success-title"
+          >
+            <div className="w-full max-w-[500px] rounded-[30px] bg-white p-8 shadow-[0_30px_90px_rgba(0,0,0,0.28)] sm:p-9">
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M7 10v12" />
+                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+                  </svg>
+                </span>
+
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#679300]">
+                  Cotización creada
+                </p>
+              </div>
+
+              <h2
+                id="bathroom-quotation-success-title"
+                className="mt-4 text-[28px] font-semibold leading-tight text-black"
+              >
+                {quotationResult.quotation.quote_number ||
+                  quotationResult.quotation.quotation_number ||
+                  quotationResult.quotation.number ||
+                  "Cotización generada"}
+              </h2>
+
+              <p className="mt-4 max-w-md text-sm leading-6 text-neutral-500">
+                Tu cotización se creó de forma correcta y ya está disponible en el listado de cotizaciones.
+              </p>
+
+              <div className="mt-6 rounded-[20px] border border-neutral-200 bg-neutral-50 p-5">
+                <div>
+                  <p className="text-xs text-neutral-500">
+                    Cliente
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-black">
+                    {customer.legalName ||
+                      quotationResult.quotation.customer_name ||
+                      "Cliente"}
+                  </p>
+                </div>
+
+                <div className="mt-4">
+                  <p className="text-xs text-neutral-500">
+                    Total
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-black">
+                    {money(
+                      quotationResult.quotation.total ||
+                      quotationResult.quotation.total_gross ||
+                      quotationTotals.gross
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-7 flex flex-col justify-end gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuotationSuccessOpen(
+                      false
+                    )
+                  }
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-200 bg-white px-6 text-sm font-medium text-black transition hover:border-neutral-400"
+                >
+                  Permanecer aquí
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    handleGoToQuotations
+                  }
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-black px-7 text-sm font-semibold text-white transition hover:bg-[#679300]"
+                >
+                  Ir a cotizaciones
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </main>
   );
 }
