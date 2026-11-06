@@ -80,6 +80,33 @@ const WALL_MODES = [
   },
 ];
 
+const ADDITIONAL_SERVICE_PRESETS = [
+  {
+    code: "SERV-QUINC",
+    description: "Quincallería",
+    unit: "GL",
+  },
+  {
+    code: "SERV-INST",
+    description: "Servicio de instalación",
+    unit: "GL",
+  },
+  {
+    code: "SERV-TRAS",
+    description: "Traslado / flete",
+    unit: "GL",
+  },
+];
+
+const SERVICE_UNITS = [
+  "GL",
+  "UN",
+  "HH",
+  "M",
+  "M2",
+  "DÍA",
+];
+
 const moneyFormatter =
   new Intl.NumberFormat(
     "es-CL",
@@ -115,6 +142,38 @@ function numberValue(
   return Number.isFinite(parsed)
     ? parsed
     : fallback;
+}
+
+function createAdditionalService(
+  preset = {}
+) {
+  return {
+    id:
+      `service-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`,
+    code:
+      String(
+        preset.code ||
+        ""
+      ),
+    description:
+      String(
+        preset.description ||
+        ""
+      ),
+    quantity:
+      preset.quantity ??
+      1,
+    unit:
+      String(
+        preset.unit ||
+        "GL"
+      ),
+    unitPrice:
+      preset.unitPrice ??
+      "",
+  };
 }
 
 function createZone(
@@ -1495,6 +1554,11 @@ export default function BathroomQuotationPage() {
   });
 
   const [
+    additionalServices,
+    setAdditionalServices,
+  ] = useState([]);
+
+  const [
     customer,
     setCustomer,
   ] = useState({
@@ -1725,6 +1789,36 @@ export default function BathroomQuotationPage() {
         cutServiceUnitPrice
       : 0;
 
+  const additionalServicesTotal =
+    useMemo(
+      () =>
+        additionalServices.reduce(
+          (
+            total,
+            service
+          ) =>
+            total +
+            Math.max(
+              numberValue(
+                service.quantity,
+                0
+              ),
+              0
+            ) *
+              Math.max(
+                numberValue(
+                  service.unitPrice,
+                  0
+                ),
+                0
+              ),
+          0
+        ),
+      [
+        additionalServices,
+      ]
+    );
+
   const calculatedPieces =
     useMemo(
       () => {
@@ -1823,7 +1917,8 @@ export default function BathroomQuotationPage() {
 
         const gross =
           materialsGross +
-          cutServiceTotal;
+          cutServiceTotal +
+          additionalServicesTotal;
 
         const net =
           Math.round(
@@ -1842,8 +1937,68 @@ export default function BathroomQuotationPage() {
         materialCommercial,
         zones,
         cutServiceTotal,
+        additionalServicesTotal,
       ]
     );
+
+  function addAdditionalService(
+    preset = {}
+  ) {
+    setAdditionalServices(
+      (current) => [
+        ...current,
+        createAdditionalService(
+          preset
+        ),
+      ]
+    );
+
+    setQuotationResult(
+      null
+    );
+  }
+
+  function updateAdditionalService(
+    serviceId,
+    field,
+    value
+  ) {
+    setAdditionalServices(
+      (current) =>
+        current.map(
+          (service) =>
+            service.id ===
+            serviceId
+              ? {
+                  ...service,
+                  [field]:
+                    value,
+                }
+              : service
+        )
+    );
+
+    setQuotationResult(
+      null
+    );
+  }
+
+  function removeAdditionalService(
+    serviceId
+  ) {
+    setAdditionalServices(
+      (current) =>
+        current.filter(
+          (service) =>
+            service.id !==
+            serviceId
+        )
+    );
+
+    setQuotationResult(
+      null
+    );
+  }
 
   function updateCommercialMaterial(
     materialCode,
@@ -2449,9 +2604,116 @@ export default function BathroomQuotationPage() {
             ]
           : [];
 
+      const additionalServiceLines =
+        additionalServices.map(
+          (
+            service,
+            index
+          ) => {
+            const description =
+              String(
+                service.description ||
+                ""
+              ).trim();
+
+            const code =
+              String(
+                service.code ||
+                ""
+              ).trim();
+
+            const quantity =
+              numberValue(
+                service.quantity,
+                0
+              );
+
+            const unit =
+              String(
+                service.unit ||
+                ""
+              )
+                .trim()
+                .toUpperCase();
+
+            const unitPrice =
+              numberValue(
+                service.unitPrice,
+                0
+              );
+
+            if (!description) {
+              throw new Error(
+                `Completa la descripción del servicio adicional ${index + 1}`
+              );
+            }
+
+            if (
+              quantity <= 0
+            ) {
+              throw new Error(
+                `La cantidad del servicio "${description}" debe ser mayor a 0`
+              );
+            }
+
+            if (!unit) {
+              throw new Error(
+                `Selecciona la unidad del servicio "${description}"`
+              );
+            }
+
+            if (
+              unitPrice < 0
+            ) {
+              throw new Error(
+                `El valor unitario del servicio "${description}" no puede ser negativo`
+              );
+            }
+
+            return {
+              line_type:
+                "SERVICE",
+              description,
+              code:
+                code ||
+                `SERV-ADIC-${String(
+                  index + 1
+                ).padStart(
+                  2,
+                  "0"
+                )}`,
+              brand:
+                "LAMINATI",
+              finish:
+                null,
+              thickness_mm:
+                null,
+              quantity,
+              unit,
+              format_label:
+                null,
+              width_cm:
+                null,
+              height_cm:
+                null,
+              unit_price_gross:
+                unitPrice,
+              tax_rate:
+                19,
+              pricing_mode:
+                "UNIT",
+              sort_order:
+                materialLines.length +
+                serviceLines.length +
+                index,
+            };
+          }
+        );
+
       const lines = [
         ...materialLines,
         ...serviceLines,
+        ...additionalServiceLines,
       ];
 
       const optimizerPayload =
@@ -3672,6 +3934,274 @@ export default function BathroomQuotationPage() {
                 <p className="mt-4 text-xs text-neutral-400">
                   Calculado automáticamente a partir de los patrones optimizados de divisores, puertas y pilastras. Código de servicio: SERV-HPL.
                 </p>
+              </div>
+
+              <div className="mt-6 rounded-[24px] border border-neutral-200 bg-white p-5 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
+                      Servicios adicionales
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-black">
+                      Servicios y cargos del proyecto
+                    </h3>
+                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">
+                      Agrega quincallería, instalación, traslado u otros servicios. Se suman automáticamente a la cotización y aparecen en el PDF como líneas de servicio.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {ADDITIONAL_SERVICE_PRESETS.map(
+                      (preset) => (
+                        <button
+                          key={
+                            preset.code
+                          }
+                          type="button"
+                          onClick={() =>
+                            addAdditionalService(
+                              preset
+                            )
+                          }
+                          className="inline-flex h-10 items-center rounded-full border border-neutral-200 bg-white px-4 text-xs font-semibold text-black transition hover:border-black hover:bg-black hover:text-white"
+                        >
+                          +{" "}
+                          {
+                            preset.description
+                          }
+                        </button>
+                      )
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addAdditionalService()
+                      }
+                      className="inline-flex h-10 items-center rounded-full bg-black px-4 text-xs font-semibold text-white transition hover:bg-[#679300]"
+                    >
+                      + Otro servicio
+                    </button>
+                  </div>
+                </div>
+
+                {additionalServices.length ===
+                0 ? (
+                  <div className="mt-5 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-5 py-6 text-center">
+                    <p className="text-sm font-medium text-neutral-500">
+                      No hay servicios adicionales.
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      El servicio de corte SERV-HPL se mantiene independiente y automático.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-5 space-y-4">
+                    {additionalServices.map(
+                      (
+                        service,
+                        index
+                      ) => {
+                        const quantity =
+                          Math.max(
+                            numberValue(
+                              service.quantity,
+                              0
+                            ),
+                            0
+                          );
+
+                        const unitPrice =
+                          Math.max(
+                            numberValue(
+                              service.unitPrice,
+                              0
+                            ),
+                            0
+                          );
+
+                        const lineTotal =
+                          quantity *
+                          unitPrice;
+
+                        return (
+                          <div
+                            key={
+                              service.id
+                            }
+                            className="rounded-[22px] border border-neutral-200 bg-neutral-50 p-4 sm:p-5"
+                          >
+                            <div className="mb-4 flex items-center justify-between gap-4">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
+                                  Servicio{" "}
+                                  {index +
+                                    1}
+                                </p>
+                                <p className="mt-1 text-sm font-semibold text-black">
+                                  {service.description ||
+                                    "Nuevo servicio"}
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeAdditionalService(
+                                    service.id
+                                  )
+                                }
+                                className="inline-flex h-9 items-center rounded-full border border-red-200 bg-white px-4 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                              <Field
+                                label="Descripción"
+                                type="text"
+                                value={
+                                  service.description
+                                }
+                                onChange={(
+                                  value
+                                ) =>
+                                  updateAdditionalService(
+                                    service.id,
+                                    "description",
+                                    value
+                                  )
+                                }
+                              />
+
+                              <Field
+                                label="Código"
+                                type="text"
+                                value={
+                                  service.code
+                                }
+                                onChange={(
+                                  value
+                                ) =>
+                                  updateAdditionalService(
+                                    service.id,
+                                    "code",
+                                    value
+                                  )
+                                }
+                              />
+
+                              <Field
+                                label="Cantidad"
+                                min="0.001"
+                                value={
+                                  service.quantity
+                                }
+                                onChange={(
+                                  value
+                                ) =>
+                                  updateAdditionalService(
+                                    service.id,
+                                    "quantity",
+                                    value
+                                  )
+                                }
+                              />
+
+                              <label className="block">
+                                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                                  Unidad
+                                </span>
+
+                                <select
+                                  value={
+                                    service.unit
+                                  }
+                                  onChange={(
+                                    event
+                                  ) =>
+                                    updateAdditionalService(
+                                      service.id,
+                                      "unit",
+                                      event
+                                        .target
+                                        .value
+                                    )
+                                  }
+                                  className="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-medium text-black outline-none transition focus:border-black"
+                                >
+                                  {SERVICE_UNITS.map(
+                                    (
+                                      unit
+                                    ) => (
+                                      <option
+                                        key={
+                                          unit
+                                        }
+                                        value={
+                                          unit
+                                        }
+                                      >
+                                        {
+                                          unit
+                                        }
+                                      </option>
+                                    )
+                                  )}
+                                </select>
+                              </label>
+
+                              <Field
+                                label="Valor unitario"
+                                suffix="CLP"
+                                min="0"
+                                value={
+                                  service.unitPrice
+                                }
+                                onChange={(
+                                  value
+                                ) =>
+                                  updateAdditionalService(
+                                    service.id,
+                                    "unitPrice",
+                                    value
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div className="mt-4 flex justify-end">
+                              <div className="min-w-[220px] rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
+                                  Total servicio
+                                </p>
+                                <p className="mt-1 text-xl font-semibold text-black">
+                                  {money(
+                                    lineTotal
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                    )}
+
+                    <div className="flex justify-end">
+                      <div className="min-w-[260px] rounded-2xl bg-black px-5 py-4 text-white">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">
+                          Total servicios adicionales
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold">
+                          {money(
+                            additionalServicesTotal
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
 </Section>
