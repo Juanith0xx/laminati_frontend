@@ -272,6 +272,88 @@ function CloseIcon({ className = "" }) {
 }
 
 
+function PlusIcon({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+
+function ChevronDownIcon({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+
+function ProjectQuotationIcon({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 3h9l4 4v14H6z" />
+      <path d="M15 3v5h4" />
+      <path d="M9 13h6" />
+      <path d="M9 17h6" />
+    </svg>
+  );
+}
+
+
+function BathroomQuotationIcon({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M4 21V9" />
+      <path d="M20 21V9" />
+      <path d="M4 9h16" />
+      <path d="M8 9v12" />
+      <path d="M16 9v12" />
+      <circle cx="8" cy="5" r="2" />
+      <circle cx="16" cy="5" r="2" />
+    </svg>
+  );
+}
+
+
 function TrackingSummary({
   quotation,
   onOpen,
@@ -577,6 +659,10 @@ export default function QuotationsPage() {
   const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [trackingQuotation, setTrackingQuotation] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [
+    createQuotationMenuOpen,
+    setCreateQuotationMenuOpen,
+  ] = useState(false);
   const [data, setData] = useState({
     quotations: [],
     pagination: null,
@@ -725,6 +811,68 @@ export default function QuotationsPage() {
   );
 
 
+  useEffect(
+    () => {
+      if (
+        !createQuotationMenuOpen
+      ) {
+        return undefined;
+      }
+
+      const handlePointerDown =
+        (event) => {
+          if (
+            event.target.closest(
+              "[data-create-quotation-menu]"
+            )
+          ) {
+            return;
+          }
+
+          setCreateQuotationMenuOpen(
+            false
+          );
+        };
+
+      const handleKeyDown =
+        (event) => {
+          if (
+            event.key === "Escape"
+          ) {
+            setCreateQuotationMenuOpen(
+              false
+            );
+          }
+        };
+
+      document.addEventListener(
+        "mousedown",
+        handlePointerDown
+      );
+
+      document.addEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      return () => {
+        document.removeEventListener(
+          "mousedown",
+          handlePointerDown
+        );
+
+        document.removeEventListener(
+          "keydown",
+          handleKeyDown
+        );
+      };
+    },
+    [
+      createQuotationMenuOpen,
+    ]
+  );
+
+
   /*
    * Actualización realtime:
    * Socket.IO recibe el evento global y
@@ -803,8 +951,8 @@ export default function QuotationsPage() {
   return (
     <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
       <div className="space-y-5">
-        <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
-          <div className="h-[3px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
+        <section className="relative overflow-visible rounded-[28px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,.05)]">
+          <div className="h-[3px] rounded-t-[28px] bg-gradient-to-r from-red-400 via-pink-400 to-violet-600" />
           <div className="flex flex-col gap-5 px-6 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
@@ -820,7 +968,7 @@ export default function QuotationsPage() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
               <Link
                 href="/admin/showroom"
                 className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
@@ -828,27 +976,104 @@ export default function QuotationsPage() {
                 Showroom
               </Link>
 
-              <Link
-                href="/admin/cotizaciones/nueva"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+              <div
+                className="relative"
+                data-create-quotation-menu
               >
-                Nueva cotización
-              </Link>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCreateQuotationMenuOpen(
+                      (
+                        current
+                      ) =>
+                        !current
+                    )
+                  }
+                  aria-expanded={
+                    createQuotationMenuOpen
+                  }
+                  aria-haspopup="menu"
+                  className="inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-full bg-black px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800 sm:w-auto"
+                  style={{
+                    color:
+                      "#ffffff",
+                  }}
+                >
+                  <PlusIcon className="h-[18px] w-[18px]" />
 
-              <Link
-                href="/admin/cotizaciones/nueva/proyecto"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-black px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800"
-                style={{ color: "#ffffff" }}
-              >
-                Nueva cotización de proyecto
-              </Link>
+                  <span>
+                    Crear cotización
+                  </span>
 
-              <Link
-                href="/admin/cotizaciones/nueva/banos"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[#6A9800] bg-[#F4F9E8] px-5 text-sm font-semibold text-[#5F8900] transition hover:bg-[#6A9800] hover:!text-white"
-              >
-                Nueva cotización de baño
-              </Link>
+                  <ChevronDownIcon
+                    className={`h-4 w-4 transition-transform ${
+                      createQuotationMenuOpen
+                        ? "rotate-180"
+                        : ""
+                    }`}
+                  />
+                </button>
+
+                {createQuotationMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-[calc(100%+10px)] z-50 w-[310px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[22px] border border-black/10 bg-white p-2 shadow-[0_20px_60px_rgba(0,0,0,0.16)]"
+                  >
+                    <Link
+                      href="/admin/cotizaciones/nueva/proyecto"
+                      role="menuitem"
+                      onClick={() =>
+                        setCreateQuotationMenuOpen(
+                          false
+                        )
+                      }
+                      className="group flex items-start gap-3 rounded-[16px] px-4 py-3.5 transition hover:bg-neutral-100"
+                    >
+                      <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 bg-white text-neutral-800 transition group-hover:border-black/20">
+                        <ProjectQuotationIcon className="h-[18px] w-[18px]" />
+                      </span>
+
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-neutral-950">
+                          Cotización de proyecto
+                        </span>
+
+                        <span className="mt-0.5 block text-xs leading-5 text-neutral-500">
+                          Productos y soluciones generales
+                        </span>
+                      </span>
+                    </Link>
+
+                    <div className="mx-3 border-t border-black/5" />
+
+                    <Link
+                      href="/admin/cotizaciones/nueva/banos"
+                      role="menuitem"
+                      onClick={() =>
+                        setCreateQuotationMenuOpen(
+                          false
+                        )
+                      }
+                      className="group flex items-start gap-3 rounded-[16px] px-4 py-3.5 transition hover:bg-neutral-100"
+                    >
+                      <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 bg-white text-neutral-800 transition group-hover:border-black/20">
+                        <BathroomQuotationIcon className="h-[18px] w-[18px]" />
+                      </span>
+
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-neutral-950">
+                          Cotización de baño
+                        </span>
+
+                        <span className="mt-0.5 block text-xs leading-5 text-neutral-500">
+                          Divisiones y cubículos HPL
+                        </span>
+                      </span>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>

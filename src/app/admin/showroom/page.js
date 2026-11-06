@@ -4013,20 +4013,12 @@ function ShowroomContent() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Link
-                href="/admin/cotizaciones"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                href="/admin/showroom/cotizaciones"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-black px-5 text-sm  !text-white transition hover:bg-neutral-800"
               >
                 Ver cotizaciones
               </Link>
 
-              <button
-                type="button"
-                disabled={submitting || quotationSaving}
-                onClick={() => changeClosingMode(quotationMode ? "SALE" : "QUOTE")}
-                className="inline-flex h-11 items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
-              >
-                {quotationMode ? "Volver a venta" : "Nueva cotización"}
-              </button>
             </div>
           </div>
         </section>
