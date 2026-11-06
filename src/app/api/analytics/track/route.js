@@ -1,8 +1,33 @@
 const MAX_BODY_BYTES =
   32 * 1024;
 
+import { createHmac } from "node:crypto";
+
 const BOT_PATTERN =
-  /bot|crawler|spider|crawling|googlebot|bingbot|yandex|duckduckbot|baiduspider|facebookexternalhit|slurp|semrush|ahrefs|mj12bot/i;
+  /bot|crawler|spider|crawling|googlebot|bingbot|yandex|duckduckbot|baiduspider|facebookexternalhit|slurp|semrush|ahrefs|mj12bot|headlesschrome|playwright|puppeteer|selenium|lighthouse|pagespeed|bytespider|petalbot|claudebot|gptbot|applebot/i;
+
+const isDevGeoAllowed = () =>
+  process.env.NODE_ENV !== "production" &&
+  process.env.ANALYTICS_ALLOW_DEV_GEO === "true";
+
+const getGeoHeader = (headers, headerName, devEnvName) =>
+  headers.get(headerName) ||
+  (isDevGeoAllowed() ? process.env[devEnvName] : null);
+
+// No guardamos IP real. HMAC diario para detectar oleadas desde un mismo origen.
+const getAnonymousVisitorHash = (request, secret) => {
+  if (process.env.VERCEL !== "1" || !secret) return null;
+  const ip = cleanText(
+    request.headers.get("x-vercel-forwarded-for") ||
+      request.headers.get("x-forwarded-for"),
+    100
+  );
+  if (!ip) return null;
+  const day = new Date().toISOString().slice(0, 10);
+  return createHmac("sha256", secret)
+    .update(`${day}:${ip}`)
+    .digest("hex");
+};
 
 const cleanText = (
   value,
@@ -93,50 +118,30 @@ const getGeoLocation = (
 
   const countryCode =
     cleanText(
-      headers.get(
-        "x-vercel-ip-country"
-      ) ||
-        process.env
-          .ANALYTICS_DEV_COUNTRY_CODE,
+      getGeoHeader(headers, "x-vercel-ip-country", "ANALYTICS_DEV_COUNTRY_CODE"),
       10
     );
 
   const regionCode =
     cleanText(
-      headers.get(
-        "x-vercel-ip-country-region"
-      ) ||
-        process.env
-          .ANALYTICS_DEV_REGION_CODE,
+      getGeoHeader(headers, "x-vercel-ip-country-region", "ANALYTICS_DEV_REGION_CODE"),
       30
     );
 
   const city =
     decodeHeader(
-      headers.get(
-        "x-vercel-ip-city"
-      ) ||
-        process.env
-          .ANALYTICS_DEV_CITY
+      getGeoHeader(headers, "x-vercel-ip-city", "ANALYTICS_DEV_CITY")
     );
 
   const latitude =
     cleanText(
-      headers.get(
-        "x-vercel-ip-latitude"
-      ) ||
-        process.env
-          .ANALYTICS_DEV_LATITUDE,
+      getGeoHeader(headers, "x-vercel-ip-latitude", "ANALYTICS_DEV_LATITUDE"),
       30
     );
 
   const longitude =
     cleanText(
-      headers.get(
-        "x-vercel-ip-longitude"
-      ) ||
-        process.env
-          .ANALYTICS_DEV_LONGITUDE,
+      getGeoHeader(headers, "x-vercel-ip-longitude", "ANALYTICS_DEV_LONGITUDE"),
       30
     );
 
@@ -147,8 +152,7 @@ const getGeoLocation = (
    */
   const commune =
     cleanText(
-      process.env
-        .ANALYTICS_DEV_COMMUNE,
+      (isDevGeoAllowed() ? process.env.ANALYTICS_DEV_COMMUNE : null),
       150
     ) ||
     (
@@ -331,6 +335,13 @@ export async function POST(
     );
   }
 
+  // La ingesta es solo para navegadores con solicitudes desde el mismo sitio.
+  // No bloqueamos la falta de Sec-Fetch-* (algunos navegadores la omiten).
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") {
+    return new Response(null, { status: 204 });
+  }
+
   const metadata =
     body.metadata &&
     typeof body.metadata ===
@@ -342,6 +353,7 @@ export async function POST(
       : {};
 
   const payload = {
+    visitor_hash: getAnonymousVisitorHash(request, secret),
     session_key:
       body.session_key,
     event_type:
@@ -375,7 +387,9 @@ export async function POST(
     metadata: {
       ...metadata,
       location_source:
-        "vercel_ip",
+        (process.env.VERCEL === "1" && request.headers.get("x-vercel-ip-country"))
+          ? "vercel_ip"
+          : (isDevGeoAllowed() ? "development_override" : "unknown"),
       commune_precision:
         "approximate",
     },

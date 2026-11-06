@@ -3232,7 +3232,10 @@ function ShowroomContent() {
         [customer.name, "nombre del cliente"],
         [customer.email, "correo"],
         [customer.phone, "teléfono"],
-        [customer.address, "dirección"],
+        [billing.address_line, "dirección"],
+        [billing.commune, "comuna"],
+        [billing.city, "ciudad"],
+        [billing.region, "región"],
       ];
       const missing = required.find(
         ([value]) => !String(value || "").trim()
@@ -3258,6 +3261,7 @@ function ShowroomContent() {
         [billing.address_line, "dirección"],
         [billing.commune, "comuna"],
         [billing.city, "ciudad"],
+        [billing.region, "región"],
       ];
 
       const missing = required.find(
@@ -3296,7 +3300,7 @@ function ShowroomContent() {
           phone:
             customer.phone,
           address:
-            customer.address,
+            billing.address_line,
         },
 
         billing: {
@@ -3574,7 +3578,10 @@ function ShowroomContent() {
         [customer.name, "nombre del cliente"],
         [customer.email, "correo"],
         [customer.phone, "teléfono"],
-        [customer.address, "dirección"],
+        [billing.address_line, "dirección"],
+        [billing.commune, "comuna"],
+        [billing.city, "ciudad"],
+        [billing.region, "región"],
       ];
 
       const missingBoletaField = boletaRequired.find(
@@ -3634,6 +3641,7 @@ function ShowroomContent() {
         [billing.address_line, "dirección"],
         [billing.commune, "comuna"],
         [billing.city, "ciudad"],
+        [billing.region, "región"],
         [billing.billing_email, "correo de facturación"],
       ];
 
@@ -3875,8 +3883,16 @@ function ShowroomContent() {
               phone:
                 String(customer.phone || "").trim() || null,
               address_line:
-                String(customer.address || "").trim() || null,
-              country: "Chile",
+                String(billing.address_line || "").trim() || null,
+              commune:
+                String(billing.commune || "").trim() || null,
+              city:
+                String(billing.city || "").trim() || null,
+              region:
+                String(billing.region || "").trim() || null,
+              country:
+                String(billing.country || "Chile").trim() ||
+                "Chile",
               relbase_customer_id:
                 rutLookup.status === "FOUND"
                   ? String(
@@ -4509,15 +4525,60 @@ function ShowroomContent() {
 
                 <Field label="Dirección">
                   <input
-                    value={customer.address}
+                    value={billing.address_line}
                     onChange={(event) => {
                       invalidatePendingSale();
-                      setCustomer((current) => ({
+                      setBilling((current) => ({
                         ...current,
-                        address: event.target.value,
+                        address_line: event.target.value,
                       }));
                     }}
-                    placeholder="Ej. Quilan 3551, Puente Alto"
+                    placeholder="Ej. Quilan 3551"
+                    className="h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm outline-none focus:border-black"
+                  />
+                </Field>
+
+                <Field label="Comuna">
+                  <input
+                    value={billing.commune}
+                    onChange={(event) => {
+                      invalidatePendingSale();
+                      setBilling((current) => ({
+                        ...current,
+                        commune: event.target.value,
+                      }));
+                    }}
+                    placeholder="Ej. Puente Alto"
+                    className="h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm outline-none focus:border-black"
+                  />
+                </Field>
+
+                <Field label="Ciudad">
+                  <input
+                    value={billing.city}
+                    onChange={(event) => {
+                      invalidatePendingSale();
+                      setBilling((current) => ({
+                        ...current,
+                        city: event.target.value,
+                      }));
+                    }}
+                    placeholder="Ej. Santiago"
+                    className="h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm outline-none focus:border-black"
+                  />
+                </Field>
+
+                <Field label="Región">
+                  <input
+                    value={billing.region}
+                    onChange={(event) => {
+                      invalidatePendingSale();
+                      setBilling((current) => ({
+                        ...current,
+                        region: event.target.value,
+                      }));
+                    }}
+                    placeholder="Ej. Región Metropolitana"
                     className="h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm outline-none focus:border-black"
                   />
                 </Field>
@@ -4632,6 +4693,19 @@ function ShowroomContent() {
                         setBilling((current) => ({
                           ...current,
                           city: event.target.value,
+                        }))
+                      }
+                      className="h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm outline-none focus:border-black"
+                    />
+                  </Field>
+
+                  <Field label="Región">
+                    <input
+                      value={billing.region}
+                      onChange={(event) =>
+                        setBilling((current) => ({
+                          ...current,
+                          region: event.target.value,
                         }))
                       }
                       className="h-11 w-full rounded-xl border border-black/10 px-3.5 text-sm outline-none focus:border-black"
@@ -7166,11 +7240,9 @@ function ShowroomContent() {
                       <div className="sm:col-span-2">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-neutral-400">Dirección</p>
                         <p className="mt-1 font-medium text-neutral-900">
-                          {documentType === "FACTURA"
-                            ? [billing.address_line, billing.commune, billing.city]
-                                .filter(Boolean)
-                                .join(", ") || "—"
-                            : customer.address || "—"}
+                          {[billing.address_line, billing.commune, billing.city, billing.region]
+                            .filter(Boolean)
+                            .join(", ") || "—"}
                         </p>
                       </div>
                     </div>

@@ -23,6 +23,7 @@ import {
 
 import {
   getProjectQuotationProducts,
+  searchRelbaseCustomers,
 } from "@/services/showroom.service";
 
 /* =========================================
@@ -151,6 +152,7 @@ function createZone(
     doorThickness: 12,
     pilasterThickness: 19,
 
+    dividerProduct: null,
     doorProduct: null,
     pilasterProduct: null,
   };
@@ -353,6 +355,193 @@ function extractProjectProducts(
   return [];
 }
 
+function firstText(...values) {
+  for (const value of values) {
+    if (
+      value === undefined ||
+      value === null ||
+      typeof value === "object"
+    ) {
+      continue;
+    }
+
+    const text =
+      String(value).trim();
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return "";
+}
+
+function firstEmail(...values) {
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      const email =
+        value
+          .map((item) =>
+            String(
+              item || ""
+            ).trim()
+          )
+          .find(Boolean);
+
+      if (email) {
+        return email;
+      }
+
+      continue;
+    }
+
+    const email =
+      firstText(value);
+
+    if (email) {
+      return email;
+    }
+  }
+
+  return "";
+}
+
+function nestedName(value) {
+  if (
+    !value ||
+    typeof value !== "object"
+  ) {
+    return "";
+  }
+
+  return firstText(
+    value.name,
+    value.label,
+    value.description
+  );
+}
+
+function mapRelbaseCustomer(
+  relbaseCustomer
+) {
+  const item =
+    relbaseCustomer || {};
+
+  return {
+    id:
+      firstText(
+        item.id,
+        item.customer_id,
+        item.client_id,
+        item.relbase_customer_id
+      ),
+
+    rut:
+      firstText(
+        item.rut,
+        item.tax_id
+      ),
+
+    legalName:
+      firstText(
+        item.name,
+        item.legal_name,
+        item.name_fantasy
+      ),
+
+    businessActivity:
+      firstText(
+        item.business_activity,
+        item.giro
+      ),
+
+    email:
+      firstEmail(
+        item.email,
+        item.email_commercial,
+        item.email_payment
+      ),
+
+    phone:
+      firstText(
+        item.mobile,
+        item.phone,
+        item.phone_payment
+      ),
+
+    address:
+      firstText(
+        item.address,
+        item.address_line,
+        item.full_address
+      ),
+
+    commune:
+      firstText(
+        item.commune_name,
+        nestedName(
+          item.commune
+        ),
+        typeof item.commune ===
+          "string"
+          ? item.commune
+          : ""
+      ),
+
+    city:
+      firstText(
+        item.city_name,
+        nestedName(
+          item.city
+        ),
+        typeof item.city ===
+          "string"
+          ? item.city
+          : ""
+      ),
+
+    region:
+      firstText(
+        item.region_name,
+        nestedName(
+          item.region
+        ),
+        typeof item.region ===
+          "string"
+          ? item.region
+          : ""
+      ),
+
+    type:
+      firstText(
+        item.type_customer,
+        item.customer_type,
+        item.type
+      ).toLowerCase(),
+  };
+}
+
+function extractRelbaseCustomers(
+  response
+) {
+  const candidates = [
+    response?.customers,
+    response?.data?.customers,
+    response?.data?.data
+      ?.customers,
+    response?.data?.data,
+    response?.data,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate;
+    }
+  }
+
+  return [];
+}
+
 function buildMaterials(
   zones,
   sheetFormat
@@ -428,6 +617,8 @@ function buildMaterials(
       addMaterial({
         thickness:
           zone.dividerThickness,
+        product:
+          zone.dividerProduct,
       });
 
       addMaterial({
@@ -457,6 +648,7 @@ function findSelectedProductForMaterial(
 ) {
   for (const zone of zones) {
     const candidates = [
+      zone.dividerProduct,
       zone.doorProduct,
       zone.pilasterProduct,
     ];
@@ -567,9 +759,12 @@ function buildPayload({
             ),
 
           dividerMaterialCode:
-            getMaterialCode(
-              zone.dividerThickness
-            ),
+            getPartMaterialCode({
+              thickness:
+                zone.dividerThickness,
+              product:
+                zone.dividerProduct,
+            }),
 
           doorMaterialCode:
             getPartMaterialCode({
@@ -1313,6 +1508,36 @@ export default function BathroomQuotationPage() {
   });
 
   const [
+    customerSearch,
+    setCustomerSearch,
+  ] = useState("");
+
+  const [
+    customerSearchResults,
+    setCustomerSearchResults,
+  ] = useState([]);
+
+  const [
+    customerSearchLoading,
+    setCustomerSearchLoading,
+  ] = useState(false);
+
+  const [
+    customerSearchError,
+    setCustomerSearchError,
+  ] = useState("");
+
+  const [
+    customerSearchOpen,
+    setCustomerSearchOpen,
+  ] = useState(false);
+
+  const [
+    selectedRelbaseCustomer,
+    setSelectedRelbaseCustomer,
+  ] = useState(null);
+
+  const [
     quotationSettings,
     setQuotationSettings,
   ] = useState({
@@ -1336,6 +1561,130 @@ export default function BathroomQuotationPage() {
     quotationResult,
     setQuotationResult,
   ] = useState(null);
+
+  useEffect(
+    () => {
+      const query =
+        String(
+          customerSearch ||
+          ""
+        ).trim();
+
+      const selectedCustomer =
+        selectedRelbaseCustomer
+          ? mapRelbaseCustomer(
+              selectedRelbaseCustomer
+            )
+          : null;
+
+      const matchesSelectedCustomer =
+        Boolean(
+          selectedCustomer &&
+          query &&
+          [
+            selectedCustomer.legalName,
+            selectedCustomer.rut,
+          ]
+            .filter(Boolean)
+            .some(
+              (value) =>
+                String(value)
+                  .trim()
+                  .toLowerCase() ===
+                query.toLowerCase()
+            )
+        );
+
+      if (
+        query.length < 2 ||
+        matchesSelectedCustomer
+      ) {
+        return undefined;
+      }
+
+      const controller =
+        new AbortController();
+
+      const timer =
+        window.setTimeout(
+          async () => {
+            try {
+              setCustomerSearchLoading(
+                true
+              );
+              setCustomerSearchError(
+                ""
+              );
+
+              const response =
+                await searchRelbaseCustomers({
+                  q: query,
+                  query,
+                  limit: 10,
+                  signal:
+                    controller.signal,
+                });
+
+              if (
+                controller.signal
+                  .aborted
+              ) {
+                return;
+              }
+
+              const results =
+                extractRelbaseCustomers(
+                  response
+                );
+
+              setCustomerSearchResults(
+                results
+              );
+              setCustomerSearchOpen(
+                true
+              );
+            } catch (requestError) {
+              if (
+                requestError?.name ===
+                "AbortError"
+              ) {
+                return;
+              }
+
+              setCustomerSearchResults([]);
+              setCustomerSearchError(
+                requestError?.message ||
+                "No fue posible buscar clientes en Relbase"
+              );
+              setCustomerSearchOpen(
+                true
+              );
+            } finally {
+              if (
+                !controller.signal
+                  .aborted
+              ) {
+                setCustomerSearchLoading(
+                  false
+                );
+              }
+            }
+          },
+          300
+        );
+
+      return () => {
+        controller.abort();
+        window.clearTimeout(
+          timer
+        );
+      };
+    },
+    [
+      customerSearch,
+      selectedRelbaseCustomer,
+    ]
+  );
 
   const summary =
     useMemo(
@@ -1531,6 +1880,61 @@ export default function BathroomQuotationPage() {
     );
   }
 
+  function applyRelbaseCustomer(
+    relbaseCustomer
+  ) {
+    const mapped =
+      mapRelbaseCustomer(
+        relbaseCustomer
+      );
+
+    setCustomer(
+      (current) => ({
+        ...current,
+        rut:
+          mapped.rut ||
+          current.rut,
+        legalName:
+          mapped.legalName ||
+          current.legalName,
+        email:
+          mapped.email ||
+          current.email,
+        phone:
+          mapped.phone ||
+          current.phone,
+        address:
+          mapped.address ||
+          current.address,
+        businessActivity:
+          mapped.businessActivity ||
+          current.businessActivity,
+        commune:
+          mapped.commune ||
+          current.commune,
+        city:
+          mapped.city ||
+          current.city,
+        region:
+          mapped.region ||
+          current.region,
+      })
+    );
+
+    setSelectedRelbaseCustomer(
+      relbaseCustomer
+    );
+    setCustomerSearch(
+      mapped.legalName ||
+      mapped.rut ||
+      ""
+    );
+    setCustomerSearchResults([]);
+    setCustomerSearchOpen(false);
+    setCustomerSearchError("");
+    setQuotationResult(null);
+  }
+
   function updateCustomer(
     field,
     value
@@ -1684,6 +2088,8 @@ export default function BathroomQuotationPage() {
             source.pilasterHeight,
           dividerThickness:
             source.dividerThickness,
+          dividerProduct:
+            source.dividerProduct,
           doorThickness:
             source.doorThickness,
           pilasterThickness:
@@ -1760,6 +2166,34 @@ export default function BathroomQuotationPage() {
       setError(
         ""
       );
+
+      for (const zone of zones) {
+        const missingMaterial = [
+          [
+            zone.dividerProduct,
+            "divisores",
+          ],
+          [
+            zone.doorProduct,
+            "puertas",
+          ],
+          [
+            zone.pilasterProduct,
+            "pilastras",
+          ],
+        ].find(
+          ([product]) =>
+            !normalizeCatalogProduct(
+              product
+            )?.code
+        );
+
+        if (missingMaterial) {
+          throw new Error(
+            `Selecciona el HPL para ${missingMaterial[1]} de ${zone.label}`
+          );
+        }
+      }
 
       const payload =
         buildPayload({
@@ -2474,7 +2908,7 @@ export default function BathroomQuotationPage() {
           <Section
             number="03"
             title="Materiales y espesores"
-            subtitle="Selecciona el espesor y, para puertas y pilastras, el HPL real del catálogo que utilizará el proyecto."
+            subtitle="Selecciona el espesor y el HPL real del catálogo para divisores, puertas y pilastras."
           >
             <div className="space-y-5">
               {zones.map(
@@ -2503,14 +2937,44 @@ export default function BathroomQuotationPage() {
                           zone.dividerThickness
                         }
                         onChange={
-                          (
-                            value
-                          ) =>
-                            updateZone(
+                          (value) =>
+                            updateZoneFields(
                               index,
-                              "dividerThickness",
-                              value
+                              {
+                                dividerThickness:
+                                  value,
+                                dividerProduct:
+                                  null,
+                              }
                             )
+                        }
+                      />
+
+                      <HplProductSelect
+                        label="HPL para divisores"
+                        thickness={
+                          zone.dividerThickness
+                        }
+                        sheetFormat={
+                          sheetFormat
+                        }
+                        value={
+                          zone.dividerProduct
+                        }
+                        onChange={(product) =>
+                          updateZoneFields(
+                            index,
+                            {
+                              dividerProduct:
+                                product,
+                              ...(product?.thickness
+                                ? {
+                                    dividerThickness:
+                                      product.thickness,
+                                  }
+                                : {}),
+                            }
+                          )
                         }
                       />
                     </div>
@@ -3183,6 +3647,162 @@ export default function BathroomQuotationPage() {
               title="Cliente y datos de cotización"
               subtitle="Se utilizarán los mismos datos y formato de la cotización de proyecto actual de Laminati."
             >
+              <div className="relative mb-6 rounded-[22px] border border-neutral-200 bg-neutral-50 p-5">
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold text-neutral-700">
+                    Buscar cliente en Relbase por nombre o RUT
+                  </span>
+
+                  <div className="relative">
+                    <input
+                      type="search"
+                      value={
+                        customerSearch
+                      }
+                      onChange={(event) => {
+                        const nextValue =
+                          event.target.value;
+
+                        setCustomerSearch(
+                          nextValue
+                        );
+                        setSelectedRelbaseCustomer(
+                          null
+                        );
+
+                        if (
+                          String(nextValue)
+                            .trim().length < 2
+                        ) {
+                          setCustomerSearchResults([]);
+                          setCustomerSearchError("");
+                          setCustomerSearchOpen(false);
+                          setCustomerSearchLoading(false);
+                        }
+                      }}
+                      onFocus={() => {
+                        if (
+                          customerSearchResults.length >
+                          0
+                        ) {
+                          setCustomerSearchOpen(
+                            true
+                          );
+                        }
+                      }}
+                      placeholder="Ej. Cumbres, 76.838.035-K"
+                      className="h-12 w-full rounded-2xl border border-neutral-300 bg-white px-4 pr-12 text-sm font-medium text-black outline-none transition focus:border-black"
+                    />
+
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400">
+                      {customerSearchLoading
+                        ? "…"
+                        : "⌕"}
+                    </span>
+                  </div>
+                </label>
+
+                {selectedRelbaseCustomer && (
+                  <p className="mt-3 text-xs font-medium text-[#5f8900]">
+                    Cliente Relbase seleccionado. Los datos se cargaron automáticamente y puedes completarlos o corregirlos antes de crear la cotización.
+                  </p>
+                )}
+
+                {customerSearchOpen &&
+                  String(
+                    customerSearch ||
+                    ""
+                  ).trim().length >=
+                    2 && (
+                  <div className="absolute left-5 right-5 top-[calc(100%-6px)] z-40 max-h-80 overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-2xl">
+                    {customerSearchLoading && (
+                      <p className="px-5 py-4 text-sm text-neutral-500">
+                        Buscando clientes en Relbase...
+                      </p>
+                    )}
+
+                    {!customerSearchLoading &&
+                      customerSearchError && (
+                      <p className="px-5 py-4 text-sm text-red-600">
+                        {customerSearchError}
+                      </p>
+                    )}
+
+                    {!customerSearchLoading &&
+                      !customerSearchError &&
+                      customerSearchResults.length ===
+                        0 && (
+                      <p className="px-5 py-4 text-sm text-neutral-500">
+                        No se encontraron clientes en Relbase. Puedes completar los datos manualmente.
+                      </p>
+                    )}
+
+                    {!customerSearchLoading &&
+                      !customerSearchError &&
+                      customerSearchResults.map(
+                        (item, resultIndex) => {
+                          const mapped =
+                            mapRelbaseCustomer(
+                              item
+                            );
+
+                          const typeLabel =
+                            mapped.type ===
+                            "company"
+                              ? "Empresa"
+                              : mapped.type ===
+                                  "person"
+                                ? "Persona"
+                                : "Cliente";
+
+                          return (
+                            <button
+                              key={
+                                mapped.id ||
+                                mapped.rut ||
+                                `${mapped.legalName}-${resultIndex}`
+                              }
+                              type="button"
+                              onClick={() =>
+                                applyRelbaseCustomer(
+                                  item
+                                )
+                              }
+                              className="block w-full border-b border-neutral-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-neutral-50"
+                            >
+                              <p className="text-sm font-semibold text-black">
+                                {mapped.legalName ||
+                                  "Cliente sin nombre"}
+                              </p>
+
+                              <p className="mt-1 text-xs text-neutral-500">
+                                {mapped.rut ||
+                                  "Sin RUT"}
+                                {" · "}
+                                {typeLabel}
+                              </p>
+
+                              {(mapped.address ||
+                                mapped.commune ||
+                                mapped.city) && (
+                                <p className="mt-1 text-xs text-neutral-400">
+                                  {[
+                                    mapped.address,
+                                    mapped.commune,
+                                    mapped.city,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </p>
+                              )}
+                            </button>
+                          );
+                        }
+                      )}
+                  </div>
+                )}
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Field
                   type="text"

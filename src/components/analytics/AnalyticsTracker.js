@@ -102,6 +102,11 @@ export default function AnalyticsTracker() {
     searchParams.toString();
 
   useEffect(() => {
+    // Filtra navegadores automatizados declarados; no sustituye la
+    // protección de ingesta que se aplica en PostgreSQL.
+    if (typeof navigator !== "undefined" && navigator.webdriver === true) {
+      return;
+    }
     if (
       !shouldTrackPath(
         pathname
