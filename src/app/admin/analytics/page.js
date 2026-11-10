@@ -38,11 +38,20 @@ const PERIOD_OPTIONS = [
   { value: 90, label: "90 días" },
 ];
 
+const LAMINATI_CHART_COLORS = [
+  "#7A1F8A",
+  "#7FA341",
+  "#E4AA25",
+  "#55A9A3",
+  "#C7423A",
+  "#3B8EAD",
+];
+
 const DEVICE_COLORS = [
-  "#111111",
-  "#737373",
-  "#a3a3a3",
-  "#d4d4d4",
+  LAMINATI_CHART_COLORS[0],
+  LAMINATI_CHART_COLORS[3],
+  LAMINATI_CHART_COLORS[2],
+  LAMINATI_CHART_COLORS[5],
 ];
 
 const compactNumber = new Intl.NumberFormat(
@@ -528,6 +537,7 @@ function RankingBars({
   secondaryKey = null,
   emptyMessage,
   maxItems = 7,
+  colors = null,
 }) {
   const items =
     rows
@@ -615,9 +625,16 @@ function RankingBars({
                   }}
                 >
                   <span
-                    className="h-full bg-neutral-900"
+                    className="h-full"
                     style={{
                       width: `${primaryWidth}%`,
+                      backgroundColor:
+                        colors?.length
+                          ? colors[
+                              index %
+                                colors.length
+                            ]
+                          : "#171717",
                     }}
                   />
 
@@ -903,6 +920,7 @@ function DeviceDonut({
 
 function LocationList({
   rows,
+  colors = null,
 }) {
   const items =
     rows.slice(0, 7);
@@ -1005,15 +1023,30 @@ function LocationList({
               key={`${main}-${index}`}
               className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
             >
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-neutral-700">
-                  {main}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className="h-8 w-1 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor:
+                      colors?.length
+                        ? colors[
+                            index %
+                              colors.length
+                          ]
+                        : "#d4d4d4",
+                  }}
+                />
 
-                <p className="mt-0.5 truncate text-[10px] text-neutral-400">
-                  {detail ||
-                    "Ubicación aproximada"}
-                </p>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-neutral-700">
+                    {main}
+                  </p>
+
+                  <p className="mt-0.5 truncate text-[10px] text-neutral-400">
+                    {detail ||
+                      "Ubicación aproximada"}
+                  </p>
+                </div>
               </div>
 
               <div className="shrink-0 text-right">
@@ -2342,6 +2375,9 @@ export default function AdminAnalyticsPage() {
                   valueKey="value"
                   emptyMessage="Todavía no hay fuentes de tráfico."
                   maxItems={6}
+                  colors={
+                    LAMINATI_CHART_COLORS
+                  }
                 />
               </DashboardCard>
 
@@ -2353,6 +2389,9 @@ export default function AdminAnalyticsPage() {
                 <LocationList
                   rows={
                     locations
+                  }
+                  colors={
+                    LAMINATI_CHART_COLORS
                   }
                 />
               </DashboardCard>
