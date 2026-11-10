@@ -158,6 +158,181 @@ function formatCounter(
 }
 
 
+function getProductDecorCode(
+  product
+) {
+  const sku =
+    String(
+      product?.sku ||
+      ""
+    ).trim();
+
+  const numericDecor =
+    sku.match(
+      /^(\d+)[A-Za-z]+$/
+    );
+
+  return (
+    numericDecor?.[1] ||
+    sku ||
+    "—"
+  );
+}
+
+
+function getProductDecorName(
+  product
+) {
+  const rawName =
+    String(
+      product?.name ||
+      ""
+    ).trim();
+
+  if (!rawName) {
+    return "Producto Laminati";
+  }
+
+  const withoutFinish =
+    rawName
+      .split("|")[0]
+      .trim();
+
+  const decorCode =
+    getProductDecorCode(
+      product
+    );
+
+  if (
+    decorCode &&
+    decorCode !== "—"
+  ) {
+    return (
+      withoutFinish
+        .replace(
+          new RegExp(
+            `\\s+${decorCode.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              "\\$&"
+            )}\\s*$`,
+            "i"
+          ),
+          ""
+        )
+        .trim() ||
+      withoutFinish
+    );
+  }
+
+  return withoutFinish;
+}
+
+
+function getProductDecorImage(
+  product
+) {
+  return (
+    product?.primary_image_url ||
+    product?.primary_image?.card_url ||
+    product?.primary_image?.detail_url ||
+    product?.primary_image?.image_url ||
+    product?.card_url ||
+    product?.thumbnail_url ||
+    product?.image_url ||
+    null
+  );
+}
+
+
+function getProductDecorColor(
+  product
+) {
+  const explicitColor =
+    String(
+      product?.color_hex ||
+      product?.hex_color ||
+      product?.color ||
+      ""
+    ).trim();
+
+  if (
+    /^(#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(
+      explicitColor
+    )
+  ) {
+    return explicitColor;
+  }
+
+  const name =
+    `${product?.name || ""} ${product?.color || ""}`
+      .toLowerCase();
+
+  const palette = [
+    [
+      /bianco|white|blanco/,
+      "#F2EFE4",
+    ],
+    [
+      /giallo|yellow|amarillo/,
+      "#DCAA32",
+    ],
+    [
+      /grigio|grey|gray|gris/,
+      "#756B60",
+    ],
+    [
+      /nero|black|negro/,
+      "#252525",
+    ],
+    [
+      /blu|bleu|blue|azul|azzurro/,
+      "#547E9D",
+    ],
+    [
+      /verde|green/,
+      "#71805E",
+    ],
+    [
+      /rosso|red|rojo/,
+      "#A94B45",
+    ],
+    [
+      /viola|purple|morado/,
+      "#71587D",
+    ],
+    [
+      /arancio|orange|naranj/,
+      "#C77B40",
+    ],
+    [
+      /rosa|pink/,
+      "#C78E99",
+    ],
+    [
+      /beige|sabbia|sahara/,
+      "#C6B493",
+    ],
+    [
+      /marron|brown|wengue|fondente/,
+      "#69584B",
+    ],
+  ];
+
+  const matched =
+    palette.find(
+      ([pattern]) =>
+        pattern.test(
+          name
+        )
+    );
+
+  return (
+    matched?.[1] ||
+    "#D9D4C9"
+  );
+}
+
+
 export default function ProjectDetail({
   project,
 }) {
@@ -673,79 +848,11 @@ export default function ProjectDetail({
         <section
           className="site-container pb-14 sm:pb-16 lg:pb-20"
         >
-          <div
-            className={`grid gap-3 ${
-              previewImages.length >
-              0
-                ? "lg:grid-cols-[1.08fr_0.92fr]"
-                : ""
-            }`}
-          >
-            <div
-              className="relative min-h-[420px] overflow-hidden rounded-[1.55rem] bg-black/[0.04] sm:min-h-[520px] lg:min-h-[610px]"
-            >
-              <img
-                src={
-                  activeImage.detailUrl
-                }
-                alt={
-                  activeImage.alt_text ||
-                  project.title
-                }
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-
-              <div
-                className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"
-              />
-
-              <div
-                className="absolute bottom-5 left-5 rounded-full bg-black/65 px-4 py-2 text-[10px] font-semibold tracking-[0.16em] text-white backdrop-blur-md"
-              >
-                {formatCounter(
-                  activeIndex +
-                    1
-                )}
-                {" / "}
-                {formatCounter(
-                  galleryImages.length
-                )}
-              </div>
-
-              {galleryImages.length >
-              1 ? (
-                <div
-                  className="absolute bottom-5 right-5 flex items-center gap-2"
-                >
-                  <button
-                    type="button"
-                    onClick={
-                      goPrevious
-                    }
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-black shadow-sm backdrop-blur transition hover:bg-white"
-                    aria-label="Fotografía anterior"
-                  >
-                    <ChevronLeftIcon />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={
-                      goNext
-                    }
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-sm transition hover:bg-white/90"
-                    aria-label="Fotografía siguiente"
-                  >
-                    <ChevronRightIcon />
-                  </button>
-                </div>
-              ) : null}
-            </div>
-
+          <div className="grid gap-3">
             {previewImages.length >
             0 ? (
               <div
-                className="grid min-h-[420px] grid-cols-2 gap-3 sm:min-h-[520px] lg:min-h-[610px]"
+                className="grid min-h-[420px] grid-cols-2 gap-3 sm:min-h-[520px] lg:min-h-[440px] lg:grid-cols-4"
               >
                 {previewImages.map(
                   (
@@ -765,15 +872,15 @@ export default function ProjectDetail({
                       className={`group/preview relative overflow-hidden rounded-[1.25rem] bg-black/[0.04] text-left ${
                         previewImages.length ===
                           1
-                          ? "col-span-2 row-span-2"
+                          ? "col-span-2 row-span-2 lg:col-span-4 lg:row-span-1"
                           : previewImages.length ===
                               2
-                            ? "row-span-2"
+                            ? "row-span-2 lg:col-span-2 lg:row-span-1"
                             : previewImages.length ===
                                 3 &&
                               previewIndex ===
                                 0
-                              ? "row-span-2"
+                              ? "row-span-2 lg:col-span-2 lg:row-span-1"
                               : ""
                       }`}
                       aria-label={`Ver fotografía ${item.index + 1}`}
@@ -930,41 +1037,59 @@ export default function ProjectDetail({
       {products.length >
       0 ? (
         <section
-          className="border-y border-black/[0.07] bg-[#eae5dc]"
+          className="border-y border-black/[0.07] bg-white"
         >
           <div
             className="site-container py-16 sm:py-20 lg:py-24"
           >
-            <div
-              className="grid gap-10 lg:grid-cols-[0.65fr_1.35fr]"
-            >
-              <div>
-                <p
-                  className="text-[10px] font-semibold uppercase tracking-[0.28em] text-black/35"
-                >
-                  Materiales
-                </p>
-
-                <h2
-                  className="mt-4 text-3xl font-medium leading-[1.05] tracking-[-0.045em] sm:text-4xl"
-                >
-                  Productos utilizados.
-                </h2>
-              </div>
-
-              <div
-                className="divide-y divide-black/[0.08] border-y border-black/[0.08]"
+            <div>
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.28em] text-black/35"
               >
-                {products.map(
-                  (
-                    product
-                  ) => (
+                Materiales
+              </p>
+
+              <h2
+                className="mt-4 text-3xl font-medium leading-[1.05] tracking-[-0.045em] sm:text-4xl"
+              >
+                Productos utilizados.
+              </h2>
+            </div>
+
+            <div
+              className="mt-10 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-x-8"
+            >
+              {products.map(
+                (
+                  product
+                ) => {
+                  const decorImage =
+                    getProductDecorImage(
+                      product
+                    );
+
+                  const decorColor =
+                    getProductDecorColor(
+                      product
+                    );
+
+                  const decorCode =
+                    getProductDecorCode(
+                      product
+                    );
+
+                  const decorName =
+                    getProductDecorName(
+                      product
+                    );
+
+                  return (
                     <Link
                       key={
                         product.product_id
                       }
                       href={`/productos/${product.slug}`}
-                      className="group/product flex items-center justify-between gap-6 py-6 !text-inherit"
+                      className="group/product block min-w-0 !text-inherit"
                       style={{
                         color:
                           "inherit",
@@ -972,26 +1097,60 @@ export default function ProjectDetail({
                           "none",
                       }}
                     >
-                      <div>
-                        <p
-                          className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35"
-                        >
-                          {
-                            product.sku
-                          }
-                        </p>
+                      <div
+                        className="relative aspect-[0.78] w-full overflow-hidden rounded-[1.5rem] border border-black/[0.04] bg-black/[0.03]"
+                        style={{
+                          backgroundColor:
+                            decorColor,
+                        }}
+                      >
+                        {decorImage ? (
+                          <img
+                            src={
+                              decorImage
+                            }
+                            alt={
+                              product.name ||
+                              `Decor ${decorCode}`
+                            }
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover/product:scale-[1.025]"
+                          />
+                        ) : null}
 
-                        <h3
-                          className="mt-2 text-xl font-medium tracking-[-0.03em]"
+                        <span
+                          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/85 text-black opacity-0 shadow-sm backdrop-blur transition group-hover/product:opacity-100"
+                          aria-hidden="true"
                         >
-                          {
-                            product.name
-                          }
+                          <ArrowIcon />
+                        </span>
+                      </div>
+
+                      <div
+                        className="mt-4"
+                      >
+                        <h3
+                          className="text-base leading-6 tracking-[-0.02em] text-black sm:text-[17px]"
+                        >
+                          <span
+                            className="font-semibold"
+                          >
+                            {
+                              decorCode
+                            }
+                          </span>
+                          {" "}
+                          <span
+                            className="font-normal"
+                          >
+                            {
+                              decorName
+                            }
+                          </span>
                         </h3>
 
                         {product.application_note ? (
                           <p
-                            className="mt-2 text-sm text-black/50"
+                            className="mt-1.5 text-sm leading-5 text-black/45"
                           >
                             {
                               product.application_note
@@ -999,16 +1158,10 @@ export default function ProjectDetail({
                           </p>
                         ) : null}
                       </div>
-
-                      <span
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 transition group-hover/product:bg-black group-hover/product:text-white"
-                      >
-                        <ArrowIcon />
-                      </span>
                     </Link>
-                  )
-                )}
-              </div>
+                  );
+                }
+              )}
             </div>
           </div>
         </section>
