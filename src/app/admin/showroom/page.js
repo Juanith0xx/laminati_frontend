@@ -1117,16 +1117,19 @@ function mapRelbaseCustomer(relbaseCustomer, formattedRut) {
     ),
     commune: firstText(
       item.commune_name,
+      item.commune_description,
       nestedName(item.commune),
       typeof item.commune === "string" ? item.commune : ""
     ),
     city: firstText(
       item.city_name,
+      item.city_description,
       nestedName(item.city),
       typeof item.city === "string" ? item.city : ""
     ),
     region: firstText(
       item.region_name,
+      item.region_description,
       nestedName(item.region),
       typeof item.region === "string" ? item.region : ""
     ),
