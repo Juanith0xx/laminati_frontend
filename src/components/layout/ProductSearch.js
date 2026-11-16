@@ -48,6 +48,7 @@ const formatPrice = (value) => {
 
 export default function ProductSearch({
   onClose,
+  allowTechnicalSearch = false,
 }) {
   const router = useRouter();
 
@@ -55,6 +56,9 @@ export default function ProductSearch({
 
   const lastNoResultsTrackedRef =
     useRef("");
+
+  const suggestionCacheRef =
+    useRef(new Map());
 
   const [query, setQuery] =
     useState("");
@@ -85,6 +89,12 @@ export default function ProductSearch({
 
   /* =========================================
      AUTOCOMPLETADO
+
+     - 160 ms para búsquedas comerciales
+     - 100 ms para códigos técnicos
+     - AbortController evita respuestas antiguas
+     - Caché corta en memoria hace instantáneo volver
+       a una consulta reciente
   ========================================= */
 
   useEffect(() => {
@@ -100,15 +110,51 @@ export default function ProductSearch({
       return;
     }
 
+    const technicalQuery =
+      /^(STRAT|LAB|MEG)-/i.test(
+        normalizedQuery
+      );
+
+    /*
+     * Evita incluso la llamada HTTP para visitantes
+     * públicos que escriban un prefijo técnico. El
+     * backend igualmente mantiene la validación real.
+     */
+    if (
+      technicalQuery &&
+      !allowTechnicalSearch
+    ) {
+      setSuggestions([]);
+      setLoading(false);
+      setError(false);
+      setSelectedIndex(-1);
+      return;
+    }
+
+    const cacheKey = `${
+      allowTechnicalSearch
+        ? "staff"
+        : "public"
+    }:${normalizedQuery.toLowerCase()}`;
+
+    const cachedSuggestions =
+      suggestionCacheRef.current.get(
+        cacheKey
+      );
+
+    if (cachedSuggestions) {
+      setSuggestions(
+        cachedSuggestions
+      );
+      setLoading(false);
+      setError(false);
+      setSelectedIndex(-1);
+      return;
+    }
+
     const controller =
       new AbortController();
 
-    /*
-      Debounce:
-      esperamos antes de consultar
-      para no llamar al backend
-      con cada pulsación.
-    */
     const timeout = setTimeout(
       async () => {
         try {
@@ -125,10 +171,34 @@ export default function ProductSearch({
               }
             );
 
-          setSuggestions(
-            response?.suggestions || []
+          const nextSuggestions =
+            response?.suggestions ||
+            [];
+
+          if (
+            suggestionCacheRef.current.size >=
+            30
+          ) {
+            const oldestKey =
+              suggestionCacheRef.current
+                .keys()
+                .next().value;
+
+            if (oldestKey) {
+              suggestionCacheRef.current.delete(
+                oldestKey
+              );
+            }
+          }
+
+          suggestionCacheRef.current.set(
+            cacheKey,
+            nextSuggestions
           );
 
+          setSuggestions(
+            nextSuggestions
+          );
           setSelectedIndex(-1);
         } catch (error) {
           if (
@@ -153,14 +223,17 @@ export default function ProductSearch({
           }
         }
       },
-      200
+      technicalQuery ? 100 : 160
     );
 
     return () => {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [query]);
+  }, [
+    query,
+    allowTechnicalSearch,
+  ]);
 
   /* =========================================
      IR A PRODUCTO
@@ -253,6 +326,18 @@ export default function ProductSearch({
       query.trim();
 
     if (!normalizedQuery) {
+      return;
+    }
+
+    const technicalQuery =
+      /^(STRAT|LAB|MEG)-/i.test(
+        normalizedQuery
+      );
+
+    if (
+      technicalQuery &&
+      !allowTechnicalSearch
+    ) {
       return;
     }
 
@@ -483,7 +568,11 @@ export default function ProductSearch({
           onKeyDown={
             handleKeyDown
           }
-          placeholder="Buscar por nombre, SKU o código..."
+          placeholder={
+            allowTechnicalSearch
+              ? "Buscar producto o código STRAT-, LAB-, MEG-..."
+              : "Ej: Formica negra, lámina blanca, negro mate..."
+          }
           autoComplete="off"
           spellCheck="false"
           aria-label="Buscar productos"

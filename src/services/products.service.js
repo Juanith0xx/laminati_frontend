@@ -1,6 +1,9 @@
 import { apiRequest } from "./api";
 
-export function getProducts(params = {}) {
+export function getProducts(
+  params = {},
+  requestOptions = {}
+) {
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
@@ -16,7 +19,8 @@ export function getProducts(params = {}) {
   const query = searchParams.toString();
 
   return apiRequest(
-    `/products${query ? `?${query}` : ""}`
+    `/products${query ? `?${query}` : ""}`,
+    requestOptions
   );
 }
 

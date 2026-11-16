@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { getProducts } from "@/services/products.service";
 import CollectionComingSoon from "@/components/catalog/CollectionComingSoon";
 import TrackedProductLink from "@/components/analytics/TrackedProductLink";
@@ -819,6 +820,12 @@ function getLabgradeGroups(
     );
 }
 
+function isTechnicalProductSearch(value = "") {
+  return /^(STRAT|LAB|MEG)-/i.test(
+    String(value || "").trim()
+  );
+}
+
 export default async function ProductsPage({
   searchParams,
   routeConfig = null,
@@ -899,7 +906,44 @@ export default async function ProductsPage({
   let errorMessage = "";
 
   try {
-    const response = await getProducts(query);
+    let requestOptions = {};
+
+    /*
+     * Solo las búsquedas técnicas necesitan reenviar
+     * la cookie desde el Server Component a Railway.
+     * El catálogo público normal no se vuelve dinámico
+     * por sesión y conserva su ruta rápida habitual.
+     */
+    if (
+      isTechnicalProductSearch(
+        query.search
+      )
+    ) {
+      const cookieStore =
+        await cookies();
+
+      const cookieHeader =
+        cookieStore
+          .getAll()
+          .map(
+            ({ name, value }) =>
+              `${name}=${value}`
+          )
+          .join("; ");
+
+      if (cookieHeader) {
+        requestOptions = {
+          headers: {
+            cookie: cookieHeader,
+          },
+        };
+      }
+    }
+
+    const response = await getProducts(
+      query,
+      requestOptions
+    );
 
     if (response?.success) {
       products = Array.isArray(response.products)

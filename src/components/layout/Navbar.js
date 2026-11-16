@@ -2424,6 +2424,11 @@ export default function Navbar() {
 
                 <ProductSearch
 
+                  allowTechnicalSearch={[
+                    "ADMIN",
+                    "VENDEDOR",
+                  ].includes(sessionRole)}
+
                   onClose={() =>
 
                     setSearchOpen(
