@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { getProducts } from "@/services/products.service";
+import {
+  getCatalogFilters,
+  getProducts,
+} from "@/services/products.service";
 import CollectionComingSoon from "@/components/catalog/CollectionComingSoon";
 import TrackedProductLink from "@/components/analytics/TrackedProductLink";
+import AbetCollectionFilter from "@/components/catalog/AbetCollectionFilter";
 
 export const metadata = {
   title:
@@ -881,6 +885,10 @@ export default async function ProductsPage({
       fixedQuery.collection !== undefined
         ? fixedQuery.collection
         : (params?.collection || ""),
+    abet_collection:
+      fixedQuery.abet_collection !== undefined
+        ? fixedQuery.abet_collection
+        : (params?.abet_collection || ""),
     finish:
       fixedQuery.finish !== undefined
         ? fixedQuery.finish
@@ -901,8 +909,17 @@ export default async function ProductsPage({
     limit: catalogLimit,
   };
 
+  const showAbetCollectionFilter =
+    routeConfig?.key === "laminados" ||
+    (
+      String(params?.category || "").toLowerCase() === "hpl" &&
+      String(params?.brand || "").toLowerCase() === "abet-laminati" &&
+      String(params?.application || "").toLowerCase() === "stratificato"
+    );
+
   let products = [];
   let pagination = null;
+  let abetCollections = [];
   let errorMessage = "";
 
   try {
@@ -961,6 +978,32 @@ export default async function ProductsPage({
 
     errorMessage =
       "No fue posible cargar los productos.";
+  }
+
+  if (showAbetCollectionFilter) {
+    try {
+      const filtersResponse =
+        await getCatalogFilters();
+
+      if (filtersResponse?.success) {
+        abetCollections =
+          Array.isArray(
+            filtersResponse
+              ?.filters
+              ?.abet_collections
+          )
+            ? filtersResponse.filters
+                .abet_collections
+            : [];
+      }
+    } catch (error) {
+      // El catálogo debe seguir funcionando aunque
+      // falle temporalmente la carga del filtro Abet.
+      console.error(
+        "Error cargando colecciones Abet:",
+        error
+      );
+    }
   }
 
   const firstProduct = products[0] || null;
@@ -1035,9 +1078,11 @@ export default async function ProductsPage({
     "/productos";
 
   const paginationSourceParams =
-    routeConfig
-      ? {}
-      : params;
+    routeConfig?.key === "laminados"
+      ? params
+      : routeConfig
+        ? {}
+        : params;
 
   const structuredData =
     routeConfig
@@ -1322,6 +1367,18 @@ export default async function ProductsPage({
           )}
 
         </div>
+
+        {showAbetCollectionFilter &&
+          abetCollections.length > 0 && (
+            <div className="mb-8 sm:mb-10">
+              <AbetCollectionFilter
+                collections={abetCollections}
+                value={query.abet_collection}
+                basePath={paginationBasePath}
+                params={params}
+              />
+            </div>
+          )}
 
         {errorMessage ? (
           <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-5 text-sm text-red-700">

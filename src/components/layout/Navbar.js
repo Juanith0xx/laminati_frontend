@@ -2124,7 +2124,7 @@ export default function Navbar() {
                                       {[
                                         {
                                           label:
-                                            "Cubiertas",
+                                            "Decorativos para Interior",
                                           detail:
                                             "Stratificato",
                                           href:
