@@ -231,14 +231,45 @@ function getProductDecorName(
 function getProductDecorImage(
   product
 ) {
+  const productImages =
+    Array.isArray(
+      product?.images
+    )
+      ? product.images
+      : Array.isArray(
+          product?.product_images
+        )
+        ? product.product_images
+        : [];
+
+  const primaryImage =
+    productImages.find(
+      (image) =>
+        image?.is_primary
+    ) ||
+    productImages[0] ||
+    null;
+
   return (
     product?.primary_image_url ||
+    product?.primary_image?.urls?.card ||
+    product?.primary_image?.urls?.detail ||
+    product?.primary_image?.urls?.thumbnail ||
     product?.primary_image?.card_url ||
     product?.primary_image?.detail_url ||
+    product?.primary_image?.thumbnail_url ||
     product?.primary_image?.image_url ||
     product?.card_url ||
     product?.thumbnail_url ||
     product?.image_url ||
+    getImageUrl(
+      primaryImage,
+      "card"
+    ) ||
+    primaryImage?.card_url ||
+    primaryImage?.detail_url ||
+    primaryImage?.thumbnail_url ||
+    primaryImage?.image_url ||
     null
   );
 }
@@ -1057,7 +1088,7 @@ export default function ProjectDetail({
             </div>
 
             <div
-              className="mt-10 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-x-8"
+              className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-[repeat(auto-fit,minmax(180px,230px))] sm:justify-start sm:gap-x-5 md:grid-cols-[repeat(auto-fit,minmax(190px,240px))] lg:mt-12 lg:grid-cols-[repeat(auto-fit,minmax(200px,250px))] lg:gap-x-6"
             >
               {products.map(
                 (
@@ -1098,7 +1129,7 @@ export default function ProjectDetail({
                       }}
                     >
                       <div
-                        className="relative aspect-[0.78] w-full overflow-hidden rounded-[1.5rem] border border-black/[0.04] bg-black/[0.03]"
+                        className="relative aspect-square w-full overflow-hidden rounded-[1.25rem] border border-black/[0.04] bg-black/[0.03]"
                         style={{
                           backgroundColor:
                             decorColor,
@@ -1118,7 +1149,7 @@ export default function ProjectDetail({
                         ) : null}
 
                         <span
-                          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/85 text-black opacity-0 shadow-sm backdrop-blur transition group-hover/product:opacity-100"
+                          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white/85 text-black opacity-0 shadow-sm backdrop-blur transition group-hover/product:opacity-100"
                           aria-hidden="true"
                         >
                           <ArrowIcon />
@@ -1126,7 +1157,7 @@ export default function ProjectDetail({
                       </div>
 
                       <div
-                        className="mt-4"
+                        className="mt-3"
                       >
                         <h3
                           className="text-base leading-6 tracking-[-0.02em] text-black sm:text-[17px]"
