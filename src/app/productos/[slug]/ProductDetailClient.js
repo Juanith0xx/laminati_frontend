@@ -125,12 +125,32 @@ product
 }) {
 
 /* =========================================*
+*     STRATIFICATO
+*     - Sólo afecta presentación de imágenes
+*     - No modifica lógica comercial
+*  ========================================= */
+
+const isStratificato =
+
+String(
+product?.sku ||
+""
+)
+.trim()
+.toUpperCase()
+.startsWith(
+"STRAT-"
+);
+
+/* =========================================*
 
 *     GALERÍA*
 
 *  ========================================= */
 
 const images = useMemo(() => {
+
+let sourceImages = [];
 
 if (
 
@@ -140,13 +160,13 @@ product.images.length > 0
 
 ) {
 
-return product.images;
+sourceImages = [
+...product.images,
+];
 
-}
+} else if (product.primary_image) {
 
-if (product.primary_image) {
-
-return [
+sourceImages = [
 
 product.primary_image,
 
@@ -154,7 +174,100 @@ product.primary_image,
 
 }
 
-return [];
+if (!isStratificato) {
+
+return sourceImages;
+
+}
+
+/*
+ * Stratificato:
+ * 1. sample
+ * 2. panel
+ *
+ * Si todavía existe algún gallery antiguo y ya tenemos
+ * sample/panel, no lo mostramos en la vista pública.
+ */
+
+const getPriority = (
+image
+) => {
+
+const imageType =
+
+String(
+image?.image_type ||
+""
+)
+.trim()
+.toLowerCase();
+
+if (
+imageType ===
+"sample"
+) {
+
+return 0;
+
+}
+
+if (
+imageType ===
+"panel"
+) {
+
+return 1;
+
+}
+
+return 2;
+
+};
+
+const sortedImages =
+
+sourceImages
+.slice()
+.sort(
+(
+left,
+right
+) =>
+
+getPriority(left) -
+getPriority(right)
+
+);
+
+const officialImages =
+
+sortedImages.filter(
+(
+image
+) => {
+
+const imageType =
+
+String(
+image?.image_type ||
+""
+)
+.trim()
+.toLowerCase();
+
+return (
+imageType ===
+"sample" ||
+imageType ===
+"panel"
+);
+
+}
+);
+
+return officialImages.length > 0
+? officialImages
+: sortedImages;
 
 }, [
 
@@ -162,15 +275,43 @@ product.images,
 
 product.primary_image,
 
+isStratificato,
+
 ]);
 
 const initialImage =
 
+isStratificato
+
+? (
+images.find(
+(
+image
+) =>
+
+String(
+image?.image_type ||
+""
+)
+.trim()
+.toLowerCase() ===
+"sample"
+) ||
+
+images[0] ||
+
+product.primary_image ||
+
+null
+)
+
+: (
 product.primary_image ||
 
 images[0] ||
 
-null;
+null
+);
 
 const [
 
@@ -449,9 +590,23 @@ selectedImage?.id
 
 );
 
+const selectedImageType =
+
+String(
+selectedImage?.image_type ||
+""
+)
+.trim()
+.toLowerCase();
+
 const canZoomSelectedImage =
 
-selectedImageIndex === 1;
+isStratificato
+
+? selectedImageType ===
+"panel"
+
+: selectedImageIndex === 1;
 
 /* =========================================*
 
@@ -2353,6 +2508,23 @@ let offsetX = 0;
 let offsetY = 0;
 
 if (
+isStratificato
+) {
+
+/*
+ * En Stratificato la imagen usa object-cover,
+ * igual que la galería visual de ProjectProductDetail.
+ */
+
+renderedWidth =
+
+rect.width;
+
+renderedHeight =
+
+rect.height;
+
+} else if (
 
 imageRatio >
 
@@ -2959,13 +3131,23 @@ product.category
 
 *              ================================= */}
 
-<div className="relative overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white">
+<div
+className={
+isStratificato
+? "relative aspect-[1.02/1] overflow-hidden rounded-[1.75rem] bg-neutral-100 shadow-[0_8px_30px_rgba(0,0,0,0.07)]"
+: "relative overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white"
+}
+>
 
 <div
 
 ref={mainImageContainerRef}
 
-className="flex h-[420px] items-center justify-center sm:h-[520px] lg:h-[600px] xl:h-[620px]"
+className={
+isStratificato
+? "flex h-full w-full items-center justify-center"
+: "flex h-[420px] items-center justify-center sm:h-[520px] lg:h-[600px] xl:h-[620px]"
+}
 
 >
 
@@ -2985,7 +3167,15 @@ onMouseLeave={handleMagnifierLeave}
 
 disabled={!canZoomSelectedImage}
 
-className={`group relative flex h-full w-full items-center justify-center overflow-hidden p-4 sm:p-5 lg:p-6 ${
+className={`group relative flex h-full w-full items-center justify-center overflow-hidden ${
+
+isStratificato
+
+? ""
+
+: "p-4 sm:p-5 lg:p-6"
+
+} ${
 
 canZoomSelectedImage
 
@@ -3031,7 +3221,15 @@ mainImageAlt
 
 }
 
-className="h-full w-full select-none rounded-[1.75rem] object-contain"
+className={
+
+isStratificato
+
+? "h-full w-full select-none object-cover"
+
+: "h-full w-full select-none rounded-[1.75rem] object-contain"
+
+}
 
 draggable="false"
 
@@ -3263,7 +3461,15 @@ alt=""
 
 draggable="false"
 
-className="h-full w-full select-none object-contain"
+className={
+
+isStratificato
+
+? "h-full w-full select-none object-cover"
+
+: "h-full w-full select-none object-contain"
+
+}
 
 style={{
 
@@ -3301,7 +3507,13 @@ Zoom detalle
 
 {images.length > 1 && (
 
-<div className="mt-4 flex gap-3">
+<div
+className={
+isStratificato
+? "mt-4 grid grid-cols-3 gap-3 sm:gap-4"
+: "mt-4 flex gap-3"
+}
+>
 
 {images.map(
 
@@ -3351,7 +3563,21 @@ image.id
 
 }
 
-className={`relative h-24 w-20 overflow-hidden rounded-xl border bg-[#f3f2ee] transition sm:h-28 sm:w-24 ${
+className={
+
+isStratificato
+
+? `aspect-[1.45/1] overflow-hidden rounded-2xl border bg-neutral-100 transition ${
+
+isSelected
+
+? "border-emerald-700 ring-1 ring-emerald-700"
+
+: "border-black/5 hover:border-neutral-300"
+
+}`
+
+: `relative h-24 w-20 overflow-hidden rounded-xl border bg-[#f3f2ee] transition sm:h-28 sm:w-24 ${
 
 isSelected
 
@@ -3359,7 +3585,9 @@ isSelected
 
 : "border-neutral-200 hover:border-neutral-400"
 
-}`}
+}`
+
+}
 
 aria-label={`Ver ${
 
