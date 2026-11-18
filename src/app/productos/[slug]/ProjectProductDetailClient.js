@@ -9,6 +9,8 @@ import {
 
 import Link from "next/link";
 
+import ProductBackButton from "./ProductBackButton";
+
 function normalizeArray(value) {
   if (Array.isArray(value)) {
     return value;
@@ -699,6 +701,10 @@ export default function ProjectProductDetailClient({
             {product?.name}
           </span>
         </nav>
+        <div className="mt-4">
+          <ProductBackButton />
+        </div>
+
 
         <div className="mt-7 grid gap-10 xl:grid-cols-[minmax(0,1.03fr)_minmax(480px,0.97fr)] xl:gap-14">
 

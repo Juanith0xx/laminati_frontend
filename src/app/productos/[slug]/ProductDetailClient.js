@@ -14,6 +14,8 @@ useState,
 
 import Link from "next/link";
 
+import ProductBackButton from "./ProductBackButton";
+
 import {
 
 useCartStore,
@@ -3054,7 +3056,7 @@ return (
 *          ===================================== */
 }
 
-<nav className="mb-8 flex flex-wrap items-center gap-2 text-xs text-neutral-400">
+<nav className="mb-4 flex flex-wrap items-center gap-2 text-xs text-neutral-400">
 
 <Link
 
@@ -3103,6 +3105,10 @@ product.category
 )}
 
 </nav>
+        <div className="mb-7">
+          <ProductBackButton />
+        </div>
+
 
 {
 /* =====================================*
