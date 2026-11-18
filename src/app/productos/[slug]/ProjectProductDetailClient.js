@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -36,6 +38,29 @@ function getImageUrl(image) {
     image?.image_url ||
     null
   );
+}
+
+function getImageType(image) {
+  return String(
+    image?.image_type || ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function getImagePriority(image) {
+  const type =
+    getImageType(image);
+
+  if (type === "sample") {
+    return 0;
+  }
+
+  if (type === "panel") {
+    return 1;
+  }
+
+  return 2;
 }
 
 function getProductCode(product) {
@@ -81,13 +106,83 @@ export default function ProjectProductDetailClient({
   product,
 }) {
   const images =
-    useMemo(
-      () =>
+    useMemo(() => {
+      const sourceImages =
         normalizeArray(
           product?.images
-        ),
-      [product?.images]
-    );
+        )
+          .filter(
+            (image) =>
+              Boolean(
+                getImageUrl(
+                  image
+                )
+              )
+          );
+
+      /*
+       * Stratificato:
+       * - sample primero
+       * - panel segundo
+       * - si todavía existe un gallery antiguo,
+       *   no se muestra cuando ya existen imágenes oficiales.
+       */
+      const officialImages =
+        sourceImages.filter(
+          (image) => {
+            const type =
+              getImageType(
+                image
+              );
+
+            return (
+              type === "sample" ||
+              type === "panel"
+            );
+          }
+        );
+
+      const visibleImages =
+        officialImages.length > 0
+          ? officialImages
+          : sourceImages;
+
+      return visibleImages
+        .slice()
+        .sort(
+          (
+            left,
+            right
+          ) => {
+            const priorityDiff =
+              getImagePriority(
+                left
+              ) -
+              getImagePriority(
+                right
+              );
+
+            if (
+              priorityDiff !== 0
+            ) {
+              return priorityDiff;
+            }
+
+            return (
+              Number(
+                left?.sort_order ??
+                  999
+              ) -
+              Number(
+                right?.sort_order ??
+                  999
+              )
+            );
+          }
+        );
+    }, [
+      product?.images,
+    ]);
 
   const formats =
     useMemo(
@@ -128,6 +223,12 @@ export default function ProjectProductDetailClient({
   const initialImage =
     images.find(
       (image) =>
+        getImageType(
+          image
+        ) === "sample"
+    ) ||
+    images.find(
+      (image) =>
         image?.is_primary
     ) ||
     images[0] ||
@@ -164,6 +265,59 @@ export default function ProjectProductDetailClient({
       ?.primary_image_url ||
     null;
 
+  const mainImageAlt =
+    selectedImage
+      ?.alt_text ||
+    product
+      ?.primary_image_alt ||
+    product?.name ||
+    "Producto Laminati";
+
+  const selectedImageType =
+    getImageType(
+      selectedImage
+    );
+
+  /*
+   * Igual que el laminado normal:
+   * el zoom se habilita para la imagen PANEL.
+   */
+  const canZoomSelectedImage =
+    selectedImageType ===
+    "panel";
+
+  const [
+    isZoomOpen,
+    setIsZoomOpen,
+  ] = useState(false);
+
+  const [
+    zoomScale,
+    setZoomScale,
+  ] = useState(1);
+
+  const mainImageContainerRef =
+    useRef(null);
+
+  const mainImageRef =
+    useRef(null);
+
+  const [
+    isMagnifierVisible,
+    setIsMagnifierVisible,
+  ] = useState(false);
+
+  const [
+    magnifierPosition,
+    setMagnifierPosition,
+  ] = useState({
+    lensLeft: 0,
+    lensTop: 0,
+    lensSize: 150,
+    originX: 50,
+    originY: 50,
+  });
+
   const technicalSheet =
     documents.find(
       (document) =>
@@ -195,6 +349,319 @@ export default function ProjectProductDetailClient({
         product?.slug ||
         ""
     )}`;
+
+  /* =========================================
+     ZOOM / MAGNIFIER DEL PANEL
+  ========================================= */
+
+  const handleMagnifierMove = (
+    event
+  ) => {
+    if (
+      !canZoomSelectedImage
+    ) {
+      setIsMagnifierVisible(
+        false
+      );
+      return;
+    }
+
+    const container =
+      mainImageContainerRef
+        .current;
+
+    const image =
+      mainImageRef.current;
+
+    if (
+      !container ||
+      !image ||
+      !image.naturalWidth ||
+      !image.naturalHeight
+    ) {
+      setIsMagnifierVisible(
+        false
+      );
+      return;
+    }
+
+    const rect =
+      container
+        .getBoundingClientRect();
+
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0
+    ) {
+      setIsMagnifierVisible(
+        false
+      );
+      return;
+    }
+
+    const imageRatio =
+      image.naturalWidth /
+      image.naturalHeight;
+
+    const containerRatio =
+      rect.width /
+      rect.height;
+
+    let renderedWidth;
+    let renderedHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    /*
+     * La imagen principal usa object-contain,
+     * por eso calculamos el área realmente renderizada.
+     */
+    if (
+      imageRatio >
+      containerRatio
+    ) {
+      renderedWidth =
+        rect.width;
+
+      renderedHeight =
+        rect.width /
+        imageRatio;
+
+      offsetY =
+        (
+          rect.height -
+          renderedHeight
+        ) / 2;
+    } else {
+      renderedHeight =
+        rect.height;
+
+      renderedWidth =
+        rect.height *
+        imageRatio;
+
+      offsetX =
+        (
+          rect.width -
+          renderedWidth
+        ) / 2;
+    }
+
+    const pointerX =
+      event.clientX -
+      rect.left;
+
+    const pointerY =
+      event.clientY -
+      rect.top;
+
+    const isInsideImage =
+      pointerX >= offsetX &&
+      pointerX <=
+        offsetX +
+          renderedWidth &&
+      pointerY >= offsetY &&
+      pointerY <=
+        offsetY +
+          renderedHeight;
+
+    if (!isInsideImage) {
+      setIsMagnifierVisible(
+        false
+      );
+      return;
+    }
+
+    const requestedLensSize =
+      150;
+
+    const lensSize =
+      Math.max(
+        80,
+        Math.min(
+          requestedLensSize,
+          renderedWidth,
+          renderedHeight
+        )
+      );
+
+    const minLeft =
+      offsetX;
+
+    const maxLeft =
+      offsetX +
+      renderedWidth -
+      lensSize;
+
+    const minTop =
+      offsetY;
+
+    const maxTop =
+      offsetY +
+      renderedHeight -
+      lensSize;
+
+    const lensLeft =
+      Math.min(
+        Math.max(
+          pointerX -
+            lensSize / 2,
+          minLeft
+        ),
+        maxLeft
+      );
+
+    const lensTop =
+      Math.min(
+        Math.max(
+          pointerY -
+            lensSize / 2,
+          minTop
+        ),
+        maxTop
+      );
+
+    const originX =
+      (
+        pointerX /
+        rect.width
+      ) * 100;
+
+    const originY =
+      (
+        pointerY /
+        rect.height
+      ) * 100;
+
+    setMagnifierPosition({
+      lensLeft,
+      lensTop,
+      lensSize,
+      originX,
+      originY,
+    });
+
+    setIsMagnifierVisible(
+      true
+    );
+  };
+
+  const handleMagnifierLeave =
+    () => {
+      setIsMagnifierVisible(
+        false
+      );
+    };
+
+  const handleOpenZoom = () => {
+    if (
+      !mainImageUrl ||
+      !canZoomSelectedImage
+    ) {
+      return;
+    }
+
+    setZoomScale(1);
+    setIsZoomOpen(true);
+  };
+
+  const handleCloseZoom = () => {
+    setIsZoomOpen(false);
+    setZoomScale(1);
+  };
+
+  const handleZoomIn = () => {
+    setZoomScale(
+      (current) =>
+        Math.min(
+          current + 0.5,
+          4
+        )
+    );
+  };
+
+  const handleZoomOut = () => {
+    setZoomScale(
+      (current) =>
+        Math.max(
+          current - 0.5,
+          1
+        )
+    );
+  };
+
+  const handleResetZoom = () => {
+    setZoomScale(1);
+  };
+
+  const handleDoubleClickZoom =
+    () => {
+      setZoomScale(
+        (current) =>
+          current > 1
+            ? 1
+            : 2
+      );
+    };
+
+  useEffect(() => {
+    if (!isZoomOpen) {
+      return undefined;
+    }
+
+    const previousOverflow =
+      document.body.style
+        .overflow;
+
+    document.body.style
+      .overflow = "hidden";
+
+    const handleKeyDown = (
+      event
+    ) => {
+      if (
+        event.key ===
+        "Escape"
+      ) {
+        handleCloseZoom();
+      }
+
+      if (
+        event.key === "+" ||
+        event.key === "="
+      ) {
+        handleZoomIn();
+      }
+
+      if (
+        event.key === "-"
+      ) {
+        handleZoomOut();
+      }
+
+      if (
+        event.key === "0"
+      ) {
+        handleResetZoom();
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      document.body.style
+        .overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, [isZoomOpen]);
 
   return (
     <main className="bg-white">
@@ -235,104 +702,253 @@ export default function ProjectProductDetailClient({
 
         <div className="mt-7 grid gap-10 xl:grid-cols-[minmax(0,1.03fr)_minmax(480px,0.97fr)] xl:gap-14">
 
-          <section className="min-w-0">
+          <section className="relative min-w-0">
 
-            <div className="relative aspect-[1.02/1] overflow-hidden rounded-[1.75rem] bg-neutral-100 shadow-[0_8px_30px_rgba(0,0,0,0.07)]">
+            {/* =================================
+                IMAGEN PRINCIPAL
+                Igual al detalle normal de laminado
+            ================================= */}
 
-              {mainImageUrl ? (
-                <img
-                  src={
-                    mainImageUrl
-                  }
-                  alt={
-                    selectedImage
-                      ?.alt_text ||
-                    product
-                      ?.primary_image_alt ||
-                    product?.name ||
-                    "Producto Laminati"
-                  }
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center px-8 text-center">
-                  <div>
-                    <p className="text-sm font-semibold tracking-[0.2em] text-neutral-400">
-                      LAMINATI
-                    </p>
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white">
 
-                    <p className="mt-2 text-xs uppercase tracking-[0.14em] text-neutral-300">
-                      Imagen próximamente
-                    </p>
+              <div
+                ref={
+                  mainImageContainerRef
+                }
+                className="flex h-[420px] items-center justify-center sm:h-[520px] lg:h-[600px] xl:h-[620px]"
+              >
+
+                {mainImageUrl ? (
+                  <button
+                    type="button"
+                    onClick={
+                      handleOpenZoom
+                    }
+                    onMouseEnter={
+                      handleMagnifierMove
+                    }
+                    onMouseMove={
+                      handleMagnifierMove
+                    }
+                    onMouseLeave={
+                      handleMagnifierLeave
+                    }
+                    disabled={
+                      !canZoomSelectedImage
+                    }
+                    className={`group relative flex h-full w-full items-center justify-center overflow-hidden p-4 sm:p-5 lg:p-6 ${
+                      canZoomSelectedImage
+                        ? "cursor-zoom-in"
+                        : "cursor-default"
+                    }`}
+                    aria-label={
+                      canZoomSelectedImage
+                        ? `Ampliar ${mainImageAlt}`
+                        : mainImageAlt
+                    }
+                  >
+
+                    <img
+                      ref={
+                        mainImageRef
+                      }
+                      key={
+                        selectedImage
+                          ?.id ||
+                        mainImageUrl
+                      }
+                      src={
+                        mainImageUrl
+                      }
+                      alt={
+                        mainImageAlt
+                      }
+                      draggable="false"
+                      className="h-full w-full select-none rounded-[1.75rem] object-contain"
+                    />
+
+                    {/* Lente de zoom, sólo escritorio */}
+                    {canZoomSelectedImage &&
+                      isMagnifierVisible && (
+                        <span
+                          className="pointer-events-none absolute hidden rounded-xl border-2 border-white/90 bg-white/15 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-[1px] xl:block"
+                          style={{
+                            left:
+                              magnifierPosition
+                                .lensLeft,
+                            top:
+                              magnifierPosition
+                                .lensTop,
+                            width:
+                              magnifierPosition
+                                .lensSize,
+                            height:
+                              magnifierPosition
+                                .lensSize,
+                          }}
+                        />
+                      )}
+
+                    {/* Indicador de zoom */}
+                    {canZoomSelectedImage && (
+                      <span className="pointer-events-none absolute bottom-5 right-5 flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition duration-300 group-hover:bg-black group-hover:text-white">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          aria-hidden="true"
+                          className="h-5 w-5"
+                        >
+                          <circle
+                            cx="11"
+                            cy="11"
+                            r="6"
+                          />
+                          <path d="m16 16 4 4" />
+                          <path d="M11 8v6" />
+                          <path d="M8 11h6" />
+                        </svg>
+                      </span>
+                    )}
+
+                  </button>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center px-8 text-center">
+                    <div>
+                      <p className="text-sm font-semibold tracking-[0.2em] text-neutral-400">
+                        LAMINATI
+                      </p>
+
+                      <p className="mt-2 text-xs uppercase tracking-[0.14em] text-neutral-300">
+                        Imagen próximamente
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+
+            {/* =================================
+                ZOOM LATERAL DEL PANEL
+                Igual al laminado normal
+            ================================= */}
+
+            {mainImageUrl &&
+              canZoomSelectedImage && (
+                <div
+                  className={`pointer-events-none absolute left-[calc(100%+1.25rem)] top-0 z-[80] hidden aspect-[720/620] w-[min(560px,42vw)] overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-[#f3f2ee] shadow-2xl transition-all duration-150 xl:block ${
+                    isMagnifierVisible
+                      ? "visible opacity-100"
+                      : "invisible opacity-0"
+                  }`}
+                  aria-hidden="true"
+                >
+                  <img
+                    src={
+                      mainImageUrl
+                    }
+                    alt=""
+                    draggable="false"
+                    className="h-full w-full select-none object-contain"
+                    style={{
+                      transform:
+                        "scale(3.2)",
+                      transformOrigin:
+                        `${magnifierPosition.originX}% ${magnifierPosition.originY}%`,
+                      transition:
+                        "transform-origin 40ms linear",
+                    }}
+                  />
+
+                  <div className="absolute left-4 top-4 rounded-full border border-black/10 bg-white/90 px-3 py-2 text-[10px] font-medium uppercase tracking-[0.16em] text-neutral-700 shadow-sm backdrop-blur">
+                    Zoom detalle
                   </div>
                 </div>
               )}
 
-            </div>
+            {/* =================================
+                MINIATURAS VERTICALES
+                sample primero / panel segundo
+            ================================= */}
 
             {images.length > 1 && (
-              <div className="mt-4 grid grid-cols-3 gap-3 sm:gap-4">
+              <div className="mt-4 flex gap-3">
 
-                {images
-                  .slice(
-                    0,
-                    6
-                  )
-                  .map(
-                    (image) => {
+                {images.map(
+                  (image) => {
+                    const thumbnail =
+                      image
+                        ?.thumbnail_url ||
+                      image?.card_url ||
+                      image?.detail_url ||
+                      image?.image_url;
 
-                      const url =
-                        getImageUrl(
-                          image
-                        );
-
-                      if (!url) {
-                        return null;
-                      }
-
-                      const active =
-                        image.id ===
-                        (
-                          selectedImage
-                            ?.id ||
-                          initialImage
-                            ?.id
-                        );
-
-                      return (
-                        <button
-                          key={
-                            image.id
-                          }
-                          type="button"
-                          onClick={() =>
-                            setSelectedImageId(
-                              image.id
-                            )
-                          }
-                          className={`aspect-[1.45/1] overflow-hidden rounded-2xl border bg-neutral-100 transition ${
-                            active
-                              ? "border-emerald-700 ring-1 ring-emerald-700"
-                              : "border-black/5 hover:border-neutral-300"
-                          }`}
-                        >
-                          <img
-                            src={
-                              url
-                            }
-                            alt={
-                              image
-                                ?.alt_text ||
-                              product
-                                ?.name ||
-                              "Producto"
-                            }
-                            className="h-full w-full object-cover"
-                          />
-                        </button>
-                      );
+                    if (!thumbnail) {
+                      return null;
                     }
-                  )}
+
+                    const active =
+                      selectedImage
+                        ?.id ===
+                      image.id;
+
+                    return (
+                      <button
+                        key={
+                          image.id
+                        }
+                        type="button"
+                        onClick={() => {
+                          setSelectedImageId(
+                            image.id
+                          );
+
+                          setIsMagnifierVisible(
+                            false
+                          );
+
+                          setIsZoomOpen(
+                            false
+                          );
+
+                          setZoomScale(
+                            1
+                          );
+                        }}
+                        className={`relative h-24 w-20 overflow-hidden rounded-xl border bg-[#f3f2ee] transition sm:h-28 sm:w-24 ${
+                          active
+                            ? "border-black"
+                            : "border-neutral-200 hover:border-neutral-400"
+                        }`}
+                        aria-label={`Ver ${
+                          image
+                            ?.alt_text ||
+                          product
+                            ?.name ||
+                          "Producto"
+                        }`}
+                      >
+                        <img
+                          src={
+                            thumbnail
+                          }
+                          alt={
+                            image
+                              ?.alt_text ||
+                            product
+                              ?.name ||
+                            "Producto"
+                          }
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    );
+                  }
+                )}
 
               </div>
             )}
@@ -587,6 +1203,141 @@ export default function ProjectProductDetailClient({
         </div>
 
       </div>
+
+      {/* =========================================
+          VISOR / LIGHTBOX DEL PANEL
+      ========================================= */}
+
+      {isZoomOpen &&
+        canZoomSelectedImage &&
+        mainImageUrl && (
+          <div
+            className="fixed inset-0 z-[200] flex flex-col bg-black/95"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Imagen ampliada de ${
+              product?.name ||
+              "producto"
+            }`}
+            onClick={
+              handleCloseZoom
+            }
+          >
+
+            <div className="relative z-20 flex h-20 shrink-0 items-center justify-between border-b border-white/10 px-4 sm:px-6">
+              <div className="min-w-0 pr-5">
+                <p className="truncate text-sm font-medium text-white">
+                  {product?.name}
+                </p>
+
+                <p className="mt-1 text-xs text-white/50">
+                  {Math.round(
+                    zoomScale *
+                      100
+                  )}
+                  % de zoom
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  handleCloseZoom
+                }
+                aria-label="Cerrar imagen ampliada"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-2xl font-light text-white transition hover:bg-white hover:text-black"
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              className="relative flex min-h-0 flex-1 overflow-auto p-4 sm:p-8"
+              onClick={(
+                event
+              ) =>
+                event.stopPropagation()
+              }
+            >
+              <div className="m-auto flex min-h-full min-w-full items-center justify-center">
+                <img
+                  src={
+                    mainImageUrl
+                  }
+                  alt={
+                    mainImageAlt
+                  }
+                  draggable="false"
+                  onDoubleClick={
+                    handleDoubleClickZoom
+                  }
+                  className="max-h-[calc(100vh-11rem)] max-w-[90vw] select-none object-contain"
+                  style={{
+                    transform:
+                      `scale(${zoomScale})`,
+                    transformOrigin:
+                      "center center",
+                    transition:
+                      "transform 180ms ease",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div
+              className="relative z-20 flex shrink-0 items-center justify-center pb-5 pt-3"
+              onClick={(
+                event
+              ) =>
+                event.stopPropagation()
+              }
+            >
+              <div className="flex items-center gap-1 rounded-full border border-white/15 bg-black/70 p-1.5 shadow-xl backdrop-blur">
+
+                <button
+                  type="button"
+                  onClick={
+                    handleZoomOut
+                  }
+                  disabled={
+                    zoomScale <= 1
+                  }
+                  aria-label="Reducir zoom"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-2xl font-light text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  −
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    handleResetZoom
+                  }
+                  className="min-w-[72px] rounded-full px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/15 hover:text-white"
+                >
+                  1:1
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    handleZoomIn
+                  }
+                  disabled={
+                    zoomScale >= 4
+                  }
+                  aria-label="Aumentar zoom"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-2xl font-light text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  +
+                </button>
+
+              </div>
+            </div>
+
+          </div>
+        )}
+
     </main>
   );
 }
