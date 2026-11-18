@@ -170,80 +170,68 @@ export default function AbetCollectionFilter({
 
   return (
     <div className="rounded-[1.35rem] border border-black/5 bg-neutral-50 px-4 py-4 sm:px-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-            Filtro
-          </p>
-
-          <p className="mt-1 text-sm font-medium text-neutral-800">
-            Colección Abet
-          </p>
+      <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-2">
+        <div className="min-w-0">
+          <label
+            htmlFor="strat-code-search"
+            className="mb-2 block text-xs font-medium text-neutral-700"
+          >
+            Buscar por código o nombre
+          </label>
+          <input
+            id="strat-code-search"
+            type="search"
+            inputMode="search"
+            autoComplete="off"
+            value={searchInput}
+            onChange={(event) => {
+              isTyping.current = true;
+              setSearchInput(event.target.value);
+            }}
+            placeholder="Ej: 810, 546, STRAT-810 o Bianco"
+            className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none transition-colors focus:border-neutral-400"
+          />
         </div>
 
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:items-end">
-          <div className="relative w-full sm:w-[300px] lg:w-[340px]">
-            <label htmlFor="strat-code-search" className="mb-1.5 block text-xs font-medium text-neutral-600">
-              Buscar código o nombre
-            </label>
-            <input
-              id="strat-code-search"
-              type="search"
-              inputMode="search"
-              autoComplete="off"
-              value={searchInput}
-              onChange={(event) => {
-                isTyping.current = true;
-                setSearchInput(event.target.value);
-              }}
-              placeholder="Ej: 810, 546, STRAT-810 o Bianco"
-              className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none transition-colors focus:border-neutral-400"
-            />
-          </div>
-          <div className="relative w-full sm:w-[300px] lg:w-[340px]">
-          <select
-            aria-label="Filtrar por colección Abet"
-            value={value || ""}
-            onChange={handleChange}
-            className="h-11 w-full appearance-none rounded-xl border border-neutral-200 bg-white px-4 pr-10 text-sm text-neutral-700 outline-none transition-colors hover:border-neutral-300 focus:border-neutral-400"
+        <div className="min-w-0">
+          <label
+            htmlFor="abet-collection-select"
+            className="mb-2 block text-xs font-medium text-neutral-700"
           >
-            <option value="">
-              Todas las colecciones
-            </option>
-
-            {groups.map((group) => (
-              <optgroup
-                key={group.type}
-                label={group.label}
-              >
-                {group.collections.map(
-                  (collection) => (
-                    <option
-                      key={collection.id}
-                      value={collection.slug}
-                    >
+            Colección Abet
+          </label>
+          <div className="relative">
+            <select
+              id="abet-collection-select"
+              value={value || ""}
+              onChange={handleChange}
+              className="h-11 w-full appearance-none rounded-xl border border-neutral-200 bg-white px-4 pr-10 text-sm text-neutral-700 outline-none transition-colors hover:border-neutral-300 focus:border-neutral-400"
+            >
+              <option value="">Todas las colecciones</option>
+              {groups.map((group) => (
+                <optgroup key={group.type} label={group.label}>
+                  {group.collections.map((collection) => (
+                    <option key={collection.id} value={collection.slug}>
                       {collection.name}
                     </option>
-                  )
-                )}
-              </optgroup>
-            ))}
-          </select>
-
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            fill="none"
-            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
-          >
-            <path
-              d="m6 8 4 4 4-4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+            >
+              <path
+                d="m6 8 4 4 4-4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
         </div>
       </div>

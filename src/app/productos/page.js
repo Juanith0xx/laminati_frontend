@@ -1022,15 +1022,28 @@ export default async function ProductsPage({
       ? formatSlugLabel(query.brand)
       : "");
 
+  // Nombre comercial visible solo en la vista STRATIFICATO.
+  // No modifica la colección almacenada ni sus filtros.
+  const isStratificatoCatalog =
+    String(params?.category || "").toLowerCase() === "hpl" &&
+    String(params?.brand || "").toLowerCase() === "abet-laminati" &&
+    String(params?.application || "").toLowerCase() === "stratificato";
+
+  const visibleCollectionTitle = isStratificatoCatalog
+    ? "Decorativos de Interior"
+    : collectionTitle;
+
   const pageTitle =
-    routeConfig?.heading ||
-    (
-      collectionTitle
-        ? collectionTitle
-        : brandTitle
-          ? brandTitle
-          : "Productos"
-    );
+    isStratificatoCatalog
+      ? "Decorativos de Interior"
+      : routeConfig?.heading ||
+        (
+          collectionTitle
+            ? collectionTitle
+            : brandTitle
+              ? brandTitle
+              : "Productos"
+        );
 
   const totalPages =
     Number(
@@ -1329,10 +1342,10 @@ export default async function ProductsPage({
                   </>
                 )}
 
-                {collectionTitle && (
+                {visibleCollectionTitle && (
                   <>
                     <span>/</span>
-                    <span>{collectionTitle}</span>
+                    <span>{visibleCollectionTitle}</span>
                   </>
                 )}
               </>
