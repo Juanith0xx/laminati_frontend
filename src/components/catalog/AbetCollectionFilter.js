@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const TYPE_ORDER = [
   "COLOR_EFFECT",
@@ -82,11 +83,48 @@ function appendSearchParam(
 export default function AbetCollectionFilter({
   collections = [],
   value = "",
+  searchValue = "",
   basePath = "/productos/laminados",
   params = {},
 }) {
   const router = useRouter();
   const groups = groupCollections(collections);
+  const [searchInput, setSearchInput] = useState(searchValue);
+  const latestParams = useRef(params);
+  latestParams.current = params;
+
+  // El campo conserva los filtros de URL y reinicia la paginación.
+  // Los SKU STRAT- no se envían a la búsqueda técnica de usuarios internos.
+  useEffect(() => {
+    setSearchInput(searchValue);
+  }, [searchValue]);
+
+  useEffect(() => {
+    const input = searchInput.trim();
+    const current = String(searchValue || "").trim();
+    if (input === current) return;
+
+    const timer = setTimeout(() => {
+      const nextParams = new URLSearchParams();
+      Object.entries(latestParams.current || {}).forEach(([key, value]) => {
+        if (key !== "page" && key !== "search" && key !== "strat_code") {
+          appendSearchParam(nextParams, key, value);
+        }
+      });
+
+      const codeMatch = input.match(/^(?:STRAT-)?([0-9]{1,6})$/i);
+      if (codeMatch) {
+        nextParams.set("strat_code", codeMatch[1]);
+      } else if (input) {
+        nextParams.set("search", input);
+      }
+
+      const query = nextParams.toString();
+      router.replace(query ? `${basePath}?${query}` : basePath, { scroll: false });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, searchValue, basePath, router]);
 
   const handleChange = (event) => {
     const nextValue = event.target.value;
@@ -124,7 +162,7 @@ export default function AbetCollectionFilter({
 
   return (
     <div className="rounded-[1.35rem] border border-black/5 bg-neutral-50 px-4 py-4 sm:px-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
             Filtro
@@ -135,7 +173,23 @@ export default function AbetCollectionFilter({
           </p>
         </div>
 
-        <div className="relative w-full sm:w-[340px] lg:w-[390px]">
+        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:items-end">
+          <div className="relative w-full sm:w-[300px] lg:w-[340px]">
+            <label htmlFor="strat-code-search" className="mb-1.5 block text-xs font-medium text-neutral-600">
+              Buscar código o nombre
+            </label>
+            <input
+              id="strat-code-search"
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Ej: 810, 546, STRAT-810 o Bianco"
+              className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none transition-colors focus:border-neutral-400"
+            />
+          </div>
+          <div className="relative w-full sm:w-[300px] lg:w-[340px]">
           <select
             aria-label="Filtrar por colección Abet"
             value={value || ""}
@@ -179,6 +233,7 @@ export default function AbetCollectionFilter({
               strokeLinejoin="round"
             />
           </svg>
+          </div>
         </div>
       </div>
     </div>

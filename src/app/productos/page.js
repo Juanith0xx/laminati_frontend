@@ -893,6 +893,8 @@ export default async function ProductsPage({
       fixedQuery.finish !== undefined
         ? fixedQuery.finish
         : (params?.finish || ""),
+    strat_code:
+      params?.strat_code || "",
     search:
       fixedQuery.search !== undefined
         ? fixedQuery.search
@@ -1374,6 +1376,7 @@ export default async function ProductsPage({
               <AbetCollectionFilter
                 collections={abetCollections}
                 value={query.abet_collection}
+                searchValue={params?.strat_code || params?.search || ""}
                 basePath={paginationBasePath}
                 params={params}
               />
