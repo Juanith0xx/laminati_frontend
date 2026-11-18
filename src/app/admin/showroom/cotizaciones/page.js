@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import {
+  convertQuotation,
   deleteQuotation,
   listQuotations,
 } from "@/services/showroom.service";
@@ -649,6 +650,482 @@ function TrackingModal({
 }
 
 
+
+function ConversionModal({
+  quotation,
+  submitting,
+  onClose,
+  onConfirm,
+}) {
+  const [
+    documentType,
+    setDocumentType,
+  ] = useState(
+    quotation?.intended_document_type ===
+      "BOLETA"
+      ? "BOLETA"
+      : "FACTURA"
+  );
+
+  const [
+    paymentMethod,
+    setPaymentMethod,
+  ] = useState(
+    "MANUAL_BANK_TRANSFER"
+  );
+
+  const [
+    externalReference,
+    setExternalReference,
+  ] = useState("");
+
+  useEffect(
+    () => {
+      if (!quotation) {
+        return;
+      }
+
+      setDocumentType(
+        quotation.intended_document_type ===
+          "BOLETA"
+          ? "BOLETA"
+          : "FACTURA"
+      );
+
+      setPaymentMethod(
+        "MANUAL_BANK_TRANSFER"
+      );
+
+      setExternalReference("");
+    },
+    [quotation]
+  );
+
+  if (!quotation) {
+    return null;
+  }
+
+  const invoiceRequiredFields = [
+    [
+      "Razón social",
+      quotation.legal_name,
+    ],
+    [
+      "Giro",
+      quotation.business_activity,
+    ],
+    [
+      "Dirección",
+      quotation.address_line,
+    ],
+    [
+      "Comuna",
+      quotation.commune,
+    ],
+    [
+      "Ciudad",
+      quotation.city,
+    ],
+    [
+      "Región",
+      quotation.region,
+    ],
+  ];
+
+  const missingInvoiceFields =
+    documentType === "FACTURA"
+      ? invoiceRequiredFields
+          .filter(
+            ([, value]) =>
+              !String(
+                value || ""
+              ).trim()
+          )
+          .map(
+            ([label]) =>
+              label
+          )
+      : [];
+
+  const invalidInvoiceCustomer =
+    documentType === "FACTURA" &&
+    String(
+      quotation.customer_type ||
+        ""
+    )
+      .trim()
+      .toUpperCase() !==
+      "COMPANY";
+
+  const requiresReference =
+    paymentMethod !== "CASH";
+
+  const canSubmit =
+    !submitting &&
+    missingInvoiceFields.length ===
+      0 &&
+    !invalidInvoiceCustomer &&
+    (
+      !requiresReference ||
+      Boolean(
+        String(
+          externalReference ||
+            ""
+        ).trim()
+      )
+    );
+
+  const paymentOptions = [
+    {
+      value:
+        "MANUAL_BANK_TRANSFER",
+      label:
+        "Transferencia bancaria",
+    },
+    {
+      value:
+        "DEBIT_CARD",
+      label:
+        "Tarjeta débito",
+    },
+    {
+      value:
+        "CREDIT_CARD",
+      label:
+        "Tarjeta crédito",
+    },
+    {
+      value: "CASH",
+      label: "Efectivo",
+    },
+  ];
+
+  const handleSubmit = () => {
+    if (!canSubmit) {
+      return;
+    }
+
+    onConfirm({
+      document_type:
+        documentType,
+      payment: {
+        method:
+          paymentMethod,
+        external_reference:
+          paymentMethod ===
+          "CASH"
+            ? null
+            : String(
+                externalReference
+              ).trim(),
+      },
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[28px] bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-black/5 bg-white/95 px-6 py-5 backdrop-blur sm:px-7">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+              Convertir cotización
+            </p>
+
+            <h2 className="mt-2 text-2xl font-medium tracking-[-0.035em] text-neutral-950">
+              {quotation.quote_number}
+            </h2>
+
+            <p className="mt-1 text-sm text-neutral-500">
+              {quotation.legal_name ||
+                quotation.customer_name}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label="Cerrar conversión"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-neutral-600 transition hover:bg-neutral-100 hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-6 sm:p-7">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-black/5 bg-neutral-50 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
+                Cliente
+              </p>
+
+              <p className="mt-2 text-sm font-semibold text-neutral-950">
+                {quotation.legal_name ||
+                  quotation.customer_name}
+              </p>
+
+              <p className="mt-1 text-xs text-neutral-500">
+                {quotation.rut ||
+                  "Sin RUT"}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-black/5 bg-neutral-50 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
+                Total
+              </p>
+
+              <p className="mt-2 text-xl font-semibold text-neutral-950">
+                {money(
+                  quotation.total
+                )}
+              </p>
+
+              <p className="mt-1 text-xs text-neutral-500">
+                Venta backoffice
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-xs font-semibold text-neutral-900">
+              Documento tributario
+            </p>
+
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {[
+                [
+                  "FACTURA",
+                  "Factura",
+                  "DTE 33",
+                ],
+                [
+                  "BOLETA",
+                  "Boleta",
+                  "DTE 39",
+                ],
+              ].map(
+                ([
+                  value,
+                  label,
+                  description,
+                ]) => {
+                  const selected =
+                    documentType ===
+                    value;
+
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() =>
+                        setDocumentType(
+                          value
+                        )
+                      }
+                      disabled={
+                        submitting
+                      }
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        selected
+                          ? "border-black bg-black text-white"
+                          : "border-black/10 bg-white text-neutral-900 hover:bg-neutral-50"
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold">
+                        {label}
+                      </span>
+
+                      <span
+                        className={`mt-1 block text-xs ${
+                          selected
+                            ? "text-white/60"
+                            : "text-neutral-500"
+                        }`}
+                      >
+                        {description}
+                      </span>
+                    </button>
+                  );
+                }
+              )}
+            </div>
+          </div>
+
+          {documentType ===
+            "FACTURA" &&
+            (
+              missingInvoiceFields.length >
+                0 ||
+              invalidInvoiceCustomer
+            ) && (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-950">
+                  Faltan datos para emitir factura
+                </p>
+
+                {invalidInvoiceCustomer && (
+                  <p className="mt-2 text-xs leading-5 text-amber-800">
+                    La cotización debe estar asociada a un cliente empresa.
+                  </p>
+                )}
+
+                {missingInvoiceFields.length >
+                  0 && (
+                  <p className="mt-2 text-xs leading-5 text-amber-800">
+                    Completa:{" "}
+                    {missingInvoiceFields.join(
+                      ", "
+                    )}
+                    .
+                  </p>
+                )}
+
+                <Link
+                  href={`/admin/cotizaciones/${quotation.id}/editar`}
+                  className="mt-3 inline-flex text-xs font-semibold text-amber-950 underline underline-offset-2"
+                >
+                  Completar datos de la cotización
+                </Link>
+              </div>
+            )}
+
+          <div className="mt-5">
+            <label className="text-xs font-semibold text-neutral-900">
+              Forma de pago
+            </label>
+
+            <select
+              value={
+                paymentMethod
+              }
+              onChange={(
+                event
+              ) => {
+                setPaymentMethod(
+                  event.target
+                    .value
+                );
+
+                setExternalReference(
+                  ""
+                );
+              }}
+              disabled={
+                submitting
+              }
+              className="mt-2 h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm outline-none transition focus:border-black"
+            >
+              {paymentOptions.map(
+                (option) => (
+                  <option
+                    key={
+                      option.value
+                    }
+                    value={
+                      option.value
+                    }
+                  >
+                    {
+                      option.label
+                    }
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          {requiresReference && (
+            <div className="mt-4">
+              <label className="text-xs font-semibold text-neutral-900">
+                {paymentMethod ===
+                "MANUAL_BANK_TRANSFER"
+                  ? "N° operación / referencia"
+                  : "Voucher / autorización"}
+              </label>
+
+              <input
+                value={
+                  externalReference
+                }
+                onChange={(
+                  event
+                ) =>
+                  setExternalReference(
+                    event.target
+                      .value
+                  )
+                }
+                disabled={
+                  submitting
+                }
+                placeholder={
+                  paymentMethod ===
+                  "MANUAL_BANK_TRANSFER"
+                    ? "Ej: transferencia 458921"
+                    : "Número entregado por el terminal"
+                }
+                className="mt-2 h-11 w-full rounded-xl border border-neutral-200 px-4 text-sm outline-none transition focus:border-black"
+              />
+            </div>
+          )}
+
+          {paymentMethod ===
+            "CASH" && (
+            <div className="mt-4 rounded-2xl border border-black/5 bg-neutral-50 px-4 py-3 text-xs leading-5 text-neutral-600">
+              Para esta conversión se registrará el pago en efectivo por el total exacto de la cotización.
+            </div>
+          )}
+
+          <div className="mt-6 rounded-2xl border border-black/5 bg-neutral-50 p-4">
+            <p className="text-xs leading-5 text-neutral-600">
+              Al confirmar se creará la orden BACKOFFICE desde esta cotización, se preparará el documento tributario y quedará encolado para emisión automática mediante Relbase.
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={
+                submitting
+              }
+              className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-xs font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                handleSubmit
+              }
+              disabled={
+                !canSubmit
+              }
+              className="inline-flex h-11 items-center justify-center rounded-full bg-black px-6 text-xs font-semibold !text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+              style={{
+                color:
+                  "#ffffff",
+              }}
+            >
+              {submitting
+                ? "Procesando..."
+                : `Emitir ${
+                    documentType ===
+                    "FACTURA"
+                      ? "factura"
+                      : "boleta"
+                  }`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function QuotationsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -658,6 +1135,8 @@ export default function QuotationsPage() {
   const [message, setMessage] = useState("");
   const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [trackingQuotation, setTrackingQuotation] = useState(null);
+  const [quotationToConvert, setQuotationToConvert] = useState(null);
+  const [convertingId, setConvertingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [
     createQuotationMenuOpen,
@@ -752,6 +1231,61 @@ export default function QuotationsPage() {
         type,
       ]
     );
+
+  const handleConvertQuotation =
+    async (payload) => {
+      if (
+        !quotationToConvert?.id ||
+        convertingId
+      ) {
+        return;
+      }
+
+      try {
+        setConvertingId(
+          quotationToConvert.id
+        );
+
+        setError("");
+        setMessage("");
+
+        const response =
+          await convertQuotation(
+            quotationToConvert.id,
+            payload
+          );
+
+        const documentLabel =
+          payload.document_type ===
+          "FACTURA"
+            ? "Factura"
+            : "Boleta";
+
+        setMessage(
+          response?.already_converted
+            ? `La cotización ${quotationToConvert.quote_number} ya estaba convertida. Se verificó la cola del documento tributario.`
+            : `${documentLabel} solicitada correctamente para ${quotationToConvert.quote_number}. La emisión quedó encolada y será procesada automáticamente por Relbase.`
+        );
+
+        setQuotationToConvert(
+          null
+        );
+
+        await load({
+          silent: true,
+        });
+      } catch (err) {
+        setError(
+          err?.message ||
+            "No fue posible convertir la cotización."
+        );
+      } finally {
+        setConvertingId(
+          null
+        );
+      }
+    };
+
 
   const handleDeleteQuotation =
     async () => {
@@ -1177,6 +1711,16 @@ export default function QuotationsPage() {
                       quotation.status
                     );
 
+                  const canConvert =
+                    !quotation.converted_order_id &&
+                    [
+                      "DRAFT",
+                      "SENT",
+                      "ACCEPTED",
+                    ].includes(
+                      quotation.status
+                    );
+
                   const canDelete =
                     !quotation.converted_order_id &&
                     quotation.status !==
@@ -1374,6 +1918,25 @@ export default function QuotationsPage() {
                           Ver detalle →
                         </Link>
 
+                        {canConvert && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setError("");
+                              setMessage("");
+                              setQuotationToConvert(
+                                quotation
+                              );
+                            }}
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-black/10 bg-white px-4 text-xs font-semibold text-neutral-800 transition hover:border-black/20 hover:bg-neutral-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-black/15"
+                            title="Convertir en venta y emitir documento tributario"
+                          >
+                            Convertir
+                            <ChevronDownIcon className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+
+
                         {canDelete && (
                           <button
                             type="button"
@@ -1404,6 +1967,30 @@ export default function QuotationsPage() {
           )}
         </section>
       </div>
+
+      {quotationToConvert && (
+        <ConversionModal
+          quotation={
+            quotationToConvert
+          }
+          submitting={
+            convertingId ===
+            quotationToConvert.id
+          }
+          onClose={() => {
+            if (
+              !convertingId
+            ) {
+              setQuotationToConvert(
+                null
+              );
+            }
+          }}
+          onConfirm={
+            handleConvertQuotation
+          }
+        />
+      )}
 
       {quotationToDelete && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
