@@ -91,18 +91,26 @@ export default function AbetCollectionFilter({
   const groups = groupCollections(collections);
   const [searchInput, setSearchInput] = useState(searchValue);
   const latestParams = useRef(params);
+  const isTyping = useRef(false);
   latestParams.current = params;
 
-  // El campo conserva los filtros de URL y reinicia la paginación.
-  // Los SKU STRAT- no se envían a la búsqueda técnica de usuarios internos.
+  // No reemplazar lo que el usuario está escribiendo cuando llega una
+  // respuesta de navegación anterior. Sincronizar desde la URL solo cuando
+  // no hay una edición pendiente (por ejemplo, al volver con el navegador).
   useEffect(() => {
+    if (isTyping.current) {
+      if (searchInput.trim() === String(searchValue || "").trim()) {
+        isTyping.current = false;
+      }
+      return;
+    }
     setSearchInput(searchValue);
-  }, [searchValue]);
+  }, [searchValue, searchInput]);
 
   useEffect(() => {
     const input = searchInput.trim();
     const current = String(searchValue || "").trim();
-    if (input === current) return;
+    if (!isTyping.current || input === current) return;
 
     const timer = setTimeout(() => {
       const nextParams = new URLSearchParams();
@@ -184,7 +192,10 @@ export default function AbetCollectionFilter({
               inputMode="search"
               autoComplete="off"
               value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
+              onChange={(event) => {
+                isTyping.current = true;
+                setSearchInput(event.target.value);
+              }}
               placeholder="Ej: 810, 546, STRAT-810 o Bianco"
               className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none transition-colors focus:border-neutral-400"
             />
