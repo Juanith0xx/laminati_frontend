@@ -12,6 +12,7 @@ import {
 
 import {
   createProjectQuotation,
+  getProjectQuotationProductOptions,
   getProjectQuotationProducts,
   getQuotation,
   searchRelbaseCustomers,
@@ -93,6 +94,12 @@ const emptyLine = (
     "",
   tax_rate:
     "19",
+  technical_options:
+    null,
+  technical_options_loading:
+    false,
+  technical_options_error:
+    "",
 });
 
 const clean = (
@@ -474,7 +481,258 @@ const mapExistingLine = (
   tax_rate:
     line.tax_rate ??
     "19",
+  technical_options:
+    null,
+  technical_options_loading:
+    false,
+  technical_options_error:
+    "",
 });
+
+const extractProjectProductOptions = (
+  response
+) => {
+  const data =
+    response?.data ??
+    response?.product ??
+    response;
+
+  return (
+    data &&
+    typeof data ===
+      "object" &&
+    !Array.isArray(
+      data
+    )
+      ? data
+      : null
+  );
+};
+
+const sameText = (
+  left,
+  right
+) =>
+  clean(
+    left
+  ).toLowerCase() ===
+  clean(
+    right
+  ).toLowerCase();
+
+const applyTechnicalOptionsToLine = (
+  line,
+  options,
+  {
+    preserveExisting =
+      false,
+  } = {}
+) => {
+  if (
+    !options
+  ) {
+    return {
+      ...line,
+      technical_options:
+        null,
+      technical_options_loading:
+        false,
+    };
+  }
+
+  const finishes =
+    Array.isArray(
+      options.finishes
+    )
+      ? options.finishes
+      : [];
+
+  const defaultFinish =
+    finishes.find(
+      (
+        finish
+      ) =>
+        Boolean(
+          finish?.is_default
+        )
+    ) ||
+    finishes[0] ||
+    null;
+
+  const selectedFinish =
+    preserveExisting &&
+    clean(
+      line.finish
+    )
+      ? finishes.find(
+          (
+            finish
+          ) =>
+            sameText(
+              finish?.name,
+              line.finish
+            )
+        ) ||
+        null
+      : defaultFinish;
+
+  const availableFormats =
+    Array.isArray(
+      selectedFinish
+        ?.formats
+    )
+      ? selectedFinish
+          .formats
+      : [];
+
+  const selectedFormat =
+    preserveExisting &&
+    clean(
+      line.format_label
+    )
+      ? availableFormats.find(
+          (
+            format
+          ) =>
+            sameText(
+              format?.label,
+              line
+                .format_label
+            )
+        ) ||
+        null
+      : availableFormats[0] ||
+        null;
+
+  return {
+    ...line,
+
+    brand:
+      preserveExisting &&
+      clean(
+        line.brand
+      )
+        ? line.brand
+        : clean(
+            options.brand
+          ) ||
+          line.brand,
+
+    collection:
+      preserveExisting &&
+      clean(
+        line.collection
+      )
+        ? line.collection
+        : clean(
+            options
+              ?.collection
+              ?.name
+          ) ||
+          line.collection,
+
+    finish:
+      preserveExisting
+        ? line.finish
+        : clean(
+            selectedFinish
+              ?.name
+          ) ||
+          line.finish,
+
+    format_label:
+      preserveExisting
+        ? line.format_label
+        : clean(
+            selectedFormat
+              ?.label
+          ) ||
+          line
+            .format_label,
+
+    width_cm:
+      preserveExisting
+        ? line.width_cm
+        : selectedFormat
+              ?.width_cm !==
+            undefined &&
+          selectedFormat
+              ?.width_cm !==
+            null
+          ? String(
+              selectedFormat
+                .width_cm
+            )
+          : line.width_cm,
+
+    height_cm:
+      preserveExisting
+        ? line.height_cm
+        : selectedFormat
+              ?.length_cm !==
+            undefined &&
+          selectedFormat
+              ?.length_cm !==
+            null
+          ? String(
+              selectedFormat
+                .length_cm
+            )
+          : line.height_cm,
+
+    technical_options:
+      options,
+    technical_options_loading:
+      false,
+    technical_options_error:
+      "",
+  };
+};
+
+const hydrateExistingProductLine =
+  async (
+    line
+  ) => {
+    if (
+      !line?.product_id
+    ) {
+      return line;
+    }
+
+    try {
+      const response =
+        await getProjectQuotationProductOptions(
+          line.product_id
+        );
+
+      return applyTechnicalOptionsToLine(
+        line,
+        extractProjectProductOptions(
+          response
+        ),
+        {
+          preserveExisting:
+            true,
+        }
+      );
+    } catch (
+      error
+    ) {
+      console.error(
+        "No fue posible cargar las opciones técnicas del producto:",
+        error
+      );
+
+      return {
+        ...line,
+        technical_options_loading:
+          false,
+        technical_options_error:
+          error?.message ||
+          "No fue posible cargar las opciones técnicas.",
+      };
+    }
+  };
 
 const calculateLineTotal = (
   line
@@ -599,6 +857,208 @@ function LineEditor({
     calculateLineTotal(
       line
     );
+
+  const technicalOptions =
+    line
+      .technical_options;
+
+  const technicalFinishes =
+    Array.isArray(
+      technicalOptions
+        ?.finishes
+    )
+      ? technicalOptions
+          .finishes
+      : [];
+
+  const technicalThicknesses =
+    Array.isArray(
+      technicalOptions
+        ?.thicknesses
+    )
+      ? technicalOptions
+          .thicknesses
+      : [];
+
+  const hasTechnicalCatalog =
+    Boolean(
+      line.product_id &&
+      technicalOptions
+        ?.technical_options_configured &&
+      technicalFinishes
+        .length >
+        0
+    );
+
+  const selectedTechnicalFinish =
+    technicalFinishes.find(
+      (
+        finish
+      ) =>
+        sameText(
+          finish?.name,
+          line.finish
+        )
+    ) ||
+    null;
+
+  const availableFormats =
+    Array.isArray(
+      selectedTechnicalFinish
+        ?.formats
+    )
+      ? selectedTechnicalFinish
+          .formats
+      : [];
+
+  const currentFinishAvailable =
+    technicalFinishes.some(
+      (
+        finish
+      ) =>
+        sameText(
+          finish?.name,
+          line.finish
+        )
+    );
+
+  const currentFormatAvailable =
+    availableFormats.some(
+      (
+        format
+      ) =>
+        sameText(
+          format?.label,
+          line
+            .format_label
+        )
+    );
+
+  const currentThicknessAvailable =
+    technicalThicknesses.some(
+      (
+        thickness
+      ) =>
+        Number(
+          thickness
+            ?.thickness_mm
+        ) ===
+        Number(
+          line
+            .thickness_mm
+        )
+    );
+
+  const changeTechnicalFinish =
+    (
+      value
+    ) => {
+      const finish =
+        technicalFinishes.find(
+          (
+            option
+          ) =>
+            sameText(
+              option?.name,
+              value
+            )
+        ) ||
+        null;
+
+      const formats =
+        Array.isArray(
+          finish
+            ?.formats
+        )
+          ? finish
+              .formats
+          : [];
+
+      const format =
+        formats[0] ||
+        null;
+
+      onChange({
+        ...line,
+        finish:
+          value,
+        format_label:
+          clean(
+            format?.label
+          ),
+        width_cm:
+          format
+              ?.width_cm !==
+            undefined &&
+          format
+              ?.width_cm !==
+            null
+            ? String(
+                format
+                  .width_cm
+              )
+            : "",
+        height_cm:
+          format
+              ?.length_cm !==
+            undefined &&
+          format
+              ?.length_cm !==
+            null
+            ? String(
+                format
+                  .length_cm
+              )
+            : "",
+      });
+    };
+
+  const changeTechnicalFormat =
+    (
+      value
+    ) => {
+      const format =
+        availableFormats.find(
+          (
+            option
+          ) =>
+            sameText(
+              option?.label,
+              value
+            )
+        ) ||
+        null;
+
+      onChange({
+        ...line,
+        format_label:
+          value,
+        width_cm:
+          format
+              ?.width_cm !==
+            undefined &&
+          format
+              ?.width_cm !==
+            null
+            ? String(
+                format
+                  .width_cm
+              )
+            : "",
+        height_cm:
+          format
+              ?.length_cm !==
+            undefined &&
+          format
+              ?.length_cm !==
+            null
+            ? String(
+                format
+                  .length_cm
+              )
+            : "",
+      });
+    };
 
   const update =
     (
@@ -732,6 +1192,9 @@ function LineEditor({
                 value={
                   line.brand
                 }
+                readOnly={
+                  hasTechnicalCatalog
+                }
                 onChange={(
                   event
                 ) =>
@@ -758,6 +1221,9 @@ function LineEditor({
                 value={
                   line.collection
                 }
+                readOnly={
+                  hasTechnicalCatalog
+                }
                 onChange={(
                   event
                 ) =>
@@ -771,43 +1237,175 @@ function LineEditor({
               />
             </Field>
 
-            <Field label="Acabado">
-              <input
-                className={INPUT}
-                value={
-                  line.finish
-                }
-                onChange={(
-                  event
-                ) =>
-                  update(
-                    "finish",
-                    event.target
-                      .value
-                  )
-                }
-              />
+            <Field
+              label="Acabado"
+              hint={
+                line
+                  .technical_options_loading
+                  ? "Cargando opciones técnicas..."
+                  : line
+                      .technical_options_error
+                    ? line
+                        .technical_options_error
+                    : hasTechnicalCatalog
+                      ? "Opciones disponibles para este producto."
+                      : null
+              }
+            >
+              {hasTechnicalCatalog ? (
+                <select
+                  className={INPUT}
+                  value={
+                    line.finish
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    changeTechnicalFinish(
+                      event.target
+                        .value
+                    )
+                  }
+                >
+                  {!clean(
+                    line.finish
+                  ) ? (
+                    <option value="">
+                      Seleccionar acabado
+                    </option>
+                  ) : null}
+
+                  {clean(
+                    line.finish
+                  ) &&
+                  !currentFinishAvailable ? (
+                    <option
+                      value={
+                        line.finish
+                      }
+                    >
+                      {line.finish} (guardado)
+                    </option>
+                  ) : null}
+
+                  {technicalFinishes.map(
+                    (
+                      finish
+                    ) => (
+                      <option
+                        key={
+                          finish.id ||
+                          finish.name
+                        }
+                        value={
+                          finish.name
+                        }
+                      >
+                        {finish.name}
+                        {finish.is_default
+                          ? " · Predeterminado"
+                          : ""}
+                      </option>
+                    )
+                  )}
+                </select>
+              ) : (
+                <input
+                  className={INPUT}
+                  value={
+                    line.finish
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    update(
+                      "finish",
+                      event.target
+                        .value
+                    )
+                  }
+                />
+              )}
             </Field>
 
             <Field label="Espesor mm">
-              <input
-                className={INPUT}
-                type="number"
-                step="0.01"
-                min="0"
-                value={
-                  line.thickness_mm
-                }
-                onChange={(
-                  event
-                ) =>
-                  update(
-                    "thickness_mm",
-                    event.target
-                      .value
-                  )
-                }
-              />
+              {hasTechnicalCatalog &&
+              technicalThicknesses.length >
+                0 ? (
+                <select
+                  className={INPUT}
+                  value={
+                    line.thickness_mm
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    update(
+                      "thickness_mm",
+                      event.target
+                        .value
+                    )
+                  }
+                >
+                  {!clean(
+                    line.thickness_mm
+                  ) ? (
+                    <option value="">
+                      Seleccionar espesor
+                    </option>
+                  ) : null}
+
+                  {clean(
+                    line.thickness_mm
+                  ) &&
+                  !currentThicknessAvailable ? (
+                    <option
+                      value={
+                        line.thickness_mm
+                      }
+                    >
+                      {line.thickness_mm} mm (guardado)
+                    </option>
+                  ) : null}
+
+                  {technicalThicknesses.map(
+                    (
+                      thickness
+                    ) => (
+                      <option
+                        key={
+                          thickness.id ||
+                          thickness.thickness_mm
+                        }
+                        value={
+                          thickness.thickness_mm
+                        }
+                      >
+                        {thickness.thickness_mm} mm
+                      </option>
+                    )
+                  )}
+                </select>
+              ) : (
+                <input
+                  className={INPUT}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={
+                    line.thickness_mm
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    update(
+                      "thickness_mm",
+                      event.target
+                        .value
+                    )
+                  }
+                />
+              )}
             </Field>
           </>
         ) : null}
@@ -854,22 +1452,84 @@ function LineEditor({
         {isProduct ? (
           <>
             <Field label="Formato">
-              <input
-                className={INPUT}
-                value={
-                  line.format_label
-                }
-                onChange={(
-                  event
-                ) =>
-                  update(
-                    "format_label",
-                    event.target
-                      .value
-                  )
-                }
-                placeholder="Ej. 130 × 305 cm"
-              />
+              {hasTechnicalCatalog ? (
+                <select
+                  className={INPUT}
+                  value={
+                    line.format_label
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    changeTechnicalFormat(
+                      event.target
+                        .value
+                    )
+                  }
+                  disabled={
+                    !clean(
+                      line.finish
+                    )
+                  }
+                >
+                  {!clean(
+                    line.format_label
+                  ) ? (
+                    <option value="">
+                      Seleccionar formato
+                    </option>
+                  ) : null}
+
+                  {clean(
+                    line.format_label
+                  ) &&
+                  !currentFormatAvailable ? (
+                    <option
+                      value={
+                        line
+                          .format_label
+                      }
+                    >
+                      {line.format_label} (guardado)
+                    </option>
+                  ) : null}
+
+                  {availableFormats.map(
+                    (
+                      format
+                    ) => (
+                      <option
+                        key={
+                          format.id ||
+                          format.label
+                        }
+                        value={
+                          format.label
+                        }
+                      >
+                        {format.label}
+                      </option>
+                    )
+                  )}
+                </select>
+              ) : (
+                <input
+                  className={INPUT}
+                  value={
+                    line.format_label
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    update(
+                      "format_label",
+                      event.target
+                        .value
+                    )
+                  }
+                  placeholder="Ej. 130 × 305 cm"
+                />
+              )}
             </Field>
 
             <Field label="Ancho cm">
@@ -880,6 +1540,10 @@ function LineEditor({
                 min="0"
                 value={
                   line.width_cm
+                }
+                readOnly={
+                  hasTechnicalCatalog &&
+                  currentFormatAvailable
                 }
                 onChange={(
                   event
@@ -901,6 +1565,10 @@ function LineEditor({
                 min="0"
                 value={
                   line.height_cm
+                }
+                readOnly={
+                  hasTechnicalCatalog &&
+                  currentFormatAvailable
                 }
                 onChange={(
                   event
@@ -1449,7 +2117,7 @@ export default function ProjectQuotationEditor({
                 ? data.project_lines
                 : [];
 
-            setLines(
+            const mappedLines =
               existingLines.length
                 ? existingLines.map(
                     mapExistingLine
@@ -1458,7 +2126,23 @@ export default function ProjectQuotationEditor({
                     emptyLine(
                       "PRODUCT"
                     ),
-                  ]
+                  ];
+
+            const hydratedLines =
+              await Promise.all(
+                mappedLines.map(
+                  hydrateExistingProductLine
+                )
+              );
+
+            if (
+              !active
+            ) {
+              return;
+            }
+
+            setLines(
+              hydratedLines
             );
           } catch (
             loadError
@@ -1678,17 +2362,25 @@ export default function ProjectQuotationEditor({
       );
 
   const addCatalogProduct =
-    (
+    async (
       product
     ) => {
+      const initialLine = {
+        ...mapProductToLine(
+          product
+        ),
+        technical_options_loading:
+          true,
+        technical_options_error:
+          "",
+      };
+
       setLines(
         (
           current
         ) => [
           ...current,
-          mapProductToLine(
-            product
-          ),
+          initialLine,
         ]
       );
 
@@ -1699,6 +2391,68 @@ export default function ProjectQuotationEditor({
       setProductResults(
         []
       );
+
+      try {
+        const response =
+          await getProjectQuotationProductOptions(
+            initialLine
+              .product_id
+          );
+
+        const options =
+          extractProjectProductOptions(
+            response
+          );
+
+        setLines(
+          (
+            current
+          ) =>
+            current.map(
+              (
+                line
+              ) =>
+                line.local_id ===
+                initialLine
+                  .local_id
+                  ? applyTechnicalOptionsToLine(
+                      line,
+                      options
+                    )
+                  : line
+            )
+        );
+      } catch (
+        optionsError
+      ) {
+        console.error(
+          "No fue posible cargar las opciones técnicas del producto:",
+          optionsError
+        );
+
+        setLines(
+          (
+            current
+          ) =>
+            current.map(
+              (
+                line
+              ) =>
+                line.local_id ===
+                initialLine
+                  .local_id
+                  ? {
+                      ...line,
+                      technical_options_loading:
+                        false,
+                      technical_options_error:
+                        optionsError?.message ||
+                        "No fue posible cargar las opciones técnicas.",
+                    }
+                  : line
+            )
+        );
+      }
     };
 
   const addLine =

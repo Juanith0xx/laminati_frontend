@@ -178,6 +178,42 @@ export async function getProjectQuotationProducts({
   );
 }
 
+
+/* =========================================
+   OPCIONES TÉCNICAS PRODUCTO PROJECT
+========================================= */
+
+export async function getProjectQuotationProductOptions(
+  productId,
+  {
+    signal,
+  } = {}
+) {
+  const normalizedProductId =
+    String(
+      productId ||
+        ""
+    ).trim();
+
+  if (
+    !normalizedProductId
+  ) {
+    throw new Error(
+      "productId es obligatorio"
+    );
+  }
+
+  return apiRequest(
+    `/admin/pos/quotations/project/products/${encodeURIComponent(
+      normalizedProductId
+    )}/options`,
+    {
+      signal,
+    }
+  );
+}
+
+
 /* =========================================
    CLIENTES LAMINATIWORD
 
