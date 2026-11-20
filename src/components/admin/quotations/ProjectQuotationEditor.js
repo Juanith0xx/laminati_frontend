@@ -2481,40 +2481,11 @@ export default function ProjectQuotationEditor({
     (
       type
     ) => {
+      // La pestaña solo cambia la categoría activa.
+      // La línea se crea únicamente al presionar el botón "+ Agregar ...".
       setActiveConceptType(
         type
       );
-
-      const alreadyExists =
-        lines.some(
-          (
-            line
-          ) => {
-            if (
-              type ===
-              "PRODUCT"
-            ) {
-              return (
-                line.line_type ===
-                  "PRODUCT" &&
-                !line.product_id
-              );
-            }
-
-            return (
-              line.line_type ===
-              type
-            );
-          }
-        );
-
-      if (
-        !alreadyExists
-      ) {
-        addLine(
-          type
-        );
-      }
     };
 
   const addAnotherConcept =
