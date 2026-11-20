@@ -1884,11 +1884,16 @@ export default function ProjectQuotationEditor({
   const [
     lines,
     setLines,
-  ] = useState([
-    emptyLine(
-      "PRODUCT"
-    ),
-  ]);
+  ] = useState(
+    []
+  );
+
+  const [
+    activeConceptType,
+    setActiveConceptType,
+  ] = useState(
+    null
+  );
 
   const [
     saving,
@@ -2124,11 +2129,7 @@ export default function ProjectQuotationEditor({
                 ? existingLines.map(
                     mapExistingLine
                   )
-                : [
-                    emptyLine(
-                      "PRODUCT"
-                    ),
-                  ];
+                : [];
 
             const hydratedLines =
               await Promise.all(
@@ -2386,6 +2387,10 @@ export default function ProjectQuotationEditor({
         ]
       );
 
+      setActiveConceptType(
+        null
+      );
+
       setProductSearch(
         ""
       );
@@ -2471,6 +2476,71 @@ export default function ProjectQuotationEditor({
           ),
         ]
       );
+
+  const activateConceptType =
+    (
+      type
+    ) => {
+      setActiveConceptType(
+        type
+      );
+
+      const alreadyExists =
+        lines.some(
+          (
+            line
+          ) => {
+            if (
+              type ===
+              "PRODUCT"
+            ) {
+              return (
+                line.line_type ===
+                  "PRODUCT" &&
+                !line.product_id
+              );
+            }
+
+            return (
+              line.line_type ===
+              type
+            );
+          }
+        );
+
+      if (
+        !alreadyExists
+      ) {
+        addLine(
+          type
+        );
+      }
+    };
+
+  const addAnotherConcept =
+    () => {
+      if (
+        !activeConceptType
+      ) {
+        return;
+      }
+
+      addLine(
+        activeConceptType
+      );
+    };
+
+  const activeConceptLabel =
+    activeConceptType ===
+    "PRODUCT"
+      ? "producto manual"
+      : activeConceptType ===
+          "SERVICE"
+        ? "servicio"
+        : activeConceptType ===
+            "OTHER"
+          ? "otro"
+          : "";
 
   const updateLine =
     (
@@ -3405,79 +3475,139 @@ export default function ProjectQuotationEditor({
           <Section
             eyebrow="Detalle del proyecto"
             title="Productos, servicios y otros conceptos"
-            action={
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    addLine(
-                      "PRODUCT"
-                    )
-                  }
-                  className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-                >
-                  + Producto manual
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    addLine(
-                      "SERVICE"
-                    )
-                  }
-                  className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-                >
-                  + Servicio
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    addLine(
-                      "OTHER"
-                    )
-                  }
-                  className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-                >
-                  + Otro
-                </button>
-              </div>
-            }
           >
-            <div className="space-y-4">
-              {lines.map(
-                (
-                  line,
-                  index
-                ) => (
-                  <LineEditor
-                    key={
-                      line.local_id
+            <div className="mb-5 overflow-x-auto border-b border-black/[.07] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-max items-end justify-between gap-6">
+                <div
+                  className="flex min-w-max gap-7 px-1"
+                  role="tablist"
+                  aria-label="Tipo de concepto"
+                >
+                  {[
+                    {
+                      type: "PRODUCT",
+                      label: "Productos manuales",
+                    },
+                    {
+                      type: "SERVICE",
+                      label: "Servicios",
+                    },
+                    {
+                      type: "OTHER",
+                      label: "Otros",
+                    },
+                  ].map(
+                    (
+                      item
+                    ) => {
+                      const active =
+                        activeConceptType ===
+                        item.type;
+
+                      return (
+                        <button
+                          key={
+                            item.type
+                          }
+                          type="button"
+                          role="tab"
+                          aria-selected={
+                            active
+                          }
+                          onClick={() =>
+                            activateConceptType(
+                              item.type
+                            )
+                          }
+                          className={`relative h-10 whitespace-nowrap text-xs transition ${
+                            active
+                              ? "font-semibold text-black"
+                              : "font-medium text-neutral-500 hover:text-black"
+                          }`}
+                        >
+                          {
+                            item.label
+                          }
+
+                          <span
+                            className={`absolute inset-x-0 bottom-[-1px] h-0.5 rounded-full bg-black transition-transform ${
+                              active
+                                ? "scale-x-100"
+                                : "scale-x-0"
+                            }`}
+                          />
+                        </button>
+                      );
                     }
-                    line={
-                      line
+                  )}
+                </div>
+
+                {activeConceptType ? (
+                  <button
+                    type="button"
+                    onClick={
+                      addAnotherConcept
                     }
-                    index={
-                      index
+                    className="mb-2.5 shrink-0 rounded-full border border-black/10 bg-white px-3.5 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50"
+                  >
+                    + Agregar{" "}
+                    {
+                      activeConceptLabel
                     }
-                    onChange={(
-                      next
-                    ) =>
-                      updateLine(
-                        index,
-                        next
-                      )
-                    }
-                    onRemove={() =>
-                      removeLine(
-                        index
-                      )
-                    }
-                  />
-                )
-              )}
+                  </button>
+                ) : null}
+              </div>
             </div>
+
+            {lines.length ? (
+              <div className="space-y-4">
+                {lines.map(
+                  (
+                    line,
+                    index
+                  ) => (
+                    <LineEditor
+                      key={
+                        line.local_id
+                      }
+                      line={
+                        line
+                      }
+                      index={
+                        index
+                      }
+                      onChange={(
+                        next
+                      ) =>
+                        updateLine(
+                          index,
+                          next
+                        )
+                      }
+                      onRemove={() =>
+                        removeLine(
+                          index
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-black/10 bg-neutral-50/60 px-6 py-10 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-black/10 bg-white text-3xl font-light text-neutral-400 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+                  +
+                </div>
+
+                <h3 className="text-base font-semibold text-neutral-900">
+                  Aún no has agregado elementos a la cotización
+                </h3>
+
+                <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-500">
+                  Selecciona un producto del catálogo o elige Productos manuales, Servicios u Otros para comenzar.
+                </p>
+              </div>
+            )}
           </Section>
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
