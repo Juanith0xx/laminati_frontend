@@ -12,7 +12,7 @@ const FAMILY_FILTERS = [
   },
   {
     code: "HPL",
-    label: "HPL",
+    label: "Laminado",
   },
   {
     code: "STRATIFICATO",
