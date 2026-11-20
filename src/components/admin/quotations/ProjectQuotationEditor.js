@@ -10,6 +10,8 @@ import {
   useRouter,
 } from "next/navigation";
 
+import QuotationProductSearch from "@/components/admin/quotations/shared/QuotationProductSearch";
+
 import {
   createProjectQuotation,
   getProjectQuotationProductOptions,
@@ -3380,80 +3382,24 @@ export default function ProjectQuotationEditor({
 
           <Section
             eyebrow="Catálogo"
-            title="Agregar producto existente"
+            title="Seleccionar producto"
           >
-            <div className="relative">
-              <input
-                className={INPUT}
-                value={
-                  productSearch
-                }
-                onChange={(
-                  event
-                ) =>
-                  setProductSearch(
-                    event.target
-                      .value
-                  )
-                }
-                placeholder="Buscar por nombre, SKU o código..."
-              />
+            <p className="mb-4 text-xs leading-5 text-neutral-500">
+              Busca por código, SKU o nombre y filtra por familia.
+            </p>
 
-              {productLoading ? (
-                <p className="mt-2 text-xs text-neutral-400">
-                  Buscando productos...
-                </p>
-              ) : null}
-
-              {productResults.length >
-              0 ? (
-                <div className="mt-3 space-y-2">
-                  {productResults.map(
-                    (
-                      product
-                    ) => (
-                      <div
-                        key={
-                          product.id ||
-                          product.product_id
-                        }
-                        className="flex items-center justify-between gap-4 rounded-[20px] border border-black/5 bg-neutral-50/70 px-4 py-3"
-                      >
-                        <div>
-                          <strong className="block text-sm text-neutral-900">
-                            {product.name}
-                          </strong>
-
-                          <span className="mt-1 block text-xs text-neutral-500">
-                            {product.internal_code ||
-                              product.sku ||
-                              "Sin código"}
-                            {product.brand
-                              ? ` · ${product.brand}`
-                              : ""}
-                            {product.collection
-                              ? ` · ${product.collection}`
-                              : ""}
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            addCatalogProduct(
-                              product
-                            )
-                          }
-                          className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
-                        >
-                          Agregar
-                        </button>
-                      </div>
-                    )
-                  )}
-                </div>
-              ) : null}
-            </div>
+            <QuotationProductSearch
+              query={productSearch}
+              onQueryChange={setProductSearch}
+              products={productResults}
+              loading={productLoading}
+              onSelect={addCatalogProduct}
+              placeholder="Buscar por código, SKU o nombre..."
+              emptyMessage="No se encontraron productos para esta búsqueda."
+              minQueryLength={2}
+              compact
+              actionLabel="Seleccionar"
+            />
           </Section>
 
           <Section
