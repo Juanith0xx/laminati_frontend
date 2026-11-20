@@ -3016,34 +3016,6 @@ export default function ProjectQuotationEditor({
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={() =>
-                router.back()
-              }
-              className="h-11 rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="button"
-              disabled={
-                saving
-              }
-              onClick={
-                save
-              }
-              className="h-11 rounded-full bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {saving
-                ? "Guardando..."
-                : editing
-                  ? "Guardar cambios"
-                  : "Crear cotización"}
-            </button>
-          </div>
         </div>
       </section>
 
@@ -3666,6 +3638,31 @@ export default function ProjectQuotationEditor({
               </div>
             </Section>
           </div>
+
+          <section className="rounded-[26px] border border-black/5 bg-white px-6 py-5 shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:px-7">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="h-11 rounded-full border border-black/10 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                disabled={saving}
+                onClick={save}
+                className="h-11 min-w-[180px] rounded-full bg-black px-6 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving
+                  ? "Guardando..."
+                  : editing
+                    ? "Guardar cambios"
+                    : "Crear cotización"}
+              </button>
+            </div>
+          </section>
       </div>
     </main>
   );
