@@ -9,6 +9,8 @@ import {
 
 import Link from "next/link";
 
+import QuotationProductSearch from "@/components/admin/quotations/shared/QuotationProductSearch";
+
 import {
   createPosSale,
   createQuotation,
@@ -1984,163 +1986,73 @@ export default function NewQuotationPage() {
                     Productos
                   </h2>
                   <p className="mt-1 text-xs leading-5 text-neutral-500">
-                    Busca por SKU, nombre, código interno o ID Relbase y agrega los productos a la operación.
+                    Busca por SKU, nombre o código. Cada resultado identifica su familia antes de agregarlo.
                   </p>
                 </div>
               </div>
+
               <span className="w-fit rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600">
                 {products.length} resultados
               </span>
             </div>
 
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Ej. 668, Apple Tree, 1678M..."
-              className="mt-5 h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none transition placeholder:text-neutral-400 focus:border-black"
-            />
-
-            {catalogError && (
-              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {catalogError}
-              </div>
-            )}
-
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {loadingProducts ? (
-                <div className="col-span-full rounded-2xl border border-dashed border-black/10 p-8 text-center text-sm text-neutral-500">
-                  Cargando catálogo POS...
-                </div>
-              ) : products.length === 0 ? (
-                <div className="col-span-full rounded-2xl border border-dashed border-black/10 p-8 text-center text-sm text-neutral-500">
-                  No se encontraron productos para esta búsqueda.
-                </div>
-              ) : (
-                products.map((product) => {
+            <div className="mt-5">
+              <QuotationProductSearch
+                query={query}
+                onQueryChange={setQuery}
+                products={products}
+                loading={loadingProducts}
+                error={catalogError}
+                onSelect={addProduct}
+                placeholder="Ej. 410, LAB-410, STRAT-410, MEG-410..."
+                emptyMessage="No se encontraron productos disponibles en Showroom."
+                actionLabel="Agregar"
+                getDisabled={(product) => {
                   const inCart = cart.find(
                     (item) => item.id === product.id
                   );
                   const isFexShipping =
                     isFexShippingItem(product);
-
                   const available =
                     isFexShipping
                       ? 1
-                      : Number(
-                          product.available_pos
-                        );
+                      : Number(product.available_pos);
 
-                  const imageUrl =
-                    product.primary_image_url ||
-                    product.primary_image?.card_url ||
-                    product.image_url ||
-                    null;
-                  const imageAlt =
-                    product.primary_image_alt ||
-                    product.primary_image?.alt_text ||
-                    product.name ||
-                    product.sku ||
-                    "Producto";
-
-                  return (
-                    <article
-                      key={product.id}
-                      className="group flex flex-col justify-between rounded-2xl border border-black/5 bg-neutral-50 p-4"
-                    >
-                      <div>
-                        <div className="mb-4 overflow-hidden rounded-xl border border-black/5 bg-white">
-                          {imageUrl ? (
-                            <div className="aspect-[16/9] overflow-hidden bg-neutral-100">
-                              <img
-                                src={imageUrl}
-                                alt={imageAlt}
-                                loading="lazy"
-                                className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025]"
-                              />
-                            </div>
-                          ) : (
-                            <div className="flex aspect-[16/9] items-center justify-center bg-neutral-100 px-4 text-center">
-                              <div>
-                                <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg text-neutral-300 shadow-sm">
-                                  ◇
-                                </span>
-                                <p className="mt-2 text-[11px] font-medium text-neutral-400">
-                                  Imagen no disponible
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
-                              {product.sku}
-                            </p>
-                            <h3 className="mt-1 text-sm font-semibold leading-5 text-neutral-900">
-                              {product.name}
-                            </h3>
-                          </div>
-                          <span
-                            className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
-                              isFexShipping
-                                ? "bg-sky-50 text-sky-700"
-                                : available > 0
-                                  ? "bg-white text-neutral-600"
-                                  : "bg-amber-50 text-amber-700"
-                            }`}
-                          >
-                            {isFexShipping
-                              ? "Despacho FEX"
-                              : available > 0
-                                ? `Stock ${product.available_pos}`
-                                : "Sin stock"}
-                          </span>
-                        </div>
-
-                        <div className="mt-4">
-                          <p className="text-lg font-semibold text-neutral-950">
-                            {isFexShipping
-                              ? "Precio según FEX"
-                              : money(product.base_price)}
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-neutral-400">
-                            {isFexShipping
-                              ? "Valor editable por operación · IVA incluido"
-                              : "IVA incluido · Bodega principal"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => addProduct(product)}
-                        disabled={
-                          isFexShipping
-                            ? Boolean(inCart)
-                            : (
-                                available <= 0 ||
-                                Number(inCart?.quantity || 0) >= available
-                              )
-                        }
-                        className="mt-4 h-10 rounded-xl bg-black px-4 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
-                      >
-                        {isFexShipping
-                          ? (
-                              inCart
-                                ? "Despacho agregado"
-                                : "Agregar despacho"
-                            )
-                          : available <= 0
-                            ? "Sin stock en Showroom"
-                            : inCart
-                              ? `Agregar otra (${inCart.quantity}/${product.available_pos})`
-                              : "Agregar al carrito"}
-                      </button>
-                    </article>
+                  return isFexShipping
+                    ? Boolean(inCart)
+                    : (
+                        available <= 0 ||
+                        Number(inCart?.quantity || 0) >= available
+                      );
+                }}
+                getActionLabel={(product) => {
+                  const inCart = cart.find(
+                    (item) => item.id === product.id
                   );
-                })
-              )}
+                  const isFexShipping =
+                    isFexShippingItem(product);
+                  const available =
+                    isFexShipping
+                      ? 1
+                      : Number(product.available_pos);
+
+                  if (isFexShipping) {
+                    return inCart
+                      ? "Despacho agregado"
+                      : "Agregar despacho";
+                  }
+
+                  if (available <= 0) {
+                    return "Sin stock";
+                  }
+
+                  if (inCart) {
+                    return `Agregar otra (${inCart.quantity}/${product.available_pos})`;
+                  }
+
+                  return "Agregar";
+                }}
+              />
             </div>
           </section>
 

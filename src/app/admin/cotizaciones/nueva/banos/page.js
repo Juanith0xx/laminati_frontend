@@ -7,6 +7,8 @@ import {
 } from "react";
 
 import Link from "next/link";
+
+import QuotationProductSearch from "@/components/admin/quotations/shared/QuotationProductSearch";
 import { useRouter } from "next/navigation";
 
 import {
@@ -322,7 +324,52 @@ function normalizeCatalogProduct(
 
   return {
     id,
+    sku:
+      String(
+        product.sku ||
+        ""
+      ).trim(),
+    internal_code:
+      String(
+        product.internal_code ||
+        code ||
+        ""
+      ).trim(),
     code,
+    project_family_id:
+      product.project_family_id ||
+      null,
+    project_family_code:
+      String(
+        product.project_family_code ||
+        product.project_family?.code ||
+        ""
+      ).trim(),
+    project_family_name:
+      String(
+        product.project_family_name ||
+        product.project_family?.name ||
+        ""
+      ).trim(),
+    project_finishes:
+      Array.isArray(
+        product.project_finishes
+      )
+        ? product.project_finishes
+        : [],
+    technical_options_configured:
+      product.technical_options_configured ===
+      true,
+    primary_image_url:
+      product.primary_image_url ||
+      null,
+    primary_image_alt:
+      product.primary_image_alt ||
+      product.name ||
+      null,
+    commercial_mode:
+      product.commercial_mode ||
+      null,
     name:
       String(
         product.name ||
@@ -1097,12 +1144,6 @@ function HplProductSelect({
     ""
   );
 
-  const hasSearchQuery =
-    String(
-      search ||
-      ""
-    ).trim().length >= 2;
-
   useEffect(
     () => {
       const query =
@@ -1268,90 +1309,29 @@ function HplProductSelect({
           </div>
         </div>
       ) : (
-        <div className="relative">
-          <input
-            type="search"
-            value={search}
-            onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
-            }
-            placeholder={`Buscar HPL ${thickness} mm por código o nombre`}
-            className="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-medium text-black outline-none transition focus:border-black"
-          />
-
-          {hasSearchQuery &&
-            (
-              loading ||
-              results.length > 0 ||
-              searchError
-            ) && (
-            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
-              {loading && (
-                <p className="px-4 py-3 text-xs text-neutral-500">
-                  Buscando HPL...
-                </p>
-              )}
-
-              {!loading &&
-                searchError && (
-                  <p className="px-4 py-3 text-xs text-red-600">
-                    {searchError}
-                  </p>
-                )}
-
-              {!loading &&
-                !searchError &&
-                results.map(
-                  (product) => (
-                    <button
-                      key={
-                        product.id ||
-                        product.code
-                      }
-                      type="button"
-                      onClick={() => {
-                        onChange(
-                          product
-                        );
-                        setSearch(
-                          ""
-                        );
-                        setResults([]);
-                      }}
-                      className="flex w-full items-start justify-between gap-4 border-b border-neutral-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-neutral-50"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-black">
-                          {product.code}
-                          {product.finish
-                            ? ` · ${product.finish}`
-                            : ""}
-                        </p>
-                        <p className="mt-1 truncate text-xs text-neutral-500">
-                          {product.name}
-                        </p>
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <p className="text-xs font-semibold text-black">
-                          {product.thickness || thickness} mm
-                        </p>
-                        {product.basePrice > 0 && (
-                          <p className="mt-1 text-[11px] text-neutral-400">
-                            {money(
-                              product.basePrice
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  )
-                )}
-            </div>
-          )}
-        </div>
+        <QuotationProductSearch
+          query={search}
+          onQueryChange={setSearch}
+          products={results}
+          loading={loading}
+          error={searchError}
+          onSelect={(product) => {
+            onChange(
+              product
+            );
+            setSearch(
+              ""
+            );
+            setResults(
+              []
+            );
+          }}
+          placeholder={`Buscar HPL ${thickness} mm por código o nombre`}
+          emptyMessage="No se encontraron productos compatibles con esta búsqueda."
+          minQueryLength={2}
+          compact
+          actionLabel="Seleccionar"
+        />
       )}
     </div>
   );
