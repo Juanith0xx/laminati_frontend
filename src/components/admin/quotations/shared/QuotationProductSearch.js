@@ -146,7 +146,7 @@ function getFamilyLabel(
     case "SERVICE":
       return "Servicio";
     default:
-      return "HPL";
+      return "Laminado";
   }
 }
 
