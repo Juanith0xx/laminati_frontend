@@ -28,6 +28,113 @@ import {
 
 import StockMovementModal from "@/components/admin/StockMovementModal";
 
+const PRODUCT_SEARCH_DEBOUNCE_MS = 200;
+
+function normalizeProductSearchValue(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[-_/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getProductSearchFamilyAliases(family) {
+  const familyCode = normalizeProjectFamilyCode(
+    family?.code ||
+      family?.family_code ||
+      family?.project_family_code ||
+      family?.slug ||
+      family?.name
+  );
+
+  switch (familyCode) {
+    case "HPL":
+      return ["HPL", "Laminado", "Laminados"];
+    case "STRATIFICATO":
+      return ["STRATIFICATO", "STRAT", "Stratificato HPL"];
+    case "MEG":
+      return ["MEG", "Fachadas", "Fachadas ventiladas"];
+    case "LABGRADE":
+      return ["LABGRADE", "LAB", "Labgrade"];
+    case "LABGRADE_PLUS":
+      return ["LABGRADE_PLUS", "LABP", "Labgrade Plus"];
+    default:
+      return [];
+  }
+}
+
+function getProductSearchFamilyCode(product, projectFamilies) {
+  const projectFamily =
+    product?.project_family_id
+      ? projectFamilies.find(
+          (family) =>
+            String(family?.id) ===
+            String(product.project_family_id)
+        )
+      : null;
+
+  return normalizeProjectFamilyCode(
+    projectFamily?.code ||
+      product?.project_family_code ||
+      product?.family_code ||
+      product?.family?.code ||
+      projectFamily?.slug ||
+      projectFamily?.name
+  );
+}
+
+function getProductSearchFamilyRank(product, projectFamilies) {
+  switch (
+    getProductSearchFamilyCode(
+      product,
+      projectFamilies
+    )
+  ) {
+    case "HPL":
+      return 0;
+    case "STRATIFICATO":
+      return 1;
+    case "MEG":
+      return 2;
+    case "LABGRADE":
+      return 3;
+    case "LABGRADE_PLUS":
+      return 4;
+    default:
+      return 10;
+  }
+}
+
+function getComparableProductCode(product) {
+  const internalCode = String(
+    product?.internal_code ?? ""
+  )
+    .trim()
+    .toUpperCase();
+
+  if (internalCode) {
+    return internalCode;
+  }
+
+  const sku = String(product?.sku ?? "")
+    .trim()
+    .toUpperCase();
+
+  const prefixedMatch = sku.match(
+    /^(?:STRAT|MEG|LAB|LABP)-(.+)$/
+  );
+
+  if (prefixedMatch?.[1]) {
+    return prefixedMatch[1];
+  }
+
+  const plainMatch = sku.match(/^(\d+)[A-Z]*$/);
+
+  return plainMatch?.[1] || sku;
+}
+
 /* =========================================
    ICONOS
 ========================================= */
@@ -1834,6 +1941,16 @@ export default function AdminProductsPage() {
 
   const [
 
+    debouncedSearch,
+
+    setDebouncedSearch,
+
+  ] =
+
+    useState("");
+
+  const [
+
     form,
 
     setForm,
@@ -3011,6 +3128,28 @@ export default function AdminProductsPage() {
     ]
   );
 
+  useEffect(
+    () => {
+      const timer = window.setTimeout(
+        () => {
+          setDebouncedSearch(
+            search
+          );
+        },
+        PRODUCT_SEARCH_DEBOUNCE_MS
+      );
+
+      return () => {
+        window.clearTimeout(
+          timer
+        );
+      };
+    },
+    [
+      search,
+    ]
+  );
+
   /* =========================================
      FILTRO PRODUCTOS
   ========================================= */
@@ -3021,13 +3160,21 @@ export default function AdminProductsPage() {
 
       () => {
 
+        const rawTerm =
+
+          String(
+
+            debouncedSearch ?? ""
+
+          ).trim();
+
         const term =
 
-          search
+          normalizeProductSearchValue(
 
-            .trim()
+            rawTerm
 
-            .toLowerCase();
+          );
 
         if (!term) {
 
@@ -3035,71 +3182,179 @@ export default function AdminProductsPage() {
 
         }
 
+        const isCodeOnlySearch =
+
+          /^\d+$/.test(rawTerm);
+
+        if (isCodeOnlySearch) {
+
+          const normalizedCode =
+
+            rawTerm.toUpperCase();
+
+          return products
+
+            .filter(
+
+              (product) =>
+
+                getComparableProductCode(
+
+                  product
+
+                ) === normalizedCode
+
+            )
+
+            .sort(
+
+              (a, b) => {
+
+                const familyDiff =
+
+                  getProductSearchFamilyRank(
+
+                    a,
+
+                    projectFamilies
+
+                  ) -
+
+                  getProductSearchFamilyRank(
+
+                    b,
+
+                    projectFamilies
+
+                  );
+
+                if (familyDiff !== 0) {
+
+                  return familyDiff;
+
+                }
+
+                return String(
+
+                  a?.sku ?? ""
+
+                ).localeCompare(
+
+                  String(
+
+                    b?.sku ?? ""
+
+                  ),
+
+                  "es",
+
+                  {
+
+                    numeric: true,
+
+                    sensitivity: "base",
+
+                  }
+
+                );
+
+              }
+
+            );
+
+        }
+
+        const tokens =
+
+          term
+
+            .split(" ")
+
+            .filter(Boolean);
+
         return products.filter(
 
           (
 
             product
 
-          ) =>
+          ) => {
 
-            [
+            const projectFamily =
 
-              product
+              product?.project_family_id
 
-                .name,
+                ? projectFamilies.find(
 
-              product
+                    (family) =>
 
-                .sku,
+                      String(family?.id) ===
 
-              product
-
-                .internal_code,
-
-              product
-
-                .brand,
-
-              product
-
-                .collection,
-
-              product
-
-                .category,
-
-            ]
-
-              .filter(
-
-                Boolean
-
-              )
-
-              .some(
-
-                (
-
-                  value
-
-                ) =>
-
-                  String(
-
-                    value
+                      String(product.project_family_id)
 
                   )
 
-                    .toLowerCase()
+                : null;
 
-                    .includes(
+            const familyAliases =
 
-                      term
+              getProductSearchFamilyAliases(
 
-                    )
+                projectFamily
 
-              )
+              );
+
+            const searchableText =
+
+              normalizeProductSearchValue(
+
+                [
+
+                  product?.name,
+
+                  product?.sku,
+
+                  product?.internal_code,
+
+                  product?.brand,
+
+                  product?.collection,
+
+                  product?.category,
+
+                  product?.color,
+
+                  product?.finish,
+
+                  projectFamily?.code,
+
+                  projectFamily?.name,
+
+                  projectFamily?.slug,
+
+                  ...familyAliases,
+
+                ]
+
+                  .filter(Boolean)
+
+                  .join(" ")
+
+              );
+
+            return tokens.every(
+
+              (token) =>
+
+                searchableText.includes(
+
+                  token
+
+                )
+
+            );
+
+          }
 
         );
 
@@ -3109,7 +3364,9 @@ export default function AdminProductsPage() {
 
         products,
 
-        search,
+        projectFamilies,
+
+        debouncedSearch,
 
       ]
 
@@ -6592,7 +6849,7 @@ export default function AdminProductsPage() {
 
                 }
 
-                placeholder="Buscar por SKU, nombre, marca..."
+                placeholder="Escribe un código (ej. 410) o busca por SKU, familia, nombre o marca..."
 
                 className="h-11 min-w-0 flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none transition placeholder:text-neutral-400 focus:border-black md:w-[340px]"
 
