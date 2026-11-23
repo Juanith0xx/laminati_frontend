@@ -42,6 +42,127 @@ const formatPrice = (value) => {
   ).format(number);
 };
 
+
+/* =========================================
+   BÚSQUEDA TÉCNICA ADMIN
+========================================= */
+
+const ADMIN_CODE_PATTERN = /^\d{2,6}$/;
+
+const ADMIN_TECHNICAL_PREFIXES = [
+  "STRAT",
+  "MEG",
+  "LAB",
+  "LABP",
+];
+
+const FAMILY_ORDER = {
+  HPL: 0,
+  STRATIFICATO: 1,
+  MEG: 2,
+  LABGRADE: 3,
+  LABGRADE_PLUS: 4,
+};
+
+const FAMILY_LABEL = {
+  HPL: "Laminado",
+  STRATIFICATO: "Stratificato",
+  MEG: "MEG",
+  LABGRADE: "Labgrade",
+  LABGRADE_PLUS: "Labgrade Plus",
+};
+
+const getProductFamilyCode = (product) => {
+  const explicit = String(
+    product?.project_family_code ||
+      product?.project_family?.code ||
+      product?.family_code ||
+      product?.family?.code ||
+      ""
+  )
+    .trim()
+    .toUpperCase();
+
+  if (explicit) {
+    return explicit;
+  }
+
+  const sku = String(product?.sku || "")
+    .trim()
+    .toUpperCase();
+
+  if (sku.startsWith("STRAT-")) {
+    return "STRATIFICATO";
+  }
+
+  if (sku.startsWith("MEG-")) {
+    return "MEG";
+  }
+
+  if (sku.startsWith("LABP-")) {
+    return "LABGRADE_PLUS";
+  }
+
+  if (sku.startsWith("LAB-")) {
+    return "LABGRADE";
+  }
+
+  return "HPL";
+};
+
+const getProductFamilyLabel = (product) =>
+  FAMILY_LABEL[getProductFamilyCode(product)] ||
+  "Laminado";
+
+const mergeAdminCodeSuggestions = (
+  suggestionGroups
+) => {
+  const unique = new Map();
+
+  suggestionGroups
+    .flat()
+    .forEach((product) => {
+      if (!product) {
+        return;
+      }
+
+      const key = String(
+        product.id ||
+          product.sku ||
+          product.slug ||
+          `${product.name || "producto"}-${getProductFamilyCode(product)}`
+      );
+
+      if (!unique.has(key)) {
+        unique.set(key, product);
+      }
+    });
+
+  return [...unique.values()].sort(
+    (a, b) => {
+      const familyA =
+        getProductFamilyCode(a);
+      const familyB =
+        getProductFamilyCode(b);
+
+      const orderA =
+        FAMILY_ORDER[familyA] ?? 99;
+      const orderB =
+        FAMILY_ORDER[familyB] ?? 99;
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+
+      return String(a?.sku || "").localeCompare(
+        String(b?.sku || ""),
+        "es",
+        { numeric: true }
+      );
+    }
+  );
+};
+
 /* =========================================
    COMPONENTE
 ========================================= */
@@ -111,7 +232,13 @@ export default function ProductSearch({
     }
 
     const technicalQuery =
-      /^(STRAT|LAB|MEG)-/i.test(
+      /^(STRAT|LABP?|MEG)-/i.test(
+        normalizedQuery
+      );
+
+    const adminCodeQuery =
+      allowTechnicalSearch &&
+      ADMIN_CODE_PATTERN.test(
         normalizedQuery
       );
 
@@ -161,19 +288,71 @@ export default function ProductSearch({
           setLoading(true);
           setError(false);
 
-          const response =
-            await searchProductSuggestions(
-              normalizedQuery,
-              {
-                limit: 6,
-                signal:
-                  controller.signal,
-              }
-            );
+          let nextSuggestions = [];
 
-          const nextSuggestions =
-            response?.suggestions ||
-            [];
+          if (adminCodeQuery) {
+            const adminQueries = [
+              normalizedQuery,
+              ...ADMIN_TECHNICAL_PREFIXES.map(
+                (prefix) =>
+                  `${prefix}-${normalizedQuery}`
+              ),
+            ];
+
+            const responses =
+              await Promise.allSettled(
+                adminQueries.map(
+                  (adminQuery) =>
+                    searchProductSuggestions(
+                      adminQuery,
+                      {
+                        limit: 6,
+                        signal:
+                          controller.signal,
+                      }
+                    )
+                )
+              );
+
+            if (
+              controller.signal.aborted
+            ) {
+              return;
+            }
+
+            const suggestionGroups =
+              responses
+                .filter(
+                  (result) =>
+                    result.status ===
+                    "fulfilled"
+                )
+                .map(
+                  (result) =>
+                    result.value
+                      ?.suggestions ||
+                    []
+                );
+
+            nextSuggestions =
+              mergeAdminCodeSuggestions(
+                suggestionGroups
+              ).slice(0, 12);
+          } else {
+            const response =
+              await searchProductSuggestions(
+                normalizedQuery,
+                {
+                  limit: 6,
+                  signal:
+                    controller.signal,
+                }
+              );
+
+            nextSuggestions =
+              response?.suggestions ||
+              [];
+          }
 
           if (
             suggestionCacheRef.current.size >=
@@ -223,7 +402,9 @@ export default function ProductSearch({
           }
         }
       },
-      technicalQuery ? 100 : 160
+      adminCodeQuery || technicalQuery
+        ? 100
+        : 160
     );
 
     return () => {
@@ -330,7 +511,7 @@ export default function ProductSearch({
     }
 
     const technicalQuery =
-      /^(STRAT|LAB|MEG)-/i.test(
+      /^(STRAT|LABP?|MEG)-/i.test(
         normalizedQuery
       );
 
@@ -468,6 +649,12 @@ export default function ProductSearch({
     query.trim().length >= 2 &&
     suggestions.length === 0;
 
+  const showAdminCodeAlternatives =
+    allowTechnicalSearch &&
+    ADMIN_CODE_PATTERN.test(
+      query.trim()
+    );
+
   useEffect(() => {
     if (!showNoResults) {
       return;
@@ -570,7 +757,7 @@ export default function ProductSearch({
           }
           placeholder={
             allowTechnicalSearch
-              ? "Buscar producto o código STRAT-, LAB-, MEG-..."
+              ? "Buscar código (ej. 421) o SKU STRAT-, MEG-, LAB-..."
               : "Ej: Formica negra, lámina blanca, negro mate..."
           }
           autoComplete="off"
@@ -729,6 +916,14 @@ export default function ProductSearch({
                             </p>
 
                             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                              {allowTechnicalSearch && (
+                                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-600">
+                                  {getProductFamilyLabel(
+                                    product
+                                  )}
+                                </span>
+                              )}
+
                               {product.sku && (
                                 <span className="text-xs text-neutral-400">
                                   SKU{" "}
@@ -769,22 +964,34 @@ export default function ProductSearch({
                 </div>
 
                 {/* VER TODOS */}
-                <div className="border-t border-black/5 p-2">
-                  <button
-                    type="button"
-                    onClick={
-                      searchAll
-                    }
-                    className="flex min-h-12 w-full items-center justify-between rounded-xl px-4 text-sm font-medium transition hover:bg-neutral-50"
-                  >
-                    <span>
-                      Ver todos los resultados
-                      para &quot;{query.trim()}&quot;
-                    </span>
+                {!showAdminCodeAlternatives && (
+                  <div className="border-t border-black/5 p-2">
+                    <button
+                      type="button"
+                      onClick={
+                        searchAll
+                      }
+                      className="flex min-h-12 w-full items-center justify-between rounded-xl px-4 text-sm font-medium transition hover:bg-neutral-50"
+                    >
+                      <span>
+                        Ver todos los resultados
+                        para &quot;{query.trim()}&quot;
+                      </span>
 
-                    <span>→</span>
-                  </button>
-                </div>
+                      <span>→</span>
+                    </button>
+                  </div>
+                )}
+
+                {showAdminCodeAlternatives && (
+                  <div className="border-t border-black/5 px-4 py-3 text-xs text-neutral-400">
+                    {suggestions.length}{" "}
+                    {suggestions.length === 1
+                      ? "alternativa encontrada"
+                      : "alternativas encontradas"}{" "}
+                    para el código {query.trim()}.
+                  </div>
+                )}
               </>
             )}
           </motion.div>
