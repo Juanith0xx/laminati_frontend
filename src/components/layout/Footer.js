@@ -27,6 +27,12 @@ const CONTACT_ADDRESS =
 const CONTACT_ADDRESS_REFERENCE =
   "Al costado de Construmart de Departamental";
 
+const CONTACT_HOURS_DAYS =
+  "Lunes a Viernes";
+
+const CONTACT_HOURS_TIME =
+  "09:00 a 18:00 hrs";
+
 const CONTACT_MAP_URL =
   "https://www.google.com/maps/search/?api=1&query=Av.%20Santa%20Rosa%205415%2C%20San%20Miguel%2C%20Chile";
 
@@ -79,6 +85,24 @@ function MapPinIcon({ className = "" }) {
     >
       <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
       <circle cx="12" cy="10" r="2.6" />
+    </svg>
+  );
+}
+
+function ClockIcon({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }
@@ -205,6 +229,26 @@ export default function Footer() {
                   </p>
                 </div>
               </a>
+
+              <div className="flex w-fit items-start gap-3">
+                <ContactIcon>
+                  <ClockIcon className="h-[17px] w-[17px]" />
+                </ContactIcon>
+
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                    Horario de atención
+                  </p>
+
+                  <p className="mt-0.5 text-sm font-medium leading-5 text-neutral-700">
+                    {CONTACT_HOURS_DAYS}
+                  </p>
+
+                  <p className="mt-0.5 text-xs leading-5 text-neutral-400">
+                    {CONTACT_HOURS_TIME}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
