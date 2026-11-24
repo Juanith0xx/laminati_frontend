@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import {
   useEffect,
   useRef,
@@ -762,7 +764,23 @@ export default function ProductSearch({
           }
           autoComplete="off"
           spellCheck="false"
-          aria-label="Buscar productos"
+          aria-label={
+            allowTechnicalSearch
+              ? "Buscar productos por nombre, código o SKU"
+              : "Buscar productos"
+          }
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={
+            query.trim().length >= 2 &&
+            suggestions.length > 0
+          }
+          aria-controls="product-search-results"
+          aria-activedescendant={
+            selectedIndex >= 0
+              ? `product-search-option-${selectedIndex}`
+              : undefined
+          }
           className="h-14 w-full rounded-full border border-black/10 bg-neutral-50 pl-13 pr-14 text-sm text-neutral-950 outline-none transition focus:border-black/20 focus:bg-white sm:h-16 sm:text-base"
         />
 
@@ -851,7 +869,12 @@ export default function ProductSearch({
             {/* SUGERENCIAS */}
             {suggestions.length > 0 && (
               <>
-                <div className="max-h-[420px] overflow-y-auto p-2">
+                <div
+                  id="product-search-results"
+                  role="listbox"
+                  aria-label="Resultados de búsqueda"
+                  className="max-h-[420px] overflow-y-auto p-2"
+                >
                   {suggestions.map(
                     (
                       product,
@@ -870,7 +893,10 @@ export default function ProductSearch({
                       return (
                         <button
                           key={product.id}
+                          id={`product-search-option-${index}`}
                           type="button"
+                          role="option"
+                          aria-selected={selected}
                           onMouseEnter={() =>
                             setSelectedIndex(
                               index
@@ -888,17 +914,20 @@ export default function ProductSearch({
                           }`}
                         >
                           {/* IMAGEN */}
-                          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100 sm:h-16 sm:w-16">
+                          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100 sm:h-16 sm:w-16">
                             {product.primary_image_url ? (
-                              <img
+                              <Image
                                 src={
                                   product.primary_image_url
                                 }
                                 alt={
                                   product.primary_image_alt ||
-                                  product.name
+                                  product.name ||
+                                  "Producto Laminati"
                                 }
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="64px"
+                                className="object-cover"
                               />
                             ) : (
                               <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-400">

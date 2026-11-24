@@ -6,13 +6,12 @@ import OffersSection from "@/components/home/OffersSection";
 import FeaturedProductsSection from "@/components/home/FeaturedProductsSection";
 import LocationSection from "@/components/home/LocationSection";
 
-export const dynamic = "force-dynamic";
-
+export const revalidate = 60;
 
 
 export default function HomePage() {
   return (
-    <main>
+    <main id="home-main">
       <Hero />
 
       <DigitalCollectionsCarousel />

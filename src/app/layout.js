@@ -8,6 +8,18 @@ import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import "./globals.css";
 
 const SITE_URL = "https://laminati.cl";
+const PRODUCT_STORAGE_ORIGIN =
+  "https://contained-rack-ctv164ff-h.t3.storageapi.dev";
+
+const API_ORIGIN = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_API_URL
+      ? new URL(process.env.NEXT_PUBLIC_API_URL).origin
+      : null;
+  } catch {
+    return null;
+  }
+})();
 
 
 const ORGANIZATION_ID = `${SITE_URL}/#organization`;
@@ -86,6 +98,30 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es" className={poppins.variable}>
+      <head>
+        <link
+          rel="preconnect"
+          href={PRODUCT_STORAGE_ORIGIN}
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="dns-prefetch"
+          href={PRODUCT_STORAGE_ORIGIN}
+        />
+        {API_ORIGIN ? (
+          <>
+            <link
+              rel="preconnect"
+              href={API_ORIGIN}
+              crossOrigin="anonymous"
+            />
+            <link
+              rel="dns-prefetch"
+              href={API_ORIGIN}
+            />
+          </>
+        ) : null}
+      </head>
       <body>
         <script
           type="application/ld+json"
@@ -93,19 +129,33 @@ export default function RootLayout({ children }) {
             __html: serializedOrganizationJsonLd,
           }}
         />
+
+        <a
+          href="#site-content"
+          className="sr-only fixed left-3 top-3 z-[100] rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white focus:not-sr-only"
+        >
+          Saltar al contenido
+        </a>
+
         <Navbar />
+
         <Suspense fallback={null}>
           <AnalyticsTracker />
         </Suspense>
-        {children}
+
+        <div id="site-content">
+          {children}
+        </div>
+
         <Footer />
         <WhatsAppBubble />
+
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
+          <GoogleAnalytics
+            gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
+          />
+        ) : null}
       </body>
-      {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
-        <GoogleAnalytics
-          gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
-        />
-      ) : null}
     </html>
   );
 }

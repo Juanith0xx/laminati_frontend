@@ -32,6 +32,24 @@ const nextConfig = {
 
   poweredByHeader: false,
 
+  compress: true,
+
+  images: {
+    formats: [
+      "image/avif",
+      "image/webp",
+    ],
+    minimumCacheTTL: 86400,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname:
+          "contained-rack-ctv164ff-h.t3.storageapi.dev",
+        pathname: "/products/**",
+      },
+    ],
+  },
+
   async headers() {
     return [
       {

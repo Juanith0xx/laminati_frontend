@@ -1,15 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const HIDDEN_PREFIXES = [
-  "/admin",
-  "/login",
-  "/registro",
-  "/checkout",
-  "/mi-cuenta",
-];
+import FooterVisibility from "./FooterVisibility";
 
 const CONTACT_EMAIL =
   process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
@@ -135,20 +125,9 @@ function ContactIcon({ children }) {
 }
 
 export default function Footer() {
-  const pathname = usePathname();
-
-  if (
-    HIDDEN_PREFIXES.some(
-      (prefix) =>
-        pathname === prefix ||
-        pathname.startsWith(`${prefix}/`)
-    )
-  ) {
-    return null;
-  }
-
   return (
-    <footer className="mx-auto mt-12 w-full max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-8">
+    <FooterVisibility>
+      <footer className="mx-auto mt-12 w-full max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-8">
       <div className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-white px-6 py-8 shadow-[0_1px_2px_rgba(0,0,0,.03)] sm:px-8 lg:px-10">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.55fr_.7fr_.7fr_.7fr] lg:gap-0">
           <div className="lg:pr-10">
@@ -374,6 +353,7 @@ export default function Footer() {
           </p>
         </div>
       </div>
-    </footer>
+      </footer>
+    </FooterVisibility>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 
 import Link from "next/link";
 
@@ -12,8 +13,6 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { useCartStore } from "@/store/cartStore";
 
-import ProductSearch from "./ProductSearch";
-
 import {
   AUTH_CHANGED_EVENT,
   getStoredUser,
@@ -23,12 +22,29 @@ import {
   apiRequest,
 } from "@/services/api";
 
-import AdminNotificationCenter from "@/components/admin/AdminNotificationCenter";
-
 import {
   connectRealtimeSocket,
   disconnectRealtimeSocket,
 } from "@/services/realtimeSocket.service";
+
+const ProductSearch = dynamic(
+  () => import("./ProductSearch"),
+  {
+    ssr: false,
+    loading: () => null,
+  }
+);
+
+const AdminNotificationCenter = dynamic(
+  () =>
+    import(
+      "@/components/admin/AdminNotificationCenter"
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  }
+);
 
 const API_BASE_URL = (
 
@@ -277,7 +293,7 @@ export default function Navbar() {
   const [
     catalogLoading,
     setCatalogLoading,
-  ] = useState(true);
+  ] = useState(false);
 
   const [
     catalogError,
@@ -395,153 +411,148 @@ export default function Navbar() {
 
   /* =========================================
      CARGAR MARCAS + COLECCIONES
-     DESDE EL CATÁLOGO PÚBLICO
+     BAJO DEMANDA: evita competir con LCP.
   ========================================= */
 
-  useEffect(
-    () => {
-      const controller =
-        new AbortController();
+  useEffect(() => {
+    const shouldLoadCatalog =
+      productsOpen ||
+      mobileProductsOpen;
 
-      const loadCatalogNavigation =
-        async () => {
-          try {
-            setCatalogLoading(
-              true
+    if (
+      !shouldLoadCatalog ||
+      catalogBrands.length > 0
+    ) {
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    const loadCatalogNavigation =
+      async () => {
+        try {
+          setCatalogLoading(true);
+          setCatalogError("");
+
+          const response =
+            await fetch(
+              `${API_BASE_URL}/catalog/navigation`,
+              {
+                method: "GET",
+                signal:
+                  controller.signal,
+                cache: "no-store",
+              }
             );
 
-            setCatalogError(
-              ""
-            );
+          const data =
+            await response.json();
 
-            const response =
-              await fetch(
-                `${API_BASE_URL}/catalog/navigation`,
-                {
-                  method:
-                    "GET",
-
-                  signal:
-                    controller.signal,
-
-                  cache:
-                    "no-store",
-                }
-              );
-
-            const data =
-              await response.json();
-
-            if (
-              !response.ok ||
-              !data?.success
-            ) {
-              throw new Error(
-                data?.message ||
-                  "No fue posible cargar el catálogo."
-              );
-            }
-
-            const brands =
-              Array.isArray(
-                data.brands
-              )
-                ? data.brands
-                : [];
-
-            setCatalogBrands(
-              brands
-            );
-
-            const laminates =
-              brands.filter(
-                (brand) => {
-                  const name =
-                    String(
-                      brand?.name ||
-                        ""
-                    )
-                      .trim()
-                      .toLowerCase()
-                      .normalize(
-                        "NFD"
-                      )
-                      .replace(
-                        /[\u0300-\u036f]/g,
-                        ""
-                      );
-
-                  return (
-                    name.includes(
-                      "abet"
-                    ) ||
-                    name.includes(
-                      "karikal"
-                    )
-                  );
-                }
-              );
-
-            setActiveLaminateBrandId(
-              (current) =>
-                current &&
-                laminates.some(
-                  (brand) =>
-                    brand.id ===
-                    current
-                )
-                  ? current
-                  : laminates[0]
-                      ?.id ||
-                    null
-            );
-          } catch (
-            error
+          if (
+            !response.ok ||
+            !data?.success
           ) {
-            if (
-              error?.name ===
-              "AbortError"
-            ) {
-              return;
-            }
-
-            console.error(
-              "Error cargando navegación del catálogo:",
-              error
+            throw new Error(
+              data?.message ||
+                "No fue posible cargar el catálogo."
             );
-
-            setCatalogBrands(
-              []
-            );
-
-            setActiveLaminateBrandId(
-              null
-            );
-
-            setCatalogError(
-              "No fue posible cargar las colecciones."
-            );
-          } finally {
-            if (
-              !controller
-                .signal
-                .aborted
-            ) {
-              setCatalogLoading(
-                false
-              );
-            }
           }
-        };
 
-      loadCatalogNavigation();
+          const brands =
+            Array.isArray(
+              data.brands
+            )
+              ? data.brands
+              : [];
 
-      return () => {
-        controller.abort();
+          setCatalogBrands(
+            brands
+          );
+
+          const laminates =
+            brands.filter(
+              (brand) => {
+                const name =
+                  String(
+                    brand?.name ||
+                      ""
+                  )
+                    .trim()
+                    .toLowerCase()
+                    .normalize(
+                      "NFD"
+                    )
+                    .replace(
+                      /[\u0300-\u036f]/g,
+                      ""
+                    );
+
+                return (
+                  name.includes(
+                    "abet"
+                  ) ||
+                  name.includes(
+                    "karikal"
+                  )
+                );
+              }
+            );
+
+          setActiveLaminateBrandId(
+            (current) =>
+              current &&
+              laminates.some(
+                (brand) =>
+                  brand.id ===
+                  current
+              )
+                ? current
+                : laminates[0]
+                    ?.id ||
+                  null
+          );
+        } catch (error) {
+          if (
+            error?.name ===
+            "AbortError"
+          ) {
+            return;
+          }
+
+          console.error(
+            "Error cargando navegación del catálogo:",
+            error
+          );
+
+          setCatalogBrands([]);
+          setActiveLaminateBrandId(
+            null
+          );
+          setCatalogError(
+            "No fue posible cargar las colecciones."
+          );
+        } finally {
+          if (
+            !controller.signal.aborted
+          ) {
+            setCatalogLoading(
+              false
+            );
+          }
+        }
       };
-    },
-    []
-  );
+
+    loadCatalogNavigation();
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    productsOpen,
+    mobileProductsOpen,
+    catalogBrands.length,
+  ]);
 
   /* =========================================*
 
@@ -702,7 +713,7 @@ export default function Navbar() {
         handleSessionChange
       );
     };
-  }, [pathname]);
+  }, []);
 
   /* =========================================
      PRESENCIA REALTIME GLOBAL
@@ -939,7 +950,8 @@ export default function Navbar() {
               alt="Laminati World"
               width={600}
               height={180}
-              priority
+              sizes="(max-width: 639px) 125px, (max-width: 767px) 140px, (max-width: 1023px) 155px, (max-width: 1279px) 175px, 190px"
+              loading="eager"
               className="h-auto w-[125px] object-contain sm:w-[140px] md:w-[155px] lg:w-[175px] xl:w-[190px]"
             />
           </Link>
