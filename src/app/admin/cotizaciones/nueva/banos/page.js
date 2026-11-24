@@ -8,6 +8,8 @@ import {
 
 import Link from "next/link";
 
+import BathroomQuotationStepperHeader from "@/components/admin/quotations/bathroom-stepper/BathroomQuotationStepperHeader";
+import BathroomQuotationStepperNavigation from "@/components/admin/quotations/bathroom-stepper/BathroomQuotationStepperNavigation";
 import QuotationProductSearch from "@/components/admin/quotations/shared/QuotationProductSearch";
 import { useRouter } from "next/navigation";
 
@@ -1466,6 +1468,11 @@ function SheetPreview({
 
 export default function BathroomQuotationPage() {
   const router = useRouter();
+
+  const [
+    activeStep,
+    setActiveStep,
+  ] = useState(1);
   const [
     projectName,
     setProjectName,
@@ -2888,6 +2895,58 @@ export default function BathroomQuotationPage() {
     }
   }
 
+  const maxAvailableStep =
+    summary ? 5 : 3;
+
+  const goToStep = (step) => {
+    const nextStep =
+      Math.min(
+        Math.max(
+          Number(step) || 1,
+          1
+        ),
+        maxAvailableStep
+      );
+
+    setActiveStep(
+      nextStep
+    );
+  };
+
+  const goToNextStep = () => {
+    if (
+      activeStep === 3 &&
+      !summary
+    ) {
+      setError(
+        "Primero debes ejecutar la optimización de cortes para continuar."
+      );
+      return;
+    }
+
+    setError("");
+
+    setActiveStep(
+      (current) =>
+        Math.min(
+          current + 1,
+          summary ? 5 : 3
+        )
+    );
+  };
+
+  const goToPreviousStep = () => {
+    setError("");
+
+    setActiveStep(
+      (current) =>
+        Math.max(
+          current - 1,
+          1
+        )
+    );
+  };
+
   return (
     <main className="min-h-screen bg-[#f5f5f2] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1500px]">
@@ -2918,7 +2977,20 @@ export default function BathroomQuotationPage() {
           </Link>
         </div>
 
+        <BathroomQuotationStepperHeader
+          activeStep={activeStep}
+          maxAvailableStep={maxAvailableStep}
+          onStepChange={goToStep}
+        />
+
         <div className="space-y-6">
+          <div
+            className={
+              activeStep === 1
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           {/* 01 */}
           <Section
             number="01"
@@ -3183,6 +3255,21 @@ export default function BathroomQuotationPage() {
             </div>
           </Section>
 
+          <BathroomQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={5}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+          />
+          </div>
+
+          <div
+            className={
+              activeStep === 2
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           {/* 03 */}
           <Section
             number="03"
@@ -3418,6 +3505,21 @@ export default function BathroomQuotationPage() {
             </div>
           </Section>
 
+          <BathroomQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={5}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+          />
+          </div>
+
+          <div
+            className={
+              activeStep === 3
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           {/* 04 */}
           <Section
             number="04"
@@ -4187,6 +4289,23 @@ export default function BathroomQuotationPage() {
 </Section>
           )}
 
+          <BathroomQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={5}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+            nextDisabled={!summary}
+            nextDisabledMessage="Optimiza los cortes antes de continuar."
+          />
+          </div>
+
+          <div
+            className={
+              activeStep === 4
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           {/* 07 */}
           {summary && (
             <Section
@@ -4538,6 +4657,21 @@ export default function BathroomQuotationPage() {
             </Section>
           )}
 
+          <BathroomQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={5}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+          />
+          </div>
+
+          <div
+            className={
+              activeStep === 5
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           {/* 08 */}
           {summary && (
             <Section
@@ -4648,6 +4782,15 @@ export default function BathroomQuotationPage() {
               </div>
             </Section>
           )}
+
+          <BathroomQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={5}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+            hideNext
+          />
+          </div>
         </div>
       </div>
 
