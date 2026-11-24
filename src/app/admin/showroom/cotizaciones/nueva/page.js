@@ -9,6 +9,8 @@ import {
 
 import Link from "next/link";
 
+import QuotationStepperHeader from "@/components/admin/quotations/stepper/QuotationStepperHeader";
+
 import {
   createPosSale,
   createQuotation,
@@ -286,6 +288,8 @@ function RutStatusIcon({ status }) {
 }
 
 export default function NewQuotationPage() {
+  const [activeStep, setActiveStep] = useState(1);
+
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] =
@@ -1499,41 +1503,10 @@ export default function NewQuotationPage() {
           </div>
         </div>
 
-        <div className="mb-6 grid gap-2 sm:grid-cols-4">
-          {[
-            ["01", "Cliente", rutLookup.status === "FOUND"],
-            ["02", "Productos", cart.length > 0],
-            ["03", "Resumen", cart.length > 0],
-            ["04", quotationMode ? "Cotización" : "Pago", saleResult || quotationResult],
-          ].map(([number, label, complete]) => (
-            <div
-              key={number}
-              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
-                complete
-                  ? "border-emerald-200 bg-emerald-50"
-                  : "border-black/5 bg-white"
-              }`}
-            >
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-                  complete
-                    ? "bg-emerald-600 text-white"
-                    : "bg-neutral-100 text-neutral-500"
-                }`}
-              >
-                {complete ? "✓" : number}
-              </span>
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
-                  Paso {number}
-                </p>
-                <p className="text-sm font-semibold text-neutral-900">
-                  {label}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <QuotationStepperHeader
+          activeStep={activeStep}
+          onStepChange={setActiveStep}
+        />
 
         <div className="space-y-6">
           <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">

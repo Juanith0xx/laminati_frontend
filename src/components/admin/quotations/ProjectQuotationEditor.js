@@ -11,6 +11,8 @@ import {
 } from "next/navigation";
 
 import QuotationProductSearch from "@/components/admin/quotations/shared/QuotationProductSearch";
+import ProjectQuotationStepperHeader from "@/components/admin/quotations/stepper/ProjectQuotationStepperHeader";
+import ProjectQuotationStepperNavigation from "@/components/admin/quotations/stepper/ProjectQuotationStepperNavigation";
 
 import {
   createProjectQuotation,
@@ -1778,6 +1780,11 @@ export default function ProjectQuotationEditor({
   const router =
     useRouter();
 
+  const [
+    activeStep,
+    setActiveStep,
+  ] = useState(1);
+
   const editing =
     Boolean(
       quotationId
@@ -1915,6 +1922,64 @@ export default function ProjectQuotationEditor({
   ] = useState(
     ""
   );
+
+  const productLineEntries =
+    useMemo(
+      () =>
+        lines
+          .map(
+            (line, index) => ({
+              line,
+              index,
+            })
+          )
+          .filter(
+            ({ line }) =>
+              line.line_type ===
+              "PRODUCT"
+          ),
+      [lines]
+    );
+
+  const serviceLineEntries =
+    useMemo(
+      () =>
+        lines
+          .map(
+            (line, index) => ({
+              line,
+              index,
+            })
+          )
+          .filter(
+            ({ line }) =>
+              line.line_type ===
+                "SERVICE" ||
+              line.line_type ===
+                "OTHER"
+          ),
+      [lines]
+    );
+
+  const goToNextStep =
+    () =>
+      setActiveStep(
+        (current) =>
+          Math.min(
+            current + 1,
+            4
+          )
+      );
+
+  const goToPreviousStep =
+    () =>
+      setActiveStep(
+        (current) =>
+          Math.max(
+            current - 1,
+            1
+          )
+      );
 
   const grossTotal =
     useMemo(
@@ -2990,6 +3055,11 @@ export default function ProjectQuotationEditor({
         </div>
       </section>
 
+      <ProjectQuotationStepperHeader
+        activeStep={activeStep}
+        onStepChange={setActiveStep}
+      />
+
         {error ? (
           <div className="rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-600 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
             {error}
@@ -2997,6 +3067,8 @@ export default function ProjectQuotationEditor({
         ) : null}
 
       <div className="space-y-5">
+        {activeStep === 1 ? (
+          <>
           <Section
             eyebrow="Proyecto"
             title="Datos de la cotización"
@@ -3393,6 +3465,17 @@ export default function ProjectQuotationEditor({
             </div>
           </Section>
 
+          <ProjectQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+          />
+          </>
+        ) : null}
+
+        {activeStep === 2 ? (
+          <>
           <Section
             eyebrow="Catálogo"
             title="Seleccionar producto"
@@ -3415,10 +3498,11 @@ export default function ProjectQuotationEditor({
             />
           </Section>
 
-          <Section
-            eyebrow="Detalle del proyecto"
-            title="Productos, servicios y otros conceptos"
-          >
+          {activeStep === 2 ? (
+            <Section
+              eyebrow="Detalle del proyecto"
+              title="Productos del proyecto"
+            >
             <div className="mb-5 overflow-x-auto border-b border-black/[.07] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex min-w-max items-end justify-between gap-6">
                 <div
@@ -3430,14 +3514,6 @@ export default function ProjectQuotationEditor({
                     {
                       type: "PRODUCT",
                       label: "Productos manuales",
-                    },
-                    {
-                      type: "SERVICE",
-                      label: "Servicios",
-                    },
-                    {
-                      type: "OTHER",
-                      label: "Otros",
                     },
                   ].map(
                     (
@@ -3502,13 +3578,13 @@ export default function ProjectQuotationEditor({
               </div>
             </div>
 
-            {lines.length ? (
+            {productLineEntries.length ? (
               <div className="space-y-4">
-                {lines.map(
-                  (
+                {productLineEntries.map(
+                  ({
                     line,
-                    index
-                  ) => (
+                    index,
+                  }) => (
                     <LineEditor
                       key={
                         line.local_id
@@ -3547,12 +3623,149 @@ export default function ProjectQuotationEditor({
                 </h3>
 
                 <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-                  Selecciona un producto del catálogo o elige Productos manuales, Servicios u Otros para comenzar.
+                  Selecciona un producto del catálogo o agrega un producto manual para comenzar.
+                </p>
+              </div>
+            )}
+          </Section>
+          ) : null}
+
+          <ProjectQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+          />
+          </>
+        ) : null}
+
+        {activeStep === 3 ? (
+          <>
+          <Section
+            eyebrow="Servicios"
+            title="Servicios y otros conceptos"
+          >
+            <div className="mb-5 overflow-x-auto border-b border-black/[.07] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-max items-end justify-between gap-6">
+                <div
+                  className="flex min-w-max gap-7 px-1"
+                  role="tablist"
+                  aria-label="Tipo de concepto adicional"
+                >
+                  {[
+                    {
+                      type: "SERVICE",
+                      label: "Servicios",
+                    },
+                    {
+                      type: "OTHER",
+                      label: "Otros",
+                    },
+                  ].map(
+                    (item) => {
+                      const active =
+                        activeConceptType ===
+                        item.type;
+
+                      return (
+                        <button
+                          key={item.type}
+                          type="button"
+                          role="tab"
+                          aria-selected={active}
+                          onClick={() =>
+                            activateConceptType(
+                              item.type
+                            )
+                          }
+                          className={`relative h-10 whitespace-nowrap text-xs transition ${
+                            active
+                              ? "font-semibold text-black"
+                              : "font-medium text-neutral-500 hover:text-black"
+                          }`}
+                        >
+                          {item.label}
+
+                          <span
+                            className={`absolute inset-x-0 bottom-[-1px] h-0.5 rounded-full bg-black transition-transform ${
+                              active
+                                ? "scale-x-100"
+                                : "scale-x-0"
+                            }`}
+                          />
+                        </button>
+                      );
+                    }
+                  )}
+                </div>
+
+                {activeConceptType === "SERVICE" ||
+                activeConceptType === "OTHER" ? (
+                  <button
+                    type="button"
+                    onClick={addAnotherConcept}
+                    className="mb-2.5 shrink-0 rounded-full border border-black/10 bg-white px-3.5 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50"
+                  >
+                    + Agregar {activeConceptLabel}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            {serviceLineEntries.length ? (
+              <div className="space-y-4">
+                {serviceLineEntries.map(
+                  ({
+                    line,
+                    index,
+                  }) => (
+                    <LineEditor
+                      key={line.local_id}
+                      line={line}
+                      index={index}
+                      onChange={(next) =>
+                        updateLine(
+                          index,
+                          next
+                        )
+                      }
+                      onRemove={() =>
+                        removeLine(
+                          index
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-black/10 bg-neutral-50/60 px-6 py-10 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-black/10 bg-white text-3xl font-light text-neutral-400 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+                  +
+                </div>
+
+                <h3 className="text-base font-semibold text-neutral-900">
+                  No hay servicios ni otros conceptos
+                </h3>
+
+                <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-500">
+                  Este paso es opcional. Puedes agregar servicios u otros conceptos, o continuar directamente a la confirmación.
                 </p>
               </div>
             )}
           </Section>
 
+          <ProjectQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+          />
+          </>
+        ) : null}
+
+        {activeStep === 4 ? (
+          <>
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <Section
               title="Observaciones"
@@ -3634,6 +3847,16 @@ export default function ProjectQuotationEditor({
               </button>
             </div>
           </section>
+
+          <ProjectQuotationStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+            hideNext
+          />
+          </>
+        ) : null}
       </div>
     </main>
   );
