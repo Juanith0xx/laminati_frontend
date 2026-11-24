@@ -49,7 +49,7 @@ function getProductImage(
   return (
     getStableProductImageUrl(
       product?.primary_image,
-      "card"
+      "thumbnail"
     ) ||
     product?.primary_image?.card_url ||
     product?.primary_image_url ||
@@ -65,7 +65,7 @@ function getSecondaryProductImage(
   return (
     getStableProductImageUrl(
       product?.secondary_image,
-      "card"
+      "thumbnail"
     ) ||
     product?.secondary_image?.card_url ||
     product?.secondary_image_url ||
@@ -329,7 +329,7 @@ export default async function CollectionsSection() {
   }
 
   return (
-    <section className="bg-[#111111] py-16 text-white sm:py-20 lg:py-28">
+    <section style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }} className="bg-[#111111] py-16 text-white sm:py-20 lg:py-28">
 
       <div className="site-container">
 
@@ -337,7 +337,7 @@ export default async function CollectionsSection() {
 
           <div>
 
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.28em] text-neutral-500">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.28em] text-neutral-300">
               Colecciones
             </p>
 
@@ -350,7 +350,7 @@ export default async function CollectionsSection() {
           <Link
             href="/colecciones"
             prefetch={false}
-            className="group flex w-fit items-center gap-2 text-sm font-medium text-neutral-400 transition hover:text-white"
+            className="group flex w-fit items-center gap-2 text-sm font-medium text-neutral-200 transition hover:text-white"
           >
             Ver todas las colecciones
 

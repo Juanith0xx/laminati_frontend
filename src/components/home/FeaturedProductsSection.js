@@ -75,11 +75,11 @@ function getImageUrl(
   return (
     getStableProductImageUrl(
       product?.primary_image,
-      "card"
+      "thumbnail"
     ) ||
     getStableProductImageUrl(
       product?.images?.[0],
-      "card"
+      "thumbnail"
     ) ||
     product
       ?.primary_image
@@ -235,7 +235,7 @@ function FeaturedCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">
               Laminati
             </span>
           </div>
@@ -251,7 +251,7 @@ function FeaturedCard({
 
         <div className="min-h-[1rem]">
 
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
             {product
               ?.collection ||
               product
@@ -312,7 +312,7 @@ function FeaturedCard({
 
           {pricing
             .hasDiscount && (
-            <p className="text-xs text-neutral-400 line-through">
+            <p className="text-xs text-neutral-600 line-through">
               {formatPrice(
                 pricing
                   .basePrice
@@ -433,7 +433,7 @@ export default async function FeaturedProductsSection() {
   }
 
   return (
-    <section className="bg-white py-16 sm:py-20 lg:py-28">
+    <section style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }} className="bg-white py-16 sm:py-20 lg:py-28">
 
       <div className="site-container">
 
@@ -441,7 +441,7 @@ export default async function FeaturedProductsSection() {
 
           <div>
 
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.28em] text-neutral-400">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.28em] text-neutral-600">
               Selección Laminati
             </p>
 
@@ -449,7 +449,7 @@ export default async function FeaturedProductsSection() {
               Productos destacados
             </h2>
 
-            <p className="mt-4 max-w-xl text-sm leading-6 text-neutral-500 sm:text-base sm:leading-7">
+            <p className="mt-4 max-w-xl text-sm leading-6 text-neutral-700 sm:text-base sm:leading-7">
               Una selección de superficies pensadas para proyectos que buscan materialidad, diseño y terminaciones cuidadas.
             </p>
 

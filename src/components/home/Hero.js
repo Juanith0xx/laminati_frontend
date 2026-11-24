@@ -44,6 +44,9 @@ function getProductImage(
   product
 ) {
   return (
+    product?.primary_image?.card_url ||
+    product?.primary_image_url ||
+    product?.images?.[0]?.card_url ||
     getStableProductImageUrl(
       product?.primary_image,
       "card"
@@ -52,15 +55,26 @@ function getProductImage(
       product?.images?.[0],
       "card"
     ) ||
-    product
-      ?.primary_image
-      ?.card_url ||
-    product
-      ?.primary_image
-      ?.detail_url ||
-    product
-      ?.primary_image_url ||
+    product?.primary_image?.detail_url ||
     null
+  );
+}
+
+function getProductPreviewImage(
+  product
+) {
+  return (
+    product?.primary_image?.thumbnail_url ||
+    product?.images?.[0]?.thumbnail_url ||
+    getStableProductImageUrl(
+      product?.primary_image,
+      "thumbnail"
+    ) ||
+    getStableProductImageUrl(
+      product?.images?.[0],
+      "thumbnail"
+    ) ||
+    getProductImage(product)
   );
 }
 
@@ -139,6 +153,10 @@ function toTexture(
     name:
       product.name,
     imageUrl,
+    previewUrl:
+      getProductPreviewImage(
+        product
+      ),
     slug:
       product.slug,
   };
@@ -632,7 +650,7 @@ export default async function Hero() {
         {/* CONTENIDO */}
         <div className="relative z-10 max-w-3xl">
 
-          <p className="mb-5 text-xs font-medium uppercase tracking-[0.32em] text-neutral-500 sm:text-sm">
+          <p className="mb-5 text-xs font-medium uppercase tracking-[0.32em] text-neutral-600 sm:text-sm">
             Diseño · Arquitectura · Superficies
           </p>
 
@@ -640,13 +658,13 @@ export default async function Hero() {
 
             Materiales que
 
-            <span className="block text-neutral-500">
+            <span className="block text-neutral-600">
               transforman.
             </span>
 
           </h1>
 
-          <p className="mt-7 max-w-xl text-base leading-7 text-neutral-600 sm:text-lg sm:leading-8">
+          <p className="mt-7 max-w-xl text-base leading-7 text-neutral-700 sm:text-lg sm:leading-8">
             Laminados y soluciones pensadas para proyectos de arquitectura, mobiliario y diseño de interiores.
           </p>
 

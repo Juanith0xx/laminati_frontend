@@ -17,12 +17,12 @@ export default async function CategoriesSection() {
   }
 
   return (
-    <section className="bg-white py-16 sm:py-20 lg:py-28">
+    <section style={{ contentVisibility: "auto", containIntrinsicSize: "850px" }} className="bg-white py-16 sm:py-20 lg:py-28">
       <div className="site-container">
         {/* ENCABEZADO */}
         <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between lg:mb-14">
           <div>
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.28em] text-neutral-400">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.28em] text-neutral-600">
               Catálogo
             </p>
 
@@ -69,7 +69,7 @@ export default async function CategoriesSection() {
               <div className="relative z-10 flex h-full min-h-[230px] flex-col justify-between sm:min-h-[284px] lg:min-h-[326px]">
                 {/* PARTE SUPERIOR */}
                 <div className="flex items-start justify-between">
-                  <span className="text-xs font-medium tracking-[0.2em] text-neutral-400">
+                  <span className="text-xs font-medium tracking-[0.2em] text-neutral-600">
                     {String(index + 1).padStart(2, "0")}
                   </span>
 
@@ -84,7 +84,7 @@ export default async function CategoriesSection() {
                     {category.name}
                   </h3>
 
-                  <p className="mt-3 max-w-xs text-sm leading-6 text-neutral-500">
+                  <p className="mt-3 max-w-xs text-sm leading-6 text-neutral-700">
                     Descubre productos, acabados y soluciones para
                     tus proyectos.
                   </p>

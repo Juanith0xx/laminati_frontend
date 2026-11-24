@@ -1,935 +1,461 @@
 "use client";
-
 import Image from "next/image";
 import dynamic from "next/dynamic";
-
 import Link from "next/link";
-
 import { usePathname } from "next/navigation";
-
 import { useEffect, useRef, useState } from "react";
-
-import { AnimatePresence, motion } from "motion/react";
-
 import { useCartStore } from "@/store/cartStore";
-
-import {
-  AUTH_CHANGED_EVENT,
-  getStoredUser,
-} from "@/services/auth.service";
-
-import {
-  apiRequest,
-} from "@/services/api";
-
-import {
-  connectRealtimeSocket,
-  disconnectRealtimeSocket,
-} from "@/services/realtimeSocket.service";
-
-const ProductSearch = dynamic(
-  () => import("./ProductSearch"),
-  {
+import { AUTH_CHANGED_EVENT, getStoredUser, } from "@/services/auth.service";
+import { apiRequest, } from "@/services/api";
+import { connectRealtimeSocket, disconnectRealtimeSocket, } from "@/services/realtimeSocket.service";
+const ProductSearch = dynamic(() => import("./ProductSearch"), {
     ssr: false,
     loading: () => null,
-  }
-);
-
-const AdminNotificationCenter = dynamic(
-  () =>
-    import(
-      "@/components/admin/AdminNotificationCenter"
-    ),
-  {
+});
+const AdminNotificationCenter = dynamic(() => import("@/components/admin/AdminNotificationCenter"), {
     ssr: false,
     loading: () => null,
-  }
-);
-
-const API_BASE_URL = (
-
-  process.env.NEXT_PUBLIC_API_URL ||
-
-  "http://localhost:5000/api"
-
-).replace(/\/$/, "");
-
+});
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:5000/api").replace(/\/$/, "");
 const navItems = [
-
-  {
-    label: "Inicio",
-    href: "/",
-  },
-
-  {
-    label: "Productos",
-    href: "/productos",
-  },
-
-  {
-    label: "Proyectos",
-    href: "/proyectos",
-  },
-
-  {
-    label: "Contacto",
-    href: "/contacto",
-  },
-
-  {
-    label: "Nosotros",
-    href: "/nosotros",
-  },
-
+    {
+        label: "Inicio",
+        href: "/",
+    },
+    {
+        label: "Productos",
+        href: "/productos",
+    },
+    {
+        label: "Proyectos",
+        href: "/proyectos",
+    },
+    {
+        label: "Contacto",
+        href: "/contacto",
+    },
+    {
+        label: "Nosotros",
+        href: "/nosotros",
+    },
 ];
-
 const getUserDisplayName = (user) => {
-  if (!user) {
-    return "";
-  }
-
-  const firstName = String(
-    user.first_name ||
-      user.firstName ||
-      ""
-  ).trim();
-
-  const lastName = String(
-    user.last_name ||
-      user.lastName ||
-      ""
-  ).trim();
-
-  const fullName = [
-    firstName,
-    lastName,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-
-  if (fullName) {
-    return fullName;
-  }
-
-  return String(
-    user.name ||
-      user.full_name ||
-      user.fullName ||
-      user.email ||
-      ""
-  ).trim();
+    if (!user) {
+        return "";
+    }
+    const firstName = String(user.first_name ||
+        user.firstName ||
+        "").trim();
+    const lastName = String(user.last_name ||
+        user.lastName ||
+        "").trim();
+    const fullName = [
+        firstName,
+        lastName,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    if (fullName) {
+        return fullName;
+    }
+    return String(user.name ||
+        user.full_name ||
+        user.fullName ||
+        user.email ||
+        "").trim();
 };
-
 const getUserInitials = (user) => {
-
-  if (!user) {
+    if (!user) {
+        return "AD";
+    }
+    const firstName = String(user.first_name ||
+        user.firstName ||
+        "").trim();
+    const lastName = String(user.last_name ||
+        user.lastName ||
+        "").trim();
+    if (firstName || lastName) {
+        return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    }
+    const fullName = String(user.name ||
+        user.full_name ||
+        user.fullName ||
+        "").trim();
+    if (fullName) {
+        const parts = fullName
+            .split(/\s+/)
+            .filter(Boolean);
+        if (parts.length === 1) {
+            return parts[0].charAt(0).toUpperCase();
+        }
+        return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+    }
+    const email = String(user.email ||
+        "").trim();
+    if (email) {
+        return email.charAt(0).toUpperCase();
+    }
     return "AD";
-  }
-
-  const firstName = String(
-    user.first_name ||
-      user.firstName ||
-      ""
-  ).trim();
-
-  const lastName = String(
-    user.last_name ||
-      user.lastName ||
-      ""
-  ).trim();
-
-  if (firstName || lastName) {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  }
-
-  const fullName = String(
-    user.name ||
-      user.full_name ||
-      user.fullName ||
-      ""
-  ).trim();
-
-  if (fullName) {
-    const parts = fullName
-      .split(/\s+/)
-      .filter(Boolean);
-
-    if (parts.length === 1) {
-      return parts[0].charAt(0).toUpperCase();
-    }
-
-    return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
-  }
-
-  const email = String(
-    user.email ||
-      ""
-  ).trim();
-
-  if (email) {
-    return email.charAt(0).toUpperCase();
-  }
-
-  return "AD";
 };
-
 export default function Navbar() {
-
-  const pathname = usePathname();
-
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  /* =========================================
-     MENÚ DE ACCESO / REGISTRO
-     Mantiene el aspecto actual del Navbar
-     mientras está cerrado.
-  ========================================= */
-
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-
-  const accountMenuRef = useRef(null);
-
-  /* =========================================
-     SESIÓN DE USUARIO
-  ========================================= */
-
-  const [
-    sessionUser,
-    setSessionUser,
-  ] = useState(null);
-
-  const userInitials =
-    getUserInitials(
-      sessionUser
-    );
-
-  const userDisplayName =
-    getUserDisplayName(
-      sessionUser
-    );
-
-  const userAvatarUrl = String(
-    sessionUser?.avatar_url ||
-      ""
-  ).trim();
-
-  const sessionRole = String(
-    sessionUser?.role || ""
-  )
-    .trim()
-    .toUpperCase();
-
-  const accountHref =
-    sessionRole ===
-    "GERENCIA_ITALIA"
-      ? "/gerencia/perfil"
-      : ["ADMIN", "VENDEDOR"].includes(
-          sessionRole
-        )
-        ? "/admin/perfil"
-        : "/mi-cuenta";
-
-  const accountAriaLabel =
-    sessionRole ===
-    "GERENCIA_ITALIA"
-      ? "Ir a mi perfil de Gerencia"
-      : ["ADMIN", "VENDEDOR"].includes(
-          sessionRole
-        )
-        ? "Ir a mi perfil del backoffice"
-        : sessionRole ===
-            "USUARIO_EMPRESA"
-          ? "Ir a mi empresa"
-          : "Ir a mi cuenta";
-
-  /* =========================================
-     MENÚ DE PRODUCTOS
-  ========================================= */
-
-  const [
-    productsOpen,
-    setProductsOpen,
-  ] = useState(false);
-
-  const [
-    mobileProductsOpen,
-    setMobileProductsOpen,
-  ] = useState(false);
-
-  const [
-    mobileProductGroup,
-    setMobileProductGroup,
-  ] = useState(
-    "laminados"
-  );
-
-  const [
-    activeProductGroup,
-    setActiveProductGroup,
-  ] = useState(
-    "laminados"
-  );
-
-  const [
-    activeHplBrand,
-    setActiveHplBrand,
-  ] = useState(
-    "abet"
-  );
-
-  const [
-    catalogBrands,
-    setCatalogBrands,
-  ] = useState([]);
-
-  const [
-    activeLaminateBrandId,
-    setActiveLaminateBrandId,
-  ] = useState(null);
-
-  const [
-    catalogLoading,
-    setCatalogLoading,
-  ] = useState(false);
-
-  const [
-    catalogError,
-    setCatalogError,
-  ] = useState("");
-
-  const items = useCartStore(
-
-    (state) => state.items
-
-  );
-
-  /**
-
-*   * Cantidad de PRODUCTOS DISTINTOS en el carrito.*
-
-*   **
-
-*   * Ejemplos:*
-
-*   * - 10 unidades de Apple Tree 668 = 1*
-
-*   * - 3 unidades de Samoa 1860 = 1*
-
-*   * - Apple Tree + Samoa = 2*
-
-*   **
-
-*   * No suma item.quantity.*
-
-*   */
-
-  const totalProducts = new Set(
-
-    items.map(
-
-      (item, index) =>
-
-        item.product_id ||
-
+    const pathname = usePathname();
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    /* =========================================
+       MENÚ DE ACCESO / REGISTRO
+       Mantiene el aspecto actual del Navbar
+       mientras está cerrado.
+    ========================================= */
+    const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+    const accountMenuRef = useRef(null);
+    /* =========================================
+       SESIÓN DE USUARIO
+    ========================================= */
+    const [sessionUser, setSessionUser,] = useState(null);
+    const userInitials = getUserInitials(sessionUser);
+    const userDisplayName = getUserDisplayName(sessionUser);
+    const userAvatarUrl = String(sessionUser?.avatar_url ||
+        "").trim();
+    const sessionRole = String(sessionUser?.role || "")
+        .trim()
+        .toUpperCase();
+    const accountHref = sessionRole ===
+        "GERENCIA_ITALIA"
+        ? "/gerencia/perfil"
+        : ["ADMIN", "VENDEDOR"].includes(sessionRole)
+            ? "/admin/perfil"
+            : "/mi-cuenta";
+    const accountAriaLabel = sessionRole ===
+        "GERENCIA_ITALIA"
+        ? "Ir a mi perfil de Gerencia"
+        : ["ADMIN", "VENDEDOR"].includes(sessionRole)
+            ? "Ir a mi perfil del backoffice"
+            : sessionRole ===
+                "USUARIO_EMPRESA"
+                ? "Ir a mi empresa"
+                : "Ir a mi cuenta";
+    /* =========================================
+       MENÚ DE PRODUCTOS
+    ========================================= */
+    const [productsOpen, setProductsOpen,] = useState(false);
+    const [mobileProductsOpen, setMobileProductsOpen,] = useState(false);
+    const [mobileProductGroup, setMobileProductGroup,] = useState("laminados");
+    const [activeProductGroup, setActiveProductGroup,] = useState("laminados");
+    const [activeHplBrand, setActiveHplBrand,] = useState("abet");
+    const [catalogBrands, setCatalogBrands,] = useState([]);
+    const [activeLaminateBrandId, setActiveLaminateBrandId,] = useState(null);
+    const [catalogLoading, setCatalogLoading,] = useState(false);
+    const [catalogError, setCatalogError,] = useState("");
+    const items = useCartStore((state) => state.items);
+    /**
+  
+  *   * Cantidad de PRODUCTOS DISTINTOS en el carrito.*
+  
+  *   **
+  
+  *   * Ejemplos:*
+  
+  *   * - 10 unidades de Apple Tree 668 = 1*
+  
+  *   * - 3 unidades de Samoa 1860 = 1*
+  
+  *   * - Apple Tree + Samoa = 2*
+  
+  *   **
+  
+  *   * No suma item.quantity.*
+  
+  *   */
+    const totalProducts = new Set(items.map((item, index) => item.product_id ||
         item.id ||
-
         item.slug ||
-
-        `cart-item-${index}`
-
-    )
-
-  ).size;
-
-  const cartAriaLabel =
-
-    totalProducts === 1
-
-      ? "Carrito con 1 producto"
-
-      : `Carrito con ${totalProducts} productos`;
-
-  const isActive = (href) => {
-
-    if (href === "/") {
-
-      return pathname === "/";
-
-    }
-
-    return pathname.startsWith(href);
-
-  };
-
-  const normalizeCatalogName = (
-    value
-  ) =>
-    String(
-      value || ""
-    )
-      .trim()
-      .toLowerCase()
-      .normalize(
-        "NFD"
-      )
-      .replace(
-        /[\u0300-\u036f]/g,
-        ""
-      );
-
-  const laminateBrands =
-    catalogBrands.filter(
-      (brand) => {
-        const name =
-          normalizeCatalogName(
-            brand?.name
-          );
-
-        return (
-          name.includes(
-            "abet"
-          ) ||
-          name.includes(
-            "karikal"
-          )
-        );
-      }
-    );
-
-  const activeLaminateBrand =
-    laminateBrands.find(
-      (brand) =>
-        brand.id ===
-        activeLaminateBrandId
-    ) ||
-    laminateBrands[0] ||
-    null;
-
-
-  /* =========================================
-     CARGAR MARCAS + COLECCIONES
-     BAJO DEMANDA: evita competir con LCP.
-  ========================================= */
-
-  useEffect(() => {
-    const shouldLoadCatalog =
-      productsOpen ||
-      mobileProductsOpen;
-
-    if (
-      !shouldLoadCatalog ||
-      catalogBrands.length > 0
-    ) {
-      return undefined;
-    }
-
-    const controller =
-      new AbortController();
-
-    const loadCatalogNavigation =
-      async () => {
-        try {
-          setCatalogLoading(true);
-          setCatalogError("");
-
-          const response =
-            await fetch(
-              `${API_BASE_URL}/catalog/navigation`,
-              {
-                method: "GET",
-                signal:
-                  controller.signal,
-                cache: "no-store",
-              }
-            );
-
-          const data =
-            await response.json();
-
-          if (
-            !response.ok ||
-            !data?.success
-          ) {
-            throw new Error(
-              data?.message ||
-                "No fue posible cargar el catálogo."
-            );
-          }
-
-          const brands =
-            Array.isArray(
-              data.brands
-            )
-              ? data.brands
-              : [];
-
-          setCatalogBrands(
-            brands
-          );
-
-          const laminates =
-            brands.filter(
-              (brand) => {
-                const name =
-                  String(
-                    brand?.name ||
-                      ""
-                  )
-                    .trim()
-                    .toLowerCase()
-                    .normalize(
-                      "NFD"
-                    )
-                    .replace(
-                      /[\u0300-\u036f]/g,
-                      ""
-                    );
-
-                return (
-                  name.includes(
-                    "abet"
-                  ) ||
-                  name.includes(
-                    "karikal"
-                  )
-                );
-              }
-            );
-
-          setActiveLaminateBrandId(
-            (current) =>
-              current &&
-              laminates.some(
-                (brand) =>
-                  brand.id ===
-                  current
-              )
-                ? current
-                : laminates[0]
-                    ?.id ||
-                  null
-          );
-        } catch (error) {
-          if (
-            error?.name ===
-            "AbortError"
-          ) {
-            return;
-          }
-
-          console.error(
-            "Error cargando navegación del catálogo:",
-            error
-          );
-
-          setCatalogBrands([]);
-          setActiveLaminateBrandId(
-            null
-          );
-          setCatalogError(
-            "No fue posible cargar las colecciones."
-          );
-        } finally {
-          if (
-            !controller.signal.aborted
-          ) {
-            setCatalogLoading(
-              false
-            );
-          }
+        `cart-item-${index}`)).size;
+    const cartAriaLabel = totalProducts === 1
+        ? "Carrito con 1 producto"
+        : `Carrito con ${totalProducts} productos`;
+    const isActive = (href) => {
+        if (href === "/") {
+            return pathname === "/";
         }
-      };
-
-    loadCatalogNavigation();
-
-    return () => {
-      controller.abort();
+        return pathname.startsWith(href);
     };
-  }, [
-    productsOpen,
-    mobileProductsOpen,
-    catalogBrands.length,
-  ]);
-
-  /* =========================================*
-
-*     CERRAR MENÚS AL CAMBIAR RUTA*
-
-*  ========================================= */
-
-  useEffect(() => {
-
-    setMenuOpen(false);
-
-    setSearchOpen(false);
-
-    setProductsOpen(false);
-
-    setAccountMenuOpen(false);
-
-    setMobileProductsOpen(
-
-      false
-
-    );
-
-    setMobileProductGroup(
-
-      "laminados"
-
-    );
-
-    setActiveProductGroup(
-
-      "laminados"
-
-    );
-
-  }, [pathname]);
-
-  /* =========================================
-     SINCRONIZAR SESIÓN
-     La autenticación real se valida en backend
-     mediante cookie HttpOnly.
-  ========================================= */
-
-  useEffect(() => {
-    let active = true;
-
-    const isSupportedRole = (role) =>
-      [
-        "ADMIN",
-        "VENDEDOR",
-        "GERENCIA_ITALIA",
-        "CLIENTE",
-        "USUARIO_EMPRESA",
-      ].includes(
-        String(role || "")
-          .trim()
-          .toUpperCase()
-      );
-
-    const syncSession = async () => {
-      const cachedUser =
-        getStoredUser();
-
-      if (
-        active &&
-        cachedUser &&
-        isSupportedRole(
-          cachedUser.role
-        )
-      ) {
-        setSessionUser(
-          cachedUser
-        );
-      }
-
-      try {
-        const response =
-          await apiRequest(
-            "/auth/me"
-          );
-
-        if (!active) {
-          return;
+    const normalizeCatalogName = (value) => String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    const laminateBrands = catalogBrands.filter((brand) => {
+        const name = normalizeCatalogName(brand?.name);
+        return (name.includes("abet") ||
+            name.includes("karikal"));
+    });
+    const activeLaminateBrand = laminateBrands.find((brand) => brand.id ===
+        activeLaminateBrandId) ||
+        laminateBrands[0] ||
+        null;
+    /* =========================================
+       CARGAR MARCAS + COLECCIONES
+       BAJO DEMANDA: evita competir con LCP.
+    ========================================= */
+    useEffect(() => {
+        const shouldLoadCatalog = productsOpen ||
+            mobileProductsOpen;
+        if (!shouldLoadCatalog ||
+            catalogBrands.length > 0) {
+            return undefined;
         }
-
-        const currentUser =
-          response?.user ||
-          null;
-
-        if (
-          currentUser &&
-          isSupportedRole(
-            currentUser.role
-          )
-        ) {
-          setSessionUser(
-            currentUser
-          );
-          return;
-        }
-
-        setSessionUser(null);
-      } catch (error) {
-        if (!active) {
-          return;
-        }
-
-        if (
-          error?.status === 401 ||
-          error?.status === 403
-        ) {
-          setSessionUser(null);
-
-          if (
-            typeof window !==
-            "undefined"
-          ) {
-            window.localStorage.removeItem(
-              "user"
-            );
-          }
-
-          return;
-        }
-
-        if (!cachedUser) {
-          setSessionUser(null);
-        }
-      }
-    };
-
-    syncSession();
-
-    const handleSessionChange = () => {
-      syncSession();
-    };
-
-    window.addEventListener(
-      "storage",
-      handleSessionChange
-    );
-
-    window.addEventListener(
-      AUTH_CHANGED_EVENT,
-      handleSessionChange
-    );
-
-    return () => {
-      active = false;
-
-      window.removeEventListener(
-        "storage",
-        handleSessionChange
-      );
-
-      window.removeEventListener(
-        AUTH_CHANGED_EVENT,
-        handleSessionChange
-      );
-    };
-  }, []);
-
-  /* =========================================
-     PRESENCIA REALTIME GLOBAL
-     Una sola conexión compartida para cualquier
-     usuario autenticado. Las salas privadas se
-     siguen resolviendo en backend por rol.
-  ========================================= */
-
-  useEffect(() => {
-    if (!sessionUser?.id) {
-      /*
-       * Sólo cerramos realtime cuando ya no existe
-       * una sesión autenticada. No lo cerramos en el
-       * cleanup porque el socket es compartido por
-       * Navbar, notificaciones y presencia.
-       */
-      disconnectRealtimeSocket();
-      return;
-    }
-
-    connectRealtimeSocket();
-  }, [sessionUser?.id]);
-
-  /* =========================================
-     CERRAR MENÚ DE CUENTA AL HACER CLICK
-     FUERA DEL POPOVER
-  ========================================= */
-
-  useEffect(() => {
-    const handlePointerDown = (event) => {
-      if (
-        accountMenuRef.current &&
-        !accountMenuRef.current.contains(event.target)
-      ) {
-        setAccountMenuOpen(false);
-      }
-    };
-
-    document.addEventListener(
-      "pointerdown",
-      handlePointerDown
-    );
-
-    return () => {
-      document.removeEventListener(
-        "pointerdown",
-        handlePointerDown
-      );
-    };
-  }, []);
-
-  /* =========================================*
-
-*     ESCAPE*
-
-*  ========================================= */
-
-  useEffect(() => {
-
-    const handleEscape = (
-
-      event
-
-    ) => {
-
-      if (
-
-        event.key === "Escape"
-
-      ) {
-
-        setSearchOpen(false);
-
+        const controller = new AbortController();
+        const loadCatalogNavigation = async () => {
+            try {
+                setCatalogLoading(true);
+                setCatalogError("");
+                const response = await fetch(`${API_BASE_URL}/catalog/navigation`, {
+                    method: "GET",
+                    signal: controller.signal,
+                    cache: "no-store",
+                });
+                const data = await response.json();
+                if (!response.ok ||
+                    !data?.success) {
+                    throw new Error(data?.message ||
+                        "No fue posible cargar el catálogo.");
+                }
+                const brands = Array.isArray(data.brands)
+                    ? data.brands
+                    : [];
+                setCatalogBrands(brands);
+                const laminates = brands.filter((brand) => {
+                    const name = String(brand?.name ||
+                        "")
+                        .trim()
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "");
+                    return (name.includes("abet") ||
+                        name.includes("karikal"));
+                });
+                setActiveLaminateBrandId((current) => current &&
+                    laminates.some((brand) => brand.id ===
+                        current)
+                    ? current
+                    : laminates[0]
+                        ?.id ||
+                        null);
+            }
+            catch (error) {
+                if (error?.name ===
+                    "AbortError") {
+                    return;
+                }
+                console.error("Error cargando navegación del catálogo:", error);
+                setCatalogBrands([]);
+                setActiveLaminateBrandId(null);
+                setCatalogError("No fue posible cargar las colecciones.");
+            }
+            finally {
+                if (!controller.signal.aborted) {
+                    setCatalogLoading(false);
+                }
+            }
+        };
+        loadCatalogNavigation();
+        return () => {
+            controller.abort();
+        };
+    }, [
+        productsOpen,
+        mobileProductsOpen,
+        catalogBrands.length,
+    ]);
+    /* =========================================*
+  
+  *     CERRAR MENÚS AL CAMBIAR RUTA*
+  
+  *  ========================================= */
+    useEffect(() => {
         setMenuOpen(false);
-
-        setProductsOpen(
-
-          false
-
-        );
-
-        setMobileProductsOpen(
-
-          false
-
-        );
-
+        setSearchOpen(false);
+        setProductsOpen(false);
         setAccountMenuOpen(false);
-
-      }
-
+        setMobileProductsOpen(false);
+        setMobileProductGroup("laminados");
+        setActiveProductGroup("laminados");
+    }, [pathname]);
+    /* =========================================
+       SINCRONIZAR SESIÓN
+       La autenticación real se valida en backend
+       mediante cookie HttpOnly.
+    ========================================= */
+    useEffect(() => {
+        let active = true;
+        const isSupportedRole = (role) => [
+            "ADMIN",
+            "VENDEDOR",
+            "GERENCIA_ITALIA",
+            "CLIENTE",
+            "USUARIO_EMPRESA",
+        ].includes(String(role || "")
+            .trim()
+            .toUpperCase());
+        const syncSession = async () => {
+            const cachedUser = getStoredUser();
+            if (active &&
+                cachedUser &&
+                isSupportedRole(cachedUser.role)) {
+                setSessionUser(cachedUser);
+            }
+            try {
+                const response = await apiRequest("/auth/me");
+                if (!active) {
+                    return;
+                }
+                const currentUser = response?.user ||
+                    null;
+                if (currentUser &&
+                    isSupportedRole(currentUser.role)) {
+                    setSessionUser(currentUser);
+                    return;
+                }
+                setSessionUser(null);
+            }
+            catch (error) {
+                if (!active) {
+                    return;
+                }
+                if (error?.status === 401 ||
+                    error?.status === 403) {
+                    setSessionUser(null);
+                    if (typeof window !==
+                        "undefined") {
+                        window.localStorage.removeItem("user");
+                    }
+                    return;
+                }
+                if (!cachedUser) {
+                    setSessionUser(null);
+                }
+            }
+        };
+        syncSession();
+        const handleSessionChange = () => {
+            syncSession();
+        };
+        window.addEventListener("storage", handleSessionChange);
+        window.addEventListener(AUTH_CHANGED_EVENT, handleSessionChange);
+        return () => {
+            active = false;
+            window.removeEventListener("storage", handleSessionChange);
+            window.removeEventListener(AUTH_CHANGED_EVENT, handleSessionChange);
+        };
+    }, []);
+    /* =========================================
+       PRESENCIA REALTIME GLOBAL
+       Una sola conexión compartida para cualquier
+       usuario autenticado. Las salas privadas se
+       siguen resolviendo en backend por rol.
+    ========================================= */
+    useEffect(() => {
+        if (!sessionUser?.id) {
+            /*
+             * Sólo cerramos realtime cuando ya no existe
+             * una sesión autenticada. No lo cerramos en el
+             * cleanup porque el socket es compartido por
+             * Navbar, notificaciones y presencia.
+             */
+            disconnectRealtimeSocket();
+            return;
+        }
+        connectRealtimeSocket();
+    }, [sessionUser?.id]);
+    /* =========================================
+       CERRAR MENÚ DE CUENTA AL HACER CLICK
+       FUERA DEL POPOVER
+    ========================================= */
+    useEffect(() => {
+        const handlePointerDown = (event) => {
+            if (accountMenuRef.current &&
+                !accountMenuRef.current.contains(event.target)) {
+                setAccountMenuOpen(false);
+            }
+        };
+        document.addEventListener("pointerdown", handlePointerDown);
+        return () => {
+            document.removeEventListener("pointerdown", handlePointerDown);
+        };
+    }, []);
+    /* =========================================*
+  
+  *     ESCAPE*
+  
+  *  ========================================= */
+    useEffect(() => {
+        const handleEscape = (event) => {
+            if (event.key === "Escape") {
+                setSearchOpen(false);
+                setMenuOpen(false);
+                setProductsOpen(false);
+                setMobileProductsOpen(false);
+                setAccountMenuOpen(false);
+            }
+        };
+        window.addEventListener("keydown", handleEscape);
+        return () => {
+            window.removeEventListener("keydown", handleEscape);
+        };
+    }, []);
+    const toggleSearch = () => {
+        setSearchOpen((current) => !current);
+        setMenuOpen(false);
+        setProductsOpen(false);
+        setAccountMenuOpen(false);
     };
-
-    window.addEventListener(
-
-      "keydown",
-
-      handleEscape
-
-    );
-
-    return () => {
-
-      window.removeEventListener(
-
-        "keydown",
-
-        handleEscape
-
-      );
-
+    const toggleMenu = () => {
+        setMenuOpen((current) => !current);
+        setSearchOpen(false);
+        setProductsOpen(false);
+        setAccountMenuOpen(false);
     };
+    /*
+     * Los filtros del catálogo cambian solamente el query string
+     * (/productos?collection=...), por lo que `pathname` sigue
+     * siendo /productos y el efecto que escucha pathname no se
+     * vuelve a ejecutar. Cerramos el menú explícitamente al
+     * seleccionar cualquier enlace del catálogo móvil.
+     */
+    const closeMobileNavigation = () => {
+        setMenuOpen(false);
+        setMobileProductsOpen(false);
+        setMobileProductGroup("laminados");
+        setSearchOpen(false);
+        setProductsOpen(false);
+        setAccountMenuOpen(false);
+    };
+    const openDesktopProducts = () => {
+        setProductsOpen(true);
+        setSearchOpen(false);
+        setAccountMenuOpen(false);
+    };
+    const toggleDesktopProducts = () => {
+        setProductsOpen((current) => !current);
+        setSearchOpen(false);
+        setAccountMenuOpen(false);
+    };
+    const toggleMobileProducts = () => {
+        setMobileProductsOpen((current) => !current);
+    };
+    const toggleMobileProductGroup = (group) => {
+        setMobileProductGroup((current) => current === group
+            ? null
+            : group);
+    };
+    return (<>
 
-  }, []);
-
-  const toggleSearch = () => {
-
-    setSearchOpen(
-      (current) => !current
-    );
-
-    setMenuOpen(false);
-
-    setProductsOpen(false);
-
-    setAccountMenuOpen(false);
-
-  };
-
-  const toggleMenu = () => {
-
-    setMenuOpen(
-      (current) => !current
-    );
-
-    setSearchOpen(false);
-
-    setProductsOpen(false);
-
-    setAccountMenuOpen(false);
-
-  };
-
-  /*
-   * Los filtros del catálogo cambian solamente el query string
-   * (/productos?collection=...), por lo que `pathname` sigue
-   * siendo /productos y el efecto que escucha pathname no se
-   * vuelve a ejecutar. Cerramos el menú explícitamente al
-   * seleccionar cualquier enlace del catálogo móvil.
-   */
-  const closeMobileNavigation = () => {
-    setMenuOpen(false);
-    setMobileProductsOpen(false);
-    setMobileProductGroup("laminados");
-    setSearchOpen(false);
-    setProductsOpen(false);
-    setAccountMenuOpen(false);
-  };
-
-  const openDesktopProducts = () => {
-
-    setProductsOpen(true);
-
-    setSearchOpen(false);
-
-    setAccountMenuOpen(false);
-
-  };
-
-  const toggleDesktopProducts = () => {
-
-    setProductsOpen(
-      (current) => !current
-    );
-
-    setSearchOpen(false);
-
-    setAccountMenuOpen(false);
-
-  };
-
-  const toggleMobileProducts = () => {
-
-    setMobileProductsOpen(
-      (current) => !current
-    );
-
-  };
-
-  const toggleMobileProductGroup = (
-    group
-  ) => {
-
-    setMobileProductGroup(
-      (current) =>
-        current === group
-          ? null
-          : group
-    );
-
-  };
-
-  return (
-
-    <>
-
-      <header
-
-        className="sticky top-0 z-50 border-b border-black/5 bg-white/95 backdrop-blur-xl"
-
-        onMouseLeave={() => {
-          setProductsOpen(false);
-          setAccountMenuOpen(false);
-        }}
-
-      >
+      <header className="sticky top-0 z-50 border-b border-black/5 bg-white/95 backdrop-blur-xl" onMouseLeave={() => {
+            setProductsOpen(false);
+            setAccountMenuOpen(false);
+        }}>
 
         {/* NAV PRINCIPAL */}
 
@@ -937,377 +463,121 @@ export default function Navbar() {
 
           {/* LOGO */}
 
-          <Link
-            href="/"
-            aria-label="Ir al inicio"
-            onMouseEnter={() =>
-              setProductsOpen(false)
-            }
-            className="flex shrink-0 items-center"
-          >
-            <Image
-              src="/images/logo-laminati-world.png"
-              alt="Laminati World"
-              width={600}
-              height={180}
-              sizes="(max-width: 639px) 125px, (max-width: 767px) 140px, (max-width: 1023px) 155px, (max-width: 1279px) 175px, 190px"
-              loading="eager"
-              className="h-auto w-[125px] object-contain sm:w-[140px] md:w-[155px] lg:w-[175px] xl:w-[190px]"
-            />
+          <Link href="/" aria-label="Ir al inicio" onMouseEnter={() => setProductsOpen(false)} className="flex shrink-0 items-center">
+            <Image src="/images/logo-laminati-world.png" alt="Laminati World" width={600} height={180} sizes="(max-width: 639px) 125px, (max-width: 767px) 140px, (max-width: 1023px) 155px, (max-width: 1279px) 175px, 190px" loading="eager" className="h-auto w-[125px] object-contain sm:w-[140px] md:w-[155px] lg:w-[175px] xl:w-[190px]"/>
           </Link>
 
           {/* =====================================
-              NAVEGACIÓN DESKTOP
-          ===================================== */}
+            NAVEGACIÓN DESKTOP
+        ===================================== */}
 
           <nav className="hidden items-center gap-7 lg:flex xl:gap-9">
 
-            {navItems.map(
-              (item) => {
-                const active =
-                  isActive(
-                    item.href
-                  );
-
-                if (
-                  item.label ===
-                  "Productos"
-                ) {
-                  return (
-                    <div
-                      key={
-                        item.href
-                      }
-                      className="relative"
-                      onMouseEnter={
-                        openDesktopProducts
-                      }
-                    >
-                      <button
-                        type="button"
-                        onClick={
-                          toggleDesktopProducts
-                        }
-                        aria-expanded={
-                          productsOpen
-                        }
-                        aria-controls="desktop-products-menu"
-                        className={`relative flex items-center gap-1.5 py-2 text-sm font-medium transition-colors ${
-                          active ||
-                          productsOpen
-                            ? "text-black"
-                            : "text-neutral-500 hover:text-black"
-                        }`}
-                      >
+            {navItems.map((item) => {
+            const active = isActive(item.href);
+            if (item.label ===
+                "Productos") {
+                return (<div key={item.href} className="relative" onMouseEnter={openDesktopProducts}>
+                      <button type="button" onClick={toggleDesktopProducts} aria-expanded={productsOpen} aria-controls="desktop-products-menu" className={`relative flex items-center gap-1.5 py-2 text-sm font-medium transition-colors ${active ||
+                        productsOpen
+                        ? "text-black"
+                        : "text-neutral-600 hover:text-black"}`}>
                         <span>
                           Productos
                         </span>
 
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          aria-hidden="true"
-                          className={`transition-transform duration-200 ${
-                            productsOpen
-                              ? "rotate-180"
-                              : ""
-                          }`}
-                        >
-                          <path
-                            d="m7 9 5 5 5-5"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className={`transition-transform duration-200 ${productsOpen
+                        ? "rotate-180"
+                        : ""}`}>
+                          <path d="m7 9 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
 
-                        {active && (
-                          <motion.span
-                            layoutId="navbar-active"
-                            className="absolute inset-x-0 -bottom-1 h-px bg-black"
-                          />
-                        )}
+                        {active && (<span className="absolute inset-x-0 -bottom-1 h-px bg-black"/>)}
                       </button>
-                    </div>
-                  );
-                }
+                    </div>);
+            }
+            return (<Link key={item.href} href={item.href} onMouseEnter={() => setProductsOpen(false)} className={`relative py-2 text-sm font-medium transition-colors ${active
+                    ? "text-black"
+                    : "text-neutral-600 hover:text-black"}`}>
+                    {item.label}
 
-                return (
-                  <Link
-                    key={
-                      item.href
-                    }
-                    href={
-                      item.href
-                    }
-                    onMouseEnter={() =>
-                      setProductsOpen(
-                        false
-                      )
-                    }
-                    className={`relative py-2 text-sm font-medium transition-colors ${
-                      active
-                        ? "text-black"
-                        : "text-neutral-500 hover:text-black"
-                    }`}
-                  >
-                    {
-                      item.label
-                    }
-
-                    {active && (
-                      <motion.span
-                        layoutId="navbar-active"
-                        className="absolute inset-x-0 -bottom-1 h-px bg-black"
-                      />
-                    )}
-                  </Link>
-                );
-              }
-            )}
+                    {active && (<span className="absolute inset-x-0 -bottom-1 h-px bg-black"/>)}
+                  </Link>);
+        })}
 
           </nav>
 
           {/* ACCIONES */}
 
-          <div
-
-            className="flex items-center gap-2"
-
-            onMouseEnter={() =>
-
-              setProductsOpen(
-
-                false
-
-              )
-
-            }
-
-          >
+          <div className="flex items-center gap-2" onMouseEnter={() => setProductsOpen(false)}>
 
             {/* BUSCAR */}
 
-            <button
+            <button type="button" onClick={toggleSearch} aria-label={searchOpen
+            ? "Cerrar buscador"
+            : "Buscar productos"} aria-expanded={searchOpen} className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${searchOpen
+            ? "border-black bg-black text-white"
+            : "border-black/10 text-black hover:bg-neutral-100"}`}>
 
-              type="button"
-
-              onClick={
-
-                toggleSearch
-
-              }
-
-              aria-label={
-
-                searchOpen
-
-                  ? "Cerrar buscador"
-
-                  : "Buscar productos"
-
-              }
-
-              aria-expanded={
-
-                searchOpen
-
-              }
-
-              className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${
-
-                searchOpen
-
-                  ? "border-black bg-black text-white"
-
-                  : "border-black/10 text-black hover:bg-neutral-100"
-
-              }`}
-
-            >
-
-              {searchOpen ? (
-
-                <span className="text-xl leading-none">
+              {searchOpen ? (<span className="text-xl leading-none">
 
                   ×
 
-                </span>
+                </span>) : (<svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 
-              ) : (
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.7"/>
 
-                <svg
+                  <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
 
-                  width="19"
-
-                  height="19"
-
-                  viewBox="0 0 24 24"
-
-                  fill="none"
-
-                  aria-hidden="true"
-
-                >
-
-                  <circle
-
-                    cx="11"
-
-                    cy="11"
-
-                    r="7"
-
-                    stroke="currentColor"
-
-                    strokeWidth="1.7"
-
-                  />
-
-                  <path
-
-                    d="M16.5 16.5L21 21"
-
-                    stroke="currentColor"
-
-                    strokeWidth="1.7"
-
-                    strokeLinecap="round"
-
-                  />
-
-                </svg>
-
-              )}
+                </svg>)}
 
             </button>
 
             {/* CENTRO DE NOTIFICACIONES BACKOFFICE */}
 
             {[
-              "ADMIN",
-              "VENDEDOR",
-            ].includes(sessionRole) && (
-              <AdminNotificationCenter />
-            )}
+            "ADMIN",
+            "VENDEDOR",
+        ].includes(sessionRole) && (<AdminNotificationCenter />)}
 
             {/* SESIÓN / LOGIN DESKTOP */}
 
-            {sessionUser ? (
-              sessionRole === "VENDEDOR" ? (
-                <Link
-                  href={accountHref}
-                  aria-label={accountAriaLabel}
-                  className="hidden max-w-[190px] items-center gap-2 rounded-full border border-black/10 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-black lg:flex"
-                >
+            {sessionUser ? (sessionRole === "VENDEDOR" ? (<Link href={accountHref} aria-label={accountAriaLabel} className="hidden max-w-[190px] items-center gap-2 rounded-full border border-black/10 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-black lg:flex">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-[9px] font-semibold uppercase tracking-[0.06em] text-white">
-                    {userAvatarUrl ? (
-                      <img
-                        src={userAvatarUrl}
-                        alt={userDisplayName || "Foto de perfil"}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      userInitials
-                    )}
+                    {userAvatarUrl ? (<img src={userAvatarUrl} alt={userDisplayName || "Foto de perfil"} className="h-full w-full object-cover"/>) : (userInitials)}
                   </span>
 
                   <span className="truncate">
                     {userDisplayName || "Vendedor"}
                   </span>
-                </Link>
-              ) : (
-                <Link
-                  href={accountHref}
-                  aria-label={accountAriaLabel}
-                  className="hidden h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-black/10 bg-white transition hover:bg-neutral-100 lg:flex"
-                >
-                  {userAvatarUrl ? (
-                    <img
-                      src={userAvatarUrl}
-                      alt={userDisplayName || "Foto de perfil"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span
-                      className="text-xs font-semibold uppercase leading-none tracking-[0.06em]"
-                      style={{ color: "#171717" }}
-                    >
+                </Link>) : (<Link href={accountHref} aria-label={accountAriaLabel} className="hidden h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-black/10 bg-white transition hover:bg-neutral-100 lg:flex">
+                  {userAvatarUrl ? (<img src={userAvatarUrl} alt={userDisplayName || "Foto de perfil"} className="h-full w-full object-cover"/>) : (<span className="text-xs font-semibold uppercase leading-none tracking-[0.06em]" style={{ color: "#171717" }}>
                       {userInitials}
-                    </span>
-                  )}
-                </Link>
-              )
-            ) : (
-              <div
-                ref={accountMenuRef}
-                className="relative hidden lg:block"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccountMenuOpen(
-                      (current) => !current
-                    );
-
-                    setSearchOpen(false);
-                    setProductsOpen(false);
-                  }}
-                  aria-expanded={accountMenuOpen}
-                  aria-haspopup="menu"
-                  className="rounded-full px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-black"
-                >
+                    </span>)}
+                </Link>)) : (<div ref={accountMenuRef} className="relative hidden lg:block">
+                <button type="button" onClick={() => {
+                setAccountMenuOpen((current) => !current);
+                setSearchOpen(false);
+                setProductsOpen(false);
+            }} aria-expanded={accountMenuOpen} aria-haspopup="menu" className="rounded-full px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-black">
                   Ingresar
                 </button>
 
-                <AnimatePresence>
-                  {accountMenuOpen && (
-                    <motion.div
-                      initial={{
-                        opacity: 0,
-                        y: -6,
-                        scale: 0.985,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                      }}
-                      exit={{
-                        opacity: 0,
-                        y: -6,
-                        scale: 0.985,
-                      }}
-                      transition={{
-                        duration: 0.16,
-                        ease: "easeOut",
-                      }}
-                      role="menu"
-                      className="absolute right-0 top-[calc(100%+10px)] z-[80] w-[290px] overflow-hidden rounded-2xl border border-black/[0.08] bg-white p-2 shadow-[0_24px_70px_rgba(0,0,0,0.14)]"
-                    >
+                <>
+                  {accountMenuOpen && (<div role="menu" className="absolute right-0 top-[calc(100%+10px)] z-[80] w-[290px] overflow-hidden rounded-2xl border border-black/[0.08] bg-white p-2 shadow-[0_24px_70px_rgba(0,0,0,0.14)]">
                       <div className="px-3 pb-2 pt-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                           Tu cuenta
                         </p>
                       </div>
 
-                      <Link
-                        href="/login"
-                        role="menuitem"
-                        onClick={() =>
-                          setAccountMenuOpen(false)
-                        }
-                        className="group flex items-center justify-between gap-4 rounded-xl px-3 py-3 transition hover:bg-neutral-50"
-                      >
+                      <Link href="/login" role="menuitem" onClick={() => setAccountMenuOpen(false)} className="group flex items-center justify-between gap-4 rounded-xl px-3 py-3 transition hover:bg-neutral-50">
                         <span>
                           <span className="block text-sm font-semibold text-neutral-950">
                             Iniciar sesión
                           </span>
 
-                          <span className="mt-0.5 block text-[11px] leading-4 text-neutral-500">
+                          <span className="mt-0.5 block text-[11px] leading-4 text-neutral-600">
                             Accede a tu cuenta Laminati.
                           </span>
                         </span>
@@ -1317,22 +587,15 @@ export default function Navbar() {
                         </span>
                       </Link>
 
-                      <div className="my-1 h-px bg-black/[0.06]" />
+                      <div className="my-1 h-px bg-black/[0.06]"/>
 
-                      <Link
-                        href="/registro"
-                        role="menuitem"
-                        onClick={() =>
-                          setAccountMenuOpen(false)
-                        }
-                        className="group flex items-center justify-between gap-4 rounded-xl bg-[#f6f1eb] px-3 py-3 transition hover:bg-[#efe7de]"
-                      >
+                      <Link href="/registro" role="menuitem" onClick={() => setAccountMenuOpen(false)} className="group flex items-center justify-between gap-4 rounded-xl bg-[#f6f1eb] px-3 py-3 transition hover:bg-[#efe7de]">
                         <span>
                           <span className="block text-sm font-semibold text-neutral-950">
                             Crear cuenta
                           </span>
 
-                          <span className="mt-0.5 block text-[11px] leading-4 text-neutral-500">
+                          <span className="mt-0.5 block text-[11px] leading-4 text-neutral-600">
                             Regístrate para comprar y cotizar.
                           </span>
                         </span>
@@ -1341,11 +604,9 @@ export default function Navbar() {
                           →
                         </span>
                       </Link>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+                    </div>)}
+                </>
+              </div>)}
 
             {/* =====================================*
 
@@ -1357,169 +618,46 @@ export default function Navbar() {
 
 *            ===================================== */}
 
-            <Link
+            <Link href="/carrito" aria-label={cartAriaLabel} title="Carrito" className="relative flex h-10 w-10 items-center justify-center rounded-full border border-black/10 text-black transition hover:bg-neutral-100">
 
-              href="/carrito"
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 
-              aria-label={
+                <path d="M4 6H6L8 16H18L20 9H7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
 
-                cartAriaLabel
+                <circle cx="9" cy="20" r="1" fill="currentColor"/>
 
-              }
-
-              title="Carrito"
-
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-black/10 text-black transition hover:bg-neutral-100"
-
-            >
-
-              <svg
-
-                width="19"
-
-                height="19"
-
-                viewBox="0 0 24 24"
-
-                fill="none"
-
-                aria-hidden="true"
-
-              >
-
-                <path
-
-                  d="M4 6H6L8 16H18L20 9H7"
-
-                  stroke="currentColor"
-
-                  strokeWidth="1.7"
-
-                  strokeLinecap="round"
-
-                  strokeLinejoin="round"
-
-                />
-
-                <circle
-
-                  cx="9"
-
-                  cy="20"
-
-                  r="1"
-
-                  fill="currentColor"
-
-                />
-
-                <circle
-
-                  cx="17"
-
-                  cy="20"
-
-                  r="1"
-
-                  fill="currentColor"
-
-                />
+                <circle cx="17" cy="20" r="1" fill="currentColor"/>
 
               </svg>
 
               {totalProducts >
+            0 && (<span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold leading-none text-white">
 
-                0 && (
+                  {totalProducts}
 
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold leading-none text-white">
-
-                  {
-
-                    totalProducts
-
-                  }
-
-                </span>
-
-              )}
+                </span>)}
 
             </Link>
 
             {/* HAMBURGUESA */}
 
-            <button
-
-              type="button"
-
-              onClick={
-
-                toggleMenu
-
-              }
-
-              aria-label={
-
-                menuOpen
-
-                  ? "Cerrar menú"
-
-                  : "Abrir menú"
-
-              }
-
-              aria-expanded={
-
-                menuOpen
-
-              }
-
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 transition hover:bg-neutral-100 lg:hidden"
-
-            >
+            <button type="button" onClick={toggleMenu} aria-label={menuOpen
+            ? "Cerrar menú"
+            : "Abrir menú"} aria-expanded={menuOpen} className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 transition hover:bg-neutral-100 lg:hidden">
 
               <span className="relative h-4 w-5">
 
-                <span
+                <span className={`absolute left-0 top-0.5 h-px w-5 bg-black transition-all duration-300 ${menuOpen
+            ? "translate-y-[6px] rotate-45"
+            : ""}`}/>
 
-                  className={`absolute left-0 top-0.5 h-px w-5 bg-black transition-all duration-300 ${
+                <span className={`absolute left-0 top-[7px] h-px w-5 bg-black transition-all duration-300 ${menuOpen
+            ? "opacity-0"
+            : "opacity-100"}`}/>
 
-                    menuOpen
-
-                      ? "translate-y-[6px] rotate-45"
-
-                      : ""
-
-                  }`}
-
-                />
-
-                <span
-
-                  className={`absolute left-0 top-[7px] h-px w-5 bg-black transition-all duration-300 ${
-
-                    menuOpen
-
-                      ? "opacity-0"
-
-                      : "opacity-100"
-
-                  }`}
-
-                />
-
-                <span
-
-                  className={`absolute bottom-0.5 left-0 h-px w-5 bg-black transition-all duration-300 ${
-
-                    menuOpen
-
-                      ? "-translate-y-[6px] -rotate-45"
-
-                      : ""
-
-                  }`}
-
-                />
+                <span className={`absolute bottom-0.5 left-0 h-px w-5 bg-black transition-all duration-300 ${menuOpen
+            ? "-translate-y-[6px] -rotate-45"
+            : ""}`}/>
 
               </span>
 
@@ -1535,34 +673,10 @@ export default function Navbar() {
             mega menú anterior.
         ===================================== */}
 
-        <AnimatePresence>
+        <>
 
           {productsOpen &&
-            !searchOpen && (
-
-            <motion.div
-              id="desktop-products-menu"
-              initial={{
-                opacity: 0,
-                y: -8,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: -8,
-              }}
-              transition={{
-                duration: 0.18,
-                ease: "easeOut",
-              }}
-              className="absolute left-0 top-full hidden w-full border-t border-black/5 bg-white shadow-[0_24px_50px_rgba(0,0,0,0.08)] lg:block"
-              onMouseEnter={
-                openDesktopProducts
-              }
-            >
+            !searchOpen && (<div id="desktop-products-menu" className="absolute left-0 top-full hidden w-full border-t border-black/5 bg-white shadow-[0_24px_50px_rgba(0,0,0,0.08)] lg:block" onMouseEnter={openDesktopProducts}>
               <div className="site-container py-8 xl:py-10">
 
                 <div className="grid grid-cols-[220px_minmax(0,1fr)] gap-10 xl:grid-cols-[250px_minmax(0,1fr)] xl:gap-14">
@@ -1571,98 +685,44 @@ export default function Navbar() {
 
                   <div className="border-r border-black/10 pr-8">
 
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-600">
                       Productos
                     </p>
 
                     <div className="mt-4 flex flex-col gap-1">
 
                       {[
-                        {
-                          id:
-                            "laminados",
-                          label:
-                            "Laminados",
-                        },
-                        {
-                          id:
-                            "hpl",
-                          label:
-                            "HPL",
-                        },
-                        {
-                          id:
-                            "adhesivos",
-                          label:
-                            "Adhesivos",
-                        },
-                      ].map(
-                        (
-                          group
-                        ) => {
-                          const selected =
-                            activeProductGroup ===
-                            group.id;
+                {
+                    id: "laminados",
+                    label: "Laminados",
+                },
+                {
+                    id: "hpl",
+                    label: "HPL",
+                },
+                {
+                    id: "adhesivos",
+                    label: "Adhesivos",
+                },
+            ].map((group) => {
+                const selected = activeProductGroup ===
+                    group.id;
+                return (<button key={group.id} type="button" onMouseEnter={() => setActiveProductGroup(group.id)} onFocus={() => setActiveProductGroup(group.id)} onClick={() => setActiveProductGroup(group.id)} className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium">
+                              <span className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${selected
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover:scale-x-100"}`} aria-hidden="true"/>
 
-                          return (
-                            <button
-                              key={
-                                group.id
-                              }
-                              type="button"
-                              onMouseEnter={() =>
-                                setActiveProductGroup(
-                                  group.id
-                                )
-                              }
-                              onFocus={() =>
-                                setActiveProductGroup(
-                                  group.id
-                                )
-                              }
-                              onClick={() =>
-                                setActiveProductGroup(
-                                  group.id
-                                )
-                              }
-                              className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium"
-                            >
-                              <span
-                                className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${
-                                  selected
-                                    ? "scale-x-100"
-                                    : "scale-x-0 group-hover:scale-x-100"
-                                }`}
-                                aria-hidden="true"
-                              />
-
-                              <span
-                                className={`relative z-10 transition-colors duration-300 ${
-                                  selected
-                                    ? "text-white"
-                                    : "text-neutral-600 group-hover:text-white"
-                                }`}
-                              >
-                                {
-                                  group.label
-                                }
+                              <span className={`relative z-10 transition-colors duration-300 ${selected
+                        ? "text-white"
+                        : "text-neutral-600 group-hover:text-white"}`}>
+                                {group.label}
                               </span>
-                            </button>
-                          );
-                        }
-                      )}
+                            </button>);
+            })}
 
                     </div>
 
-                    <Link
-                      href="/productos"
-                      onClick={() =>
-                        setProductsOpen(
-                          false
-                        )
-                      }
-                      className="mt-6 inline-flex items-center text-xs font-medium text-neutral-500 transition hover:text-black"
-                    >
+                    <Link href="/productos" onClick={() => setProductsOpen(false)} className="mt-6 inline-flex items-center text-xs font-medium text-neutral-600 transition hover:text-black">
                       Ver todos los productos
                     </Link>
 
@@ -1672,35 +732,14 @@ export default function Navbar() {
 
                   <div className="min-w-0">
 
-                    <AnimatePresence
-                      mode="wait"
-                    >
+                    <>
 
                       {activeProductGroup ===
-                        "laminados" && (
-
-                        <motion.div
-                          key="laminados"
-                          initial={{
-                            opacity: 0,
-                            x: 10,
-                          }}
-                          animate={{
-                            opacity: 1,
-                            x: 0,
-                          }}
-                          exit={{
-                            opacity: 0,
-                            x: -8,
-                          }}
-                          transition={{
-                            duration: 0.16,
-                          }}
-                        >
+                "laminados" && (<div key="laminados">
                           <div className="flex items-end justify-between gap-6">
 
                             <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-600">
                                 Laminados
                               </p>
 
@@ -1709,15 +748,7 @@ export default function Navbar() {
                               </h3>
                             </div>
 
-                            <Link
-                              href="/productos?category=laminados"
-                              onClick={() =>
-                                setProductsOpen(
-                                  false
-                                )
-                              }
-                              className="shrink-0 text-xs font-medium text-neutral-500 transition hover:text-black"
-                            >
+                            <Link href="/productos?category=laminados" onClick={() => setProductsOpen(false)} className="shrink-0 text-xs font-medium text-neutral-600 transition hover:text-black">
                               Ver todos los laminados
                             </Link>
 
@@ -1729,91 +760,35 @@ export default function Navbar() {
 
                             <div className="border-r border-black/10 pr-6">
 
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                 Marcas
                               </p>
 
                               <div className="mt-3 flex flex-col gap-1">
 
-                                {catalogLoading ? (
-
-                                  <p className="px-3 py-3 text-sm text-neutral-400">
+                                {catalogLoading ? (<p className="px-3 py-3 text-sm text-neutral-600">
                                     Cargando...
-                                  </p>
-
-                                ) : catalogError ? (
-
-                                  <p className="px-3 py-3 text-xs leading-5 text-red-600">
+                                  </p>) : catalogError ? (<p className="px-3 py-3 text-xs leading-5 text-red-600">
                                     {catalogError}
-                                  </p>
-
-                                ) : laminateBrands.length ===
-                                  0 ? (
-
-                                  <p className="px-3 py-3 text-sm text-neutral-400">
+                                  </p>) : laminateBrands.length ===
+                    0 ? (<p className="px-3 py-3 text-sm text-neutral-600">
                                     No hay marcas visibles.
-                                  </p>
+                                  </p>) : (laminateBrands.map((brand) => {
+                    const selected = activeLaminateBrand
+                        ?.id ===
+                        brand.id;
+                    return (<button key={brand.id} type="button" onMouseEnter={() => setActiveLaminateBrandId(brand.id)} onFocus={() => setActiveLaminateBrandId(brand.id)} onClick={() => setActiveLaminateBrandId(brand.id)} className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium">
+                                          <span className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${selected
+                            ? "scale-x-100"
+                            : "scale-x-0 group-hover:scale-x-100"}`} aria-hidden="true"/>
 
-                                ) : (
-
-                                  laminateBrands.map(
-                                    (
-                                      brand
-                                    ) => {
-                                      const selected =
-                                        activeLaminateBrand
-                                          ?.id ===
-                                        brand.id;
-
-                                      return (
-                                        <button
-                                          key={
-                                            brand.id
-                                          }
-                                          type="button"
-                                          onMouseEnter={() =>
-                                            setActiveLaminateBrandId(
-                                              brand.id
-                                            )
-                                          }
-                                          onFocus={() =>
-                                            setActiveLaminateBrandId(
-                                              brand.id
-                                            )
-                                          }
-                                          onClick={() =>
-                                            setActiveLaminateBrandId(
-                                              brand.id
-                                            )
-                                          }
-                                          className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium"
-                                        >
-                                          <span
-                                            className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${
-                                              selected
-                                                ? "scale-x-100"
-                                                : "scale-x-0 group-hover:scale-x-100"
-                                            }`}
-                                            aria-hidden="true"
-                                          />
-
-                                          <span
-                                            className={`relative z-10 transition-colors duration-300 ${
-                                              selected
-                                                ? "text-white"
-                                                : "text-neutral-600 group-hover:text-white"
-                                            }`}
-                                          >
-                                            {
-                                              brand.name
-                                            }
+                                          <span className={`relative z-10 transition-colors duration-300 ${selected
+                            ? "text-white"
+                            : "text-neutral-600 group-hover:text-white"}`}>
+                                            {brand.name}
                                           </span>
-                                        </button>
-                                      );
-                                    }
-                                  )
-
-                                )}
+                                        </button>);
+                }))}
 
                               </div>
 
@@ -1823,155 +798,71 @@ export default function Navbar() {
 
                             <div className="min-w-0">
 
-                              {activeLaminateBrand ? (
-
-                                <>
+                              {activeLaminateBrand ? (<>
 
                                   <div className="flex items-end justify-between gap-6">
 
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                         Colecciones
                                       </p>
 
                                       <h4 className="mt-2 text-xl font-medium tracking-[-0.025em] text-neutral-950">
-                                        {
-                                          activeLaminateBrand.name
-                                        }
+                                        {activeLaminateBrand.name}
                                       </h4>
                                     </div>
 
-                                    <Link
-                                      href={`/productos?brand=${encodeURIComponent(
-                                        activeLaminateBrand.slug
-                                      )}`}
-                                      onClick={() =>
-                                        setProductsOpen(
-                                          false
-                                        )
-                                      }
-                                      className="shrink-0 text-xs font-medium text-neutral-500 transition hover:text-black"
-                                    >
+                                    <Link href={`/productos?brand=${encodeURIComponent(activeLaminateBrand.slug)}`} onClick={() => setProductsOpen(false)} className="shrink-0 text-xs font-medium text-neutral-600 transition hover:text-black">
                                       Ver productos
                                     </Link>
 
                                   </div>
 
-                                  {Array.isArray(
-                                    activeLaminateBrand.collections
-                                  ) &&
-                                  activeLaminateBrand.collections
-                                    .length >
-                                    0 ? (
+                                  {Array.isArray(activeLaminateBrand.collections) &&
+                        activeLaminateBrand.collections
+                            .length >
+                            0 ? (<div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-1 xl:grid-cols-3 xl:gap-x-7">
 
-                                    <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-1 xl:grid-cols-3 xl:gap-x-7">
+                                      {activeLaminateBrand.collections.map((collection) => (<Link key={collection.id} href={`/productos?collection=${encodeURIComponent(collection.slug)}`} onClick={() => setProductsOpen(false)} className="group relative flex min-h-11 w-full min-w-0 items-center overflow-hidden rounded-lg px-3 py-2 text-sm">
+                                            <span className="absolute inset-0 origin-left scale-x-0 bg-black transition-transform duration-700 ease-out group-hover:scale-x-100" aria-hidden="true"/>
 
-                                      {activeLaminateBrand.collections.map(
-                                        (
-                                          collection
-                                        ) => (
-
-                                          <Link
-                                            key={
-                                              collection.id
-                                            }
-                                            href={`/productos?collection=${encodeURIComponent(
-                                              collection.slug
-                                            )}`}
-                                            onClick={() =>
-                                              setProductsOpen(
-                                                false
-                                              )
-                                            }
-                                            className="group relative flex min-h-11 w-full min-w-0 items-center overflow-hidden rounded-lg px-3 py-2 text-sm"
-                                          >
-                                            <span
-                                              className="absolute inset-0 origin-left scale-x-0 bg-black transition-transform duration-700 ease-out group-hover:scale-x-100"
-                                              aria-hidden="true"
-                                            />
-
-                                            <span
-                                              title={collection.name}
-                                              className={`relative z-10 block min-w-0 max-w-full truncate leading-5 tracking-[-0.01em] text-neutral-600 transition-colors duration-300 group-hover:text-white ${
-                                                String(
-                                                  collection.name ||
-                                                    ""
-                                                ).length > 24
-                                                  ? "text-[12px] xl:text-[13px]"
-                                                  : "text-sm"
-                                              }`}
-                                            >
-                                              {
-                                                collection.name
-                                              }
+                                            <span title={collection.name} className={`relative z-10 block min-w-0 max-w-full truncate leading-5 tracking-[-0.01em] text-neutral-600 transition-colors duration-300 group-hover:text-white ${String(collection.name ||
+                                "").length > 24
+                                ? "text-[12px] xl:text-[13px]"
+                                : "text-sm"}`}>
+                                              {collection.name}
                                             </span>
 
-                                          </Link>
+                                          </Link>))}
 
-                                        )
-                                      )}
+                                    </div>) : (<div className="mt-4 rounded-2xl border border-black/5 bg-neutral-50 px-5 py-5">
 
-                                    </div>
-
-                                  ) : (
-
-                                    <div className="mt-4 rounded-2xl border border-black/5 bg-neutral-50 px-5 py-5">
-
-                                      <p className="text-sm text-neutral-500">
+                                      <p className="text-sm text-neutral-600">
                                         Esta marca no tiene colecciones visibles por el momento.
                                       </p>
 
-                                    </div>
+                                    </div>)}
 
-                                  )}
+                                </>) : (<div className="rounded-2xl border border-black/5 bg-neutral-50 px-5 py-5">
 
-                                </>
-
-                              ) : (
-
-                                <div className="rounded-2xl border border-black/5 bg-neutral-50 px-5 py-5">
-
-                                  <p className="text-sm text-neutral-500">
+                                  <p className="text-sm text-neutral-600">
                                     Selecciona una marca para ver sus colecciones.
                                   </p>
 
-                                </div>
-
-                              )}
+                                </div>)}
 
                             </div>
 
                           </div>
 
-                        </motion.div>
-
-                      )}
+                        </div>)}
 
                       {activeProductGroup ===
-                        "hpl" && (
-
-                        <motion.div
-                          key="hpl"
-                          initial={{
-                            opacity: 0,
-                            x: 10,
-                          }}
-                          animate={{
-                            opacity: 1,
-                            x: 0,
-                          }}
-                          exit={{
-                            opacity: 0,
-                            x: -8,
-                          }}
-                          transition={{
-                            duration: 0.16,
-                          }}
-                        >
+                "hpl" && (<div key="hpl">
                           <div className="flex items-end justify-between gap-6">
 
                             <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-600">
                                 HPL
                               </p>
 
@@ -1980,15 +871,7 @@ export default function Navbar() {
                               </h3>
                             </div>
 
-                            <Link
-                              href="/productos?category=hpl"
-                              onClick={() =>
-                                setProductsOpen(
-                                  false
-                                )
-                              }
-                              className="shrink-0 text-xs font-medium text-neutral-500 transition hover:text-black"
-                            >
+                            <Link href="/productos?category=hpl" onClick={() => setProductsOpen(false)} className="shrink-0 text-xs font-medium text-neutral-600 transition hover:text-black">
                               Ver todos los HPL
                             </Link>
 
@@ -2000,90 +883,36 @@ export default function Navbar() {
 
                             <div className="border-r border-black/10 pr-6">
 
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                 Marcas
                               </p>
 
                               <div className="mt-3 flex flex-col gap-1">
 
-                                <button
-                                  type="button"
-                                  onMouseEnter={() =>
-                                    setActiveHplBrand(
-                                      "abet"
-                                    )
-                                  }
-                                  onFocus={() =>
-                                    setActiveHplBrand(
-                                      "abet"
-                                    )
-                                  }
-                                  onClick={() =>
-                                    setActiveHplBrand(
-                                      "abet"
-                                    )
-                                  }
-                                  className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium"
-                                >
-                                  <span
-                                    className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${
-                                      activeHplBrand ===
-                                      "abet"
-                                        ? "scale-x-100"
-                                        : "scale-x-0 group-hover:scale-x-100"
-                                    }`}
-                                    aria-hidden="true"
-                                  />
+                                <button type="button" onMouseEnter={() => setActiveHplBrand("abet")} onFocus={() => setActiveHplBrand("abet")} onClick={() => setActiveHplBrand("abet")} className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium">
+                                  <span className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${activeHplBrand ===
+                    "abet"
+                    ? "scale-x-100"
+                    : "scale-x-0 group-hover:scale-x-100"}`} aria-hidden="true"/>
 
-                                  <span
-                                    className={`relative z-10 transition-colors duration-300 ${
-                                      activeHplBrand ===
-                                      "abet"
-                                        ? "text-white"
-                                        : "text-neutral-600 group-hover:text-white"
-                                    }`}
-                                  >
+                                  <span className={`relative z-10 transition-colors duration-300 ${activeHplBrand ===
+                    "abet"
+                    ? "text-white"
+                    : "text-neutral-600 group-hover:text-white"}`}>
                                     Abet Laminati
                                   </span>
                                 </button>
 
-                                <button
-                                  type="button"
-                                  onMouseEnter={() =>
-                                    setActiveHplBrand(
-                                      "karikal"
-                                    )
-                                  }
-                                  onFocus={() =>
-                                    setActiveHplBrand(
-                                      "karikal"
-                                    )
-                                  }
-                                  onClick={() =>
-                                    setActiveHplBrand(
-                                      "karikal"
-                                    )
-                                  }
-                                  className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium"
-                                >
-                                  <span
-                                    className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${
-                                      activeHplBrand ===
-                                      "karikal"
-                                        ? "scale-x-100"
-                                        : "scale-x-0 group-hover:scale-x-100"
-                                    }`}
-                                    aria-hidden="true"
-                                  />
+                                <button type="button" onMouseEnter={() => setActiveHplBrand("karikal")} onFocus={() => setActiveHplBrand("karikal")} onClick={() => setActiveHplBrand("karikal")} className="group relative w-full overflow-hidden rounded-xl px-3 py-3 text-left text-sm font-medium">
+                                  <span className={`absolute inset-0 origin-left bg-black transition-transform duration-700 ease-out ${activeHplBrand ===
+                    "karikal"
+                    ? "scale-x-100"
+                    : "scale-x-0 group-hover:scale-x-100"}`} aria-hidden="true"/>
 
-                                  <span
-                                    className={`relative z-10 transition-colors duration-300 ${
-                                      activeHplBrand ===
-                                      "karikal"
-                                        ? "text-white"
-                                        : "text-neutral-600 group-hover:text-white"
-                                    }`}
-                                  >
+                                  <span className={`relative z-10 transition-colors duration-300 ${activeHplBrand ===
+                    "karikal"
+                    ? "text-white"
+                    : "text-neutral-600 group-hover:text-white"}`}>
                                     Karikal
                                   </span>
                                 </button>
@@ -2096,33 +925,12 @@ export default function Navbar() {
 
                             <div className="min-w-0">
 
-                              <AnimatePresence
-                                mode="wait"
-                              >
+                              <>
 
                                 {activeHplBrand ===
-                                  "abet" && (
-
-                                  <motion.div
-                                    key="hpl-abet"
-                                    initial={{
-                                      opacity: 0,
-                                      x: 10,
-                                    }}
-                                    animate={{
-                                      opacity: 1,
-                                      x: 0,
-                                    }}
-                                    exit={{
-                                      opacity: 0,
-                                      x: -8,
-                                    }}
-                                    transition={{
-                                      duration: 0.16,
-                                    }}
-                                  >
+                    "abet" && (<div key="hpl-abet">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                         Abet Laminati
                                       </p>
 
@@ -2134,105 +942,47 @@ export default function Navbar() {
                                     <div className="mt-4 grid gap-x-5 gap-y-1 xl:grid-cols-2">
 
                                       {[
-                                        {
-                                          label:
-                                            "Decorativos para Interior",
-                                          detail:
-                                            "Stratificato",
-                                          href:
-                                            "/productos?category=hpl&brand=abet-laminati&application=stratificato",
-                                        },
-                                        {
-                                          label:
-                                            "Fachadas Ventiladas",
-                                          detail:
-                                            "MEG",
-                                          href:
-                                            "/productos?category=hpl&brand=abet-laminati&application=meg",
-                                        },
-                                        {
-                                          label:
-                                            "Cubiertas de Laboratorio",
-                                          detail:
-                                            "Labgrade",
-                                          href:
-                                            "/productos?category=hpl&brand=abet-laminati&application=labgrade",
-                                        },
-                                      ].map(
-                                        (
-                                          item
-                                        ) => (
-
-                                          <Link
-                                            key={
-                                              item.href
-                                            }
-                                            href={
-                                              item.href
-                                            }
-                                            onClick={() =>
-                                              setProductsOpen(
-                                                false
-                                              )
-                                            }
-                                            className="group relative flex min-h-14 items-center overflow-hidden rounded-xl px-4 py-3"
-                                          >
-                                            <span
-                                              className="absolute inset-0 origin-left scale-x-0 bg-black transition-transform duration-700 ease-out group-hover:scale-x-100"
-                                              aria-hidden="true"
-                                            />
+                        {
+                            label: "Decorativos para Interior",
+                            detail: "Stratificato",
+                            href: "/productos?category=hpl&brand=abet-laminati&application=stratificato",
+                        },
+                        {
+                            label: "Fachadas Ventiladas",
+                            detail: "MEG",
+                            href: "/productos?category=hpl&brand=abet-laminati&application=meg",
+                        },
+                        {
+                            label: "Cubiertas de Laboratorio",
+                            detail: "Labgrade",
+                            href: "/productos?category=hpl&brand=abet-laminati&application=labgrade",
+                        },
+                    ].map((item) => (<Link key={item.href} href={item.href} onClick={() => setProductsOpen(false)} className="group relative flex min-h-14 items-center overflow-hidden rounded-xl px-4 py-3">
+                                            <span className="absolute inset-0 origin-left scale-x-0 bg-black transition-transform duration-700 ease-out group-hover:scale-x-100" aria-hidden="true"/>
 
                                             <span className="relative z-10 min-w-0">
                                               <span className="block text-sm font-medium text-neutral-700 transition-colors duration-300 group-hover:text-white">
-                                                {
-                                                  item.label
-                                                }
+                                                {item.label}
                                               </span>
 
-                                              <span className="mt-1 block text-xs text-neutral-400 transition-colors duration-300 group-hover:text-white/70">
-                                                {
-                                                  item.detail
-                                                }
+                                              <span className="mt-1 block text-xs text-neutral-600 transition-colors duration-300 group-hover:text-white/70">
+                                                {item.detail}
                                               </span>
                                             </span>
 
                                             <span className="relative z-10 ml-auto text-neutral-300 transition-all duration-300 group-hover:translate-x-1 group-hover:text-white">
                                               →
                                             </span>
-                                          </Link>
-
-                                        )
-                                      )}
+                                          </Link>))}
 
                                     </div>
 
-                                  </motion.div>
-
-                                )}
+                                  </div>)}
 
                                 {activeHplBrand ===
-                                  "karikal" && (
-
-                                  <motion.div
-                                    key="hpl-karikal"
-                                    initial={{
-                                      opacity: 0,
-                                      x: 10,
-                                    }}
-                                    animate={{
-                                      opacity: 1,
-                                      x: 0,
-                                    }}
-                                    exit={{
-                                      opacity: 0,
-                                      x: -8,
-                                    }}
-                                    transition={{
-                                      duration: 0.16,
-                                    }}
-                                  >
+                    "karikal" && (<div key="hpl-karikal">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                         Karikal
                                       </p>
 
@@ -2243,26 +993,15 @@ export default function Navbar() {
 
                                     <div className="mt-4 grid gap-x-5 gap-y-1 xl:grid-cols-2">
 
-                                      <Link
-                                        href="/productos?category=hpl&brand=karikal&application=banos"
-                                        onClick={() =>
-                                          setProductsOpen(
-                                            false
-                                          )
-                                        }
-                                        className="group relative flex min-h-14 items-center overflow-hidden rounded-xl px-4 py-3"
-                                      >
-                                        <span
-                                          className="absolute inset-0 origin-left scale-x-0 bg-black transition-transform duration-700 ease-out group-hover:scale-x-100"
-                                          aria-hidden="true"
-                                        />
+                                      <Link href="/productos?category=hpl&brand=karikal&application=banos" onClick={() => setProductsOpen(false)} className="group relative flex min-h-14 items-center overflow-hidden rounded-xl px-4 py-3">
+                                        <span className="absolute inset-0 origin-left scale-x-0 bg-black transition-transform duration-700 ease-out group-hover:scale-x-100" aria-hidden="true"/>
 
                                         <span className="relative z-10 min-w-0">
                                           <span className="block text-sm font-medium text-neutral-700 transition-colors duration-300 group-hover:text-white">
                                             Paneles Fenólicos
                                           </span>
 
-                                          <span className="mt-1 block text-xs text-neutral-400 transition-colors duration-300 group-hover:text-white/70">
+                                          <span className="mt-1 block text-xs text-neutral-600 transition-colors duration-300 group-hover:text-white/70">
                                             Baños
                                           </span>
                                         </span>
@@ -2274,45 +1013,22 @@ export default function Navbar() {
 
                                     </div>
 
-                                  </motion.div>
+                                  </div>)}
 
-                                )}
-
-                              </AnimatePresence>
+                              </>
 
                             </div>
 
                           </div>
 
-                        </motion.div>
-
-                      )}
+                        </div>)}
 
                       {activeProductGroup ===
-                        "adhesivos" && (
-
-                        <motion.div
-                          key="adhesivos"
-                          initial={{
-                            opacity: 0,
-                            x: 10,
-                          }}
-                          animate={{
-                            opacity: 1,
-                            x: 0,
-                          }}
-                          exit={{
-                            opacity: 0,
-                            x: -8,
-                          }}
-                          transition={{
-                            duration: 0.16,
-                          }}
-                        >
+                "adhesivos" && (<div key="adhesivos">
                           <div className="flex items-end justify-between gap-6">
 
                             <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-600">
                                 Adhesivos
                               </p>
 
@@ -2321,15 +1037,7 @@ export default function Navbar() {
                               </h3>
                             </div>
 
-                            <Link
-                              href="/productos?category=adhesivos"
-                              onClick={() =>
-                                setProductsOpen(
-                                  false
-                                )
-                              }
-                              className="shrink-0 text-xs font-medium text-neutral-500 transition hover:text-black"
-                            >
+                            <Link href="/productos?category=adhesivos" onClick={() => setProductsOpen(false)} className="shrink-0 text-xs font-medium text-neutral-600 transition hover:text-black">
                               Ver todos los adhesivos
                             </Link>
 
@@ -2337,16 +1045,8 @@ export default function Navbar() {
 
                           <div className="mt-6 grid gap-x-8 gap-y-1 sm:grid-cols-2">
 
-                            <Link
-                              href="/productos?brand=kisafix"
-                              onClick={() =>
-                                setProductsOpen(
-                                  false
-                                )
-                              }
-                              className="group relative overflow-hidden rounded-xl px-4 py-4"
-                            >
-                              <span className="absolute inset-0 origin-left bg-neutral-50 transition-transform duration-500 ease-out group-hover:scale-x-100" />
+                            <Link href="/productos?brand=kisafix" onClick={() => setProductsOpen(false)} className="group relative overflow-hidden rounded-xl px-4 py-4">
+                              <span className="absolute inset-0 origin-left bg-neutral-50 transition-transform duration-500 ease-out group-hover:scale-x-100"/>
 
                               <span className="relative z-10 flex items-center justify-between gap-4">
                                 <span>
@@ -2354,7 +1054,7 @@ export default function Navbar() {
                                     Kisafix
                                   </span>
 
-                                  <span className="mt-1 block text-xs text-neutral-400">
+                                  <span className="mt-1 block text-xs text-neutral-600">
                                     Adhesivos profesionales para laminados y superficies
                                   </span>
                                 </span>
@@ -2367,22 +1067,18 @@ export default function Navbar() {
 
                           </div>
 
-                        </motion.div>
+                        </div>)}
 
-                      )}
-
-                    </AnimatePresence>
+                    </>
 
                   </div>
 
                 </div>
 
               </div>
-            </motion.div>
+            </div>)}
 
-          )}
-
-        </AnimatePresence>
+        </>
 
         {/* =====================================*
 
@@ -2390,76 +1086,22 @@ export default function Navbar() {
 
 *        ===================================== */}
 
-        <AnimatePresence>
+        <>
 
-          {searchOpen && (
-
-            <motion.div
-
-              initial={{
-
-                opacity: 0,
-
-                height: 0,
-
-              }}
-
-              animate={{
-
-                opacity: 1,
-
-                height: "auto",
-
-              }}
-
-              exit={{
-
-                opacity: 0,
-
-                height: 0,
-
-              }}
-
-              transition={{
-
-                duration: 0.25,
-
-                ease: "easeInOut",
-
-              }}
-
-              className="overflow-visible border-t border-black/5 bg-white"
-
-            >
+          {searchOpen && (<div className="overflow-visible border-t border-black/5 bg-white">
 
               <div className="site-container py-5 sm:py-7">
 
-                <ProductSearch
-
-                  allowTechnicalSearch={[
-                    "ADMIN",
-                    "VENDEDOR",
-                  ].includes(sessionRole)}
-
-                  onClose={() =>
-
-                    setSearchOpen(
-
-                      false
-
-                    )
-
-                  }
-
-                />
+                <ProductSearch allowTechnicalSearch={[
+                "ADMIN",
+                "VENDEDOR",
+            ].includes(sessionRole)} onClose={() => setSearchOpen(false)}/>
 
               </div>
 
-            </motion.div>
+            </div>)}
 
-          )}
-
-        </AnimatePresence>
+        </>
 
         {/* =====================================*
 
@@ -2467,154 +1109,47 @@ export default function Navbar() {
 
 *        ===================================== */}
 
-        <AnimatePresence>
+        <>
 
-          {menuOpen && (
-
-            <motion.div
-
-              initial={{
-
-                opacity: 0,
-
-                height: 0,
-
-              }}
-
-              animate={{
-
-                opacity: 1,
-
-                height: "auto",
-
-              }}
-
-              exit={{
-
-                opacity: 0,
-
-                height: 0,
-
-              }}
-
-              transition={{
-
-                duration: 0.25,
-
-                ease: "easeInOut",
-
-              }}
-
-              className="overflow-hidden border-t border-black/5 bg-white lg:hidden"
-
-            >
+          {menuOpen && (<div className="overflow-hidden border-t border-black/5 bg-white lg:hidden">
 
               <div className="site-container py-5">
 
                 <nav className="flex flex-col">
 
-                  {navItems.map(
-                    (item) => {
-                      const active =
-                        isActive(
-                          item.href
-                        );
-
-                      if (
-                        item.label ===
-                        "Productos"
-                      ) {
-                        return (
-                          <div
-                            key={
-                              item.href
-                            }
-                            className="border-b border-black/5"
-                          >
-                            <button
-                              type="button"
-                              onClick={
-                                toggleMobileProducts
-                              }
-                              aria-expanded={
-                                mobileProductsOpen
-                              }
-                              className={`flex w-full items-center justify-between py-4 text-left text-base font-medium ${
-                                active
-                                  ? "text-black"
-                                  : "text-neutral-600"
-                              }`}
-                            >
+                  {navItems.map((item) => {
+                const active = isActive(item.href);
+                if (item.label ===
+                    "Productos") {
+                    return (<div key={item.href} className="border-b border-black/5">
+                            <button type="button" onClick={toggleMobileProducts} aria-expanded={mobileProductsOpen} className={`flex w-full items-center justify-between py-4 text-left text-base font-medium ${active
+                            ? "text-black"
+                            : "text-neutral-600"}`}>
                               <span>
                                 Productos
                               </span>
 
-                              <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                aria-hidden="true"
-                                className={`transition-transform duration-200 ${
-                                  mobileProductsOpen
-                                    ? "rotate-180"
-                                    : ""
-                                }`}
-                              >
-                                <path
-                                  d="m7 9 5 5 5-5"
-                                  stroke="currentColor"
-                                  strokeWidth="1.8"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className={`transition-transform duration-200 ${mobileProductsOpen
+                            ? "rotate-180"
+                            : ""}`}>
+                                <path d="m7 9 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                             </button>
 
-                            <AnimatePresence initial={false}>
-                              {mobileProductsOpen && (
-                                <motion.div
-                                  initial={{
-                                    opacity: 0,
-                                    height: 0,
-                                  }}
-                                  animate={{
-                                    opacity: 1,
-                                    height: "auto",
-                                  }}
-                                  exit={{
-                                    opacity: 0,
-                                    height: 0,
-                                  }}
-                                  transition={{
-                                    duration: 0.22,
-                                    ease: "easeInOut",
-                                  }}
-                                  className="overflow-hidden"
-                                >
+                            <>
+                              {mobileProductsOpen && (<div className="overflow-hidden">
                                   <div className="pb-5">
 
                                     {/* =====================================
-                                        LAMINADOS
-                                        Colecciones dinámicas del catálogo
-                                    ===================================== */}
+                                LAMINADOS
+                                Colecciones dinámicas del catálogo
+                            ===================================== */}
 
                                     <div className="border-b border-black/10">
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          toggleMobileProductGroup(
-                                            "laminados"
-                                          )
-                                        }
-                                        aria-expanded={
-                                          mobileProductGroup ===
-                                          "laminados"
-                                        }
-                                        className="flex min-h-14 w-full items-center justify-between py-3 text-left"
-                                      >
+                                      <button type="button" onClick={() => toggleMobileProductGroup("laminados")} aria-expanded={mobileProductGroup ===
+                                "laminados"} className="flex min-h-14 w-full items-center justify-between py-3 text-left">
                                         <span>
-                                          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                                          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                             Productos
                                           </span>
 
@@ -2623,67 +1158,24 @@ export default function Navbar() {
                                           </span>
                                         </span>
 
-                                        <span
-                                          className={`flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-neutral-700 transition-transform duration-200 ${
-                                            mobileProductGroup ===
-                                            "laminados"
-                                              ? "rotate-180"
-                                              : ""
-                                          }`}
-                                        >
-                                          <svg
-                                            width="14"
-                                            height="14"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            aria-hidden="true"
-                                          >
-                                            <path
-                                              d="m7 9 5 5 5-5"
-                                              stroke="currentColor"
-                                              strokeWidth="1.8"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                            />
+                                        <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-neutral-700 transition-transform duration-200 ${mobileProductGroup ===
+                                "laminados"
+                                ? "rotate-180"
+                                : ""}`}>
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="m7 9 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
                                         </span>
                                       </button>
 
-                                      <AnimatePresence initial={false}>
+                                      <>
                                         {mobileProductGroup ===
-                                          "laminados" && (
-                                          <motion.div
-                                            initial={{
-                                              opacity: 0,
-                                              height: 0,
-                                            }}
-                                            animate={{
-                                              opacity: 1,
-                                              height: "auto",
-                                            }}
-                                            exit={{
-                                              opacity: 0,
-                                              height: 0,
-                                            }}
-                                            transition={{
-                                              duration:
-                                                0.2,
-                                              ease:
-                                                "easeInOut",
-                                            }}
-                                            className="overflow-hidden"
-                                          >
+                                "laminados" && (<div className="overflow-hidden">
                                             <div className="pb-5 pt-1">
 
-                                              <Link
-                                                href="/productos?category=laminados"
-                                                onClick={closeMobileNavigation}
-                                                className="flex min-h-11 items-center justify-between rounded-xl bg-neutral-950 px-4 text-sm font-semibold !text-white"
-                                                style={{
-                                                  color:
-                                                    "#ffffff",
-                                                }}
-                                              >
+                                              <Link href="/productos?category=laminados" onClick={closeMobileNavigation} className="flex min-h-11 items-center justify-between rounded-xl bg-neutral-950 px-4 text-sm font-semibold !text-white" style={{
+                                    color: "#ffffff",
+                                }}>
                                                 <span className="!text-white">
                                                   Ver todos los laminados
                                                 </span>
@@ -2695,161 +1187,81 @@ export default function Navbar() {
 
                                               <div className="mt-5">
 
-                                                <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                                                <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-600">
                                                   Colecciones
                                                 </p>
 
-                                                {catalogLoading ? (
-                                                  <div className="mt-3 rounded-xl bg-neutral-50 px-4 py-4 text-sm text-neutral-400">
+                                                {catalogLoading ? (<div className="mt-3 rounded-xl bg-neutral-50 px-4 py-4 text-sm text-neutral-600">
                                                     Cargando colecciones...
-                                                  </div>
-                                                ) : catalogError ? (
-                                                  <div className="mt-3 rounded-xl bg-red-50 px-4 py-4 text-xs leading-5 text-red-600">
+                                                  </div>) : catalogError ? (<div className="mt-3 rounded-xl bg-red-50 px-4 py-4 text-xs leading-5 text-red-600">
                                                     {catalogError}
-                                                  </div>
-                                                ) : laminateBrands.length ===
-                                                  0 ? (
-                                                  <div className="mt-3 rounded-xl bg-neutral-50 px-4 py-4 text-sm text-neutral-400">
+                                                  </div>) : laminateBrands.length ===
+                                    0 ? (<div className="mt-3 rounded-xl bg-neutral-50 px-4 py-4 text-sm text-neutral-600">
                                                     No hay colecciones visibles.
-                                                  </div>
-                                                ) : (
-                                                  <div className="mt-3 space-y-5">
+                                                  </div>) : (<div className="mt-3 space-y-5">
 
-                                                    {laminateBrands.map(
-                                                      (
-                                                        brand
-                                                      ) => (
-                                                        <div
-                                                          key={
-                                                            brand.id
-                                                          }
-                                                        >
+                                                    {laminateBrands.map((brand) => (<div key={brand.id}>
                                                           <div className="flex items-center justify-between gap-4 px-1">
                                                             <p className="text-xs font-semibold text-neutral-950">
-                                                              {
-                                                                brand.name
-                                                              }
+                                                              {brand.name}
                                                             </p>
 
-                                                            <Link
-                                                              href={`/productos?brand=${encodeURIComponent(
-                                                                brand.slug
-                                                              )}`}
-                                                              onClick={closeMobileNavigation}
-                                                              className="text-[10px] font-medium !text-neutral-400"
-                                                            >
+                                                            <Link href={`/productos?brand=${encodeURIComponent(brand.slug)}`} onClick={closeMobileNavigation} className="text-[10px] font-medium !text-neutral-600">
                                                               Ver marca
                                                             </Link>
                                                           </div>
 
-                                                          {Array.isArray(
-                                                            brand.collections
-                                                          ) &&
-                                                          brand.collections
-                                                            .length >
-                                                            0 ? (
-                                                            <div
-                                                              className={`mt-2 rounded-2xl border border-black/[0.07] bg-neutral-50/80 ${
-                                                                normalizeCatalogName(
-                                                                  brand?.name
-                                                                ).includes(
-                                                                  "abet"
-                                                                )
-                                                                  ? "max-h-[260px] overflow-x-hidden overflow-y-auto overscroll-contain sm:max-h-none sm:overflow-hidden"
-                                                                  : "overflow-hidden"
-                                                              }`}
-                                                              style={
-                                                                normalizeCatalogName(
-                                                                  brand?.name
-                                                                ).includes(
-                                                                  "abet"
-                                                                )
-                                                                  ? {
-                                                                      WebkitOverflowScrolling:
-                                                                        "touch",
-                                                                    }
-                                                                  : undefined
-                                                              }
-                                                            >
+                                                          {Array.isArray(brand.collections) &&
+                                            brand.collections
+                                                .length >
+                                                0 ? (<div className={`mt-2 rounded-2xl border border-black/[0.07] bg-neutral-50/80 ${normalizeCatalogName(brand?.name).includes("abet")
+                                                ? "max-h-[260px] overflow-x-hidden overflow-y-auto overscroll-contain sm:max-h-none sm:overflow-hidden"
+                                                : "overflow-hidden"}`} style={normalizeCatalogName(brand?.name).includes("abet")
+                                                ? {
+                                                    WebkitOverflowScrolling: "touch",
+                                                }
+                                                : undefined}>
 
-                                                              {brand.collections.map(
-                                                                (
-                                                                  collection,
-                                                                  index
-                                                                ) => (
-                                                                  <Link
-                                                                    key={
-                                                                      collection.id
-                                                                    }
-                                                                    href={`/productos?collection=${encodeURIComponent(
-                                                                      collection.slug
-                                                                    )}`}
-                                                                    onClick={closeMobileNavigation}
-                                                                    className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black ${
-                                                                      index !==
-                                                                      brand
-                                                                        .collections
-                                                                        .length -
-                                                                        1
-                                                                        ? "border-b border-black/[0.06]"
-                                                                        : ""
-                                                                    }`}
-                                                                  >
+                                                              {brand.collections.map((collection, index) => (<Link key={collection.id} href={`/productos?collection=${encodeURIComponent(collection.slug)}`} onClick={closeMobileNavigation} className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black ${index !==
+                                                    brand
+                                                        .collections
+                                                        .length -
+                                                        1
+                                                    ? "border-b border-black/[0.06]"
+                                                    : ""}`}>
                                                                     <span className="min-w-0 truncate">
-                                                                      {
-                                                                        collection.name
-                                                                      }
+                                                                      {collection.name}
                                                                     </span>
 
                                                                     <span className="shrink-0 text-neutral-300 transition-transform group-hover:translate-x-1 group-hover:text-black">
                                                                       →
                                                                     </span>
-                                                                  </Link>
-                                                                )
-                                                              )}
+                                                                  </Link>))}
 
-                                                            </div>
-                                                          ) : (
-                                                            <p className="mt-2 rounded-xl bg-neutral-50 px-4 py-3 text-xs text-neutral-400">
+                                                            </div>) : (<p className="mt-2 rounded-xl bg-neutral-50 px-4 py-3 text-xs text-neutral-600">
                                                               Sin colecciones visibles.
-                                                            </p>
-                                                          )}
+                                                            </p>)}
 
-                                                        </div>
-                                                      )
-                                                    )}
+                                                        </div>))}
 
-                                                  </div>
-                                                )}
+                                                  </div>)}
 
                                               </div>
 
                                             </div>
-                                          </motion.div>
-                                        )}
-                                      </AnimatePresence>
+                                          </div>)}
+                                      </>
                                     </div>
 
                                     {/* =====================================
-                                        HPL
-                                    ===================================== */}
+                                HPL
+                            ===================================== */}
 
                                     <div className="border-b border-black/10">
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          toggleMobileProductGroup(
-                                            "hpl"
-                                          )
-                                        }
-                                        aria-expanded={
-                                          mobileProductGroup ===
-                                          "hpl"
-                                        }
-                                        className="flex min-h-14 w-full items-center justify-between py-3 text-left"
-                                      >
+                                      <button type="button" onClick={() => toggleMobileProductGroup("hpl")} aria-expanded={mobileProductGroup ===
+                                "hpl"} className="flex min-h-14 w-full items-center justify-between py-3 text-left">
                                         <span>
-                                          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                                          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                             Soluciones
                                           </span>
 
@@ -2858,56 +1270,19 @@ export default function Navbar() {
                                           </span>
                                         </span>
 
-                                        <span
-                                          className={`flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-neutral-700 transition-transform duration-200 ${
-                                            mobileProductGroup ===
-                                            "hpl"
-                                              ? "rotate-180"
-                                              : ""
-                                          }`}
-                                        >
-                                          <svg
-                                            width="14"
-                                            height="14"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            aria-hidden="true"
-                                          >
-                                            <path
-                                              d="m7 9 5 5 5-5"
-                                              stroke="currentColor"
-                                              strokeWidth="1.8"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                            />
+                                        <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-neutral-700 transition-transform duration-200 ${mobileProductGroup ===
+                                "hpl"
+                                ? "rotate-180"
+                                : ""}`}>
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="m7 9 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
                                         </span>
                                       </button>
 
-                                      <AnimatePresence initial={false}>
+                                      <>
                                         {mobileProductGroup ===
-                                          "hpl" && (
-                                          <motion.div
-                                            initial={{
-                                              opacity: 0,
-                                              height: 0,
-                                            }}
-                                            animate={{
-                                              opacity: 1,
-                                              height: "auto",
-                                            }}
-                                            exit={{
-                                              opacity: 0,
-                                              height: 0,
-                                            }}
-                                            transition={{
-                                              duration:
-                                                0.2,
-                                              ease:
-                                                "easeInOut",
-                                            }}
-                                            className="overflow-hidden"
-                                          >
+                                "hpl" && (<div className="overflow-hidden">
                                             <div className="space-y-5 pb-5 pt-1">
 
                                               <div>
@@ -2917,58 +1292,31 @@ export default function Navbar() {
 
                                                 <div className="mt-2 overflow-hidden rounded-2xl border border-black/[0.07] bg-neutral-50/80">
                                                   {[
-                                                    {
-                                                      label:
-                                                        "Cubiertas / Stratificato",
-                                                      href:
-                                                        "/productos?category=hpl&brand=abet-laminati&application=stratificato",
-                                                    },
-                                                    {
-                                                      label:
-                                                        "Fachadas Ventiladas / MEG",
-                                                      href:
-                                                        "/productos?category=hpl&brand=abet-laminati&application=meg",
-                                                    },
-                                                    {
-                                                      label:
-                                                        "Cubiertas de Laboratorio / Labgrade",
-                                                      href:
-                                                        "/productos?category=hpl&brand=abet-laminati&application=labgrade",
-                                                    },
-                                                  ].map(
-                                                    (
-                                                      link,
-                                                      index,
-                                                      links
-                                                    ) => (
-                                                      <Link
-                                                        key={
-                                                          link.href
-                                                        }
-                                                        href={
-                                                          link.href
-                                                        }
-                                                        onClick={closeMobileNavigation}
-                                                        className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black ${
-                                                          index !==
-                                                          links.length -
-                                                            1
-                                                            ? "border-b border-black/[0.06]"
-                                                            : ""
-                                                        }`}
-                                                      >
+                                    {
+                                        label: "Cubiertas / Stratificato",
+                                        href: "/productos?category=hpl&brand=abet-laminati&application=stratificato",
+                                    },
+                                    {
+                                        label: "Fachadas Ventiladas / MEG",
+                                        href: "/productos?category=hpl&brand=abet-laminati&application=meg",
+                                    },
+                                    {
+                                        label: "Cubiertas de Laboratorio / Labgrade",
+                                        href: "/productos?category=hpl&brand=abet-laminati&application=labgrade",
+                                    },
+                                ].map((link, index, links) => (<Link key={link.href} href={link.href} onClick={closeMobileNavigation} className={`group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black ${index !==
+                                        links.length -
+                                            1
+                                        ? "border-b border-black/[0.06]"
+                                        : ""}`}>
                                                         <span>
-                                                          {
-                                                            link.label
-                                                          }
+                                                          {link.label}
                                                         </span>
 
                                                         <span className="shrink-0 text-neutral-300 transition-transform group-hover:translate-x-1 group-hover:text-black">
                                                           →
                                                         </span>
-                                                      </Link>
-                                                    )
-                                                  )}
+                                                      </Link>))}
                                                 </div>
                                               </div>
 
@@ -2978,11 +1326,7 @@ export default function Navbar() {
                                                 </p>
 
                                                 <div className="mt-2 overflow-hidden rounded-2xl border border-black/[0.07] bg-neutral-50/80">
-                                                  <Link
-                                                    href="/productos?category=hpl&brand=karikal&application=banos"
-                                                    onClick={closeMobileNavigation}
-                                                    className="group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black"
-                                                  >
+                                                  <Link href="/productos?category=hpl&brand=karikal&application=banos" onClick={closeMobileNavigation} className="group flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black">
                                                     <span>
                                                       Paneles Fenólicos / Baños
                                                     </span>
@@ -2994,11 +1338,7 @@ export default function Navbar() {
                                                 </div>
                                               </div>
 
-                                              <Link
-                                                href="/productos?category=hpl"
-                                                onClick={closeMobileNavigation}
-                                                className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold !text-neutral-500"
-                                              >
+                                              <Link href="/productos?category=hpl" onClick={closeMobileNavigation} className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold !text-neutral-600">
                                                 Ver todos los HPL
                                                 <span>
                                                   →
@@ -3006,31 +1346,19 @@ export default function Navbar() {
                                               </Link>
 
                                             </div>
-                                          </motion.div>
-                                        )}
-                                      </AnimatePresence>
+                                          </div>)}
+                                      </>
                                     </div>
 
                                     {/* =====================================
-                                        ADHESIVOS
-                                    ===================================== */}
+                                ADHESIVOS
+                            ===================================== */}
 
                                     <div className="border-b border-black/10">
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          toggleMobileProductGroup(
-                                            "adhesivos"
-                                          )
-                                        }
-                                        aria-expanded={
-                                          mobileProductGroup ===
-                                          "adhesivos"
-                                        }
-                                        className="flex min-h-14 w-full items-center justify-between py-3 text-left"
-                                      >
+                                      <button type="button" onClick={() => toggleMobileProductGroup("adhesivos")} aria-expanded={mobileProductGroup ===
+                                "adhesivos"} className="flex min-h-14 w-full items-center justify-between py-3 text-left">
                                         <span>
-                                          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                                          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                                             Complementos
                                           </span>
 
@@ -3039,63 +1367,22 @@ export default function Navbar() {
                                           </span>
                                         </span>
 
-                                        <span
-                                          className={`flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-neutral-700 transition-transform duration-200 ${
-                                            mobileProductGroup ===
-                                            "adhesivos"
-                                              ? "rotate-180"
-                                              : ""
-                                          }`}
-                                        >
-                                          <svg
-                                            width="14"
-                                            height="14"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            aria-hidden="true"
-                                          >
-                                            <path
-                                              d="m7 9 5 5 5-5"
-                                              stroke="currentColor"
-                                              strokeWidth="1.8"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                            />
+                                        <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-neutral-700 transition-transform duration-200 ${mobileProductGroup ===
+                                "adhesivos"
+                                ? "rotate-180"
+                                : ""}`}>
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="m7 9 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
                                         </span>
                                       </button>
 
-                                      <AnimatePresence initial={false}>
+                                      <>
                                         {mobileProductGroup ===
-                                          "adhesivos" && (
-                                          <motion.div
-                                            initial={{
-                                              opacity: 0,
-                                              height: 0,
-                                            }}
-                                            animate={{
-                                              opacity: 1,
-                                              height: "auto",
-                                            }}
-                                            exit={{
-                                              opacity: 0,
-                                              height: 0,
-                                            }}
-                                            transition={{
-                                              duration:
-                                                0.2,
-                                              ease:
-                                                "easeInOut",
-                                            }}
-                                            className="overflow-hidden"
-                                          >
+                                "adhesivos" && (<div className="overflow-hidden">
                                             <div className="space-y-2 pb-5 pt-1">
 
-                                              <Link
-                                                href="/productos?brand=kisafix"
-                                                onClick={closeMobileNavigation}
-                                                className="group flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-neutral-50/80 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black"
-                                              >
+                                              <Link href="/productos?brand=kisafix" onClick={closeMobileNavigation} className="group flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-neutral-50/80 px-4 py-3 text-sm font-medium !text-neutral-700 transition hover:bg-white hover:!text-black">
                                                 <span>
                                                   Kisafix
                                                 </span>
@@ -3105,11 +1392,7 @@ export default function Navbar() {
                                                 </span>
                                               </Link>
 
-                                              <Link
-                                                href="/productos?category=adhesivos"
-                                                onClick={closeMobileNavigation}
-                                                className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold !text-neutral-500"
-                                              >
+                                              <Link href="/productos?category=adhesivos" onClick={closeMobileNavigation} className="flex min-h-11 items-center justify-between px-1 text-xs font-semibold !text-neutral-600">
                                                 Ver todos los adhesivos
                                                 <span>
                                                   →
@@ -3117,177 +1400,65 @@ export default function Navbar() {
                                               </Link>
 
                                             </div>
-                                          </motion.div>
-                                        )}
-                                      </AnimatePresence>
+                                          </div>)}
+                                      </>
                                     </div>
 
-                                    <Link
-                                      href="/productos"
-                                      onClick={closeMobileNavigation}
-                                      className="mt-5 flex min-h-12 items-center justify-center rounded-full bg-black px-4 text-sm font-semibold !text-white"
-                                      style={{
-                                        color:
-                                          "#ffffff",
-                                      }}
-                                    >
+                                    <Link href="/productos" onClick={closeMobileNavigation} className="mt-5 flex min-h-12 items-center justify-center rounded-full bg-black px-4 text-sm font-semibold !text-white" style={{
+                                color: "#ffffff",
+                            }}>
                                       <span className="!text-white">
                                         Ver todos los productos
                                       </span>
                                     </Link>
 
                                   </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <Link
-                          key={
-                            item.href
-                          }
-                          href={
-                            item.href
-                          }
-                          onClick={closeMobileNavigation}
-                          className={`flex items-center justify-between border-b border-black/5 py-4 text-base font-medium ${
-                            active
-                              ? "!text-black"
-                              : "!text-neutral-600"
-                          }`}
-                        >
+                                </div>)}
+                            </>
+                          </div>);
+                }
+                return (<Link key={item.href} href={item.href} onClick={closeMobileNavigation} className={`flex items-center justify-between border-b border-black/5 py-4 text-base font-medium ${active
+                        ? "!text-black"
+                        : "!text-neutral-600"}`}>
                           <span>
-                            {
-                              item.label
-                            }
+                            {item.label}
                           </span>
 
-                          <span className="text-neutral-400">
+                          <span className="text-neutral-600">
                             →
                           </span>
-                        </Link>
-                      );
-                    }
-                  )}
+                        </Link>);
+            })}
 
                 </nav>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
 
-                  {sessionUser ? (
-                    <Link
-                      href={accountHref}
-                      aria-label={accountAriaLabel}
-                      className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 transition hover:bg-neutral-50"
-                    >
-                      <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold uppercase leading-none tracking-[0.06em] ${
-                          sessionRole === "VENDEDOR"
-                            ? "bg-black text-white"
-                            : "border border-black/10 bg-white"
-                        }`}
-                        style={
-                          sessionRole === "VENDEDOR"
-                            ? undefined
-                            : { color: "#171717" }
-                        }
-                      >
-                        {userAvatarUrl ? (
-                          <img
-                            src={userAvatarUrl}
-                            alt={userDisplayName || "Foto de perfil"}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          userInitials
-                        )}
+                  {sessionUser ? (<Link href={accountHref} aria-label={accountAriaLabel} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 transition hover:bg-neutral-50">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold uppercase leading-none tracking-[0.06em] ${sessionRole === "VENDEDOR"
+                    ? "bg-black text-white"
+                    : "border border-black/10 bg-white"}`} style={sessionRole === "VENDEDOR"
+                    ? undefined
+                    : { color: "#171717" }}>
+                        {userAvatarUrl ? (<img src={userAvatarUrl} alt={userDisplayName || "Foto de perfil"} className="h-full w-full object-cover"/>) : (userInitials)}
                       </span>
 
-                      {sessionRole === "VENDEDOR" ? (
-                        <span className="min-w-0 truncate text-sm font-medium text-neutral-800">
+                      {sessionRole === "VENDEDOR" ? (<span className="min-w-0 truncate text-sm font-medium text-neutral-800">
                           {userDisplayName || "Vendedor"}
-                        </span>
-                      ) : null}
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/login"
-                      className="flex min-h-12 items-center justify-center rounded-xl border border-black/10 px-4 text-sm font-medium !text-neutral-950"
-                    >
+                        </span>) : null}
+                    </Link>) : (<Link href="/login" className="flex min-h-12 items-center justify-center rounded-xl border border-black/10 px-4 text-sm font-medium !text-neutral-950">
                       Ingresar
-                    </Link>
-                  )}
+                    </Link>)}
 
-                  <Link
+                  <Link href="/carrito" aria-label={cartAriaLabel} className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-black px-4 text-sm font-medium !text-white">
 
-                    href="/carrito"
+                    <svg className="!text-white" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 
-                    aria-label={
+                      <path d="M4 6H6L8 16H18L20 9H7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
 
-                      cartAriaLabel
+                      <circle cx="9" cy="20" r="1" fill="currentColor"/>
 
-                    }
-
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-black px-4 text-sm font-medium !text-white"
-
-                  >
-
-                    <svg
-
-                      className="!text-white"
-
-                      width="18"
-
-                      height="18"
-
-                      viewBox="0 0 24 24"
-
-                      fill="none"
-
-                      aria-hidden="true"
-
-                    >
-
-                      <path
-
-                        d="M4 6H6L8 16H18L20 9H7"
-
-                        stroke="currentColor"
-
-                        strokeWidth="1.7"
-
-                        strokeLinecap="round"
-
-                        strokeLinejoin="round"
-
-                      />
-
-                      <circle
-
-                        cx="9"
-
-                        cy="20"
-
-                        r="1"
-
-                        fill="currentColor"
-
-                      />
-
-                      <circle
-
-                        cx="17"
-
-                        cy="20"
-
-                        r="1"
-
-                        fill="currentColor"
-
-                      />
+                      <circle cx="17" cy="20" r="1" fill="currentColor"/>
 
                     </svg>
 
@@ -3298,30 +1469,17 @@ export default function Navbar() {
                     </span>
 
                     {totalProducts >
+                0 && (<span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-black">
 
-                      0 && (
+                        {totalProducts}
 
-                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-black">
-
-                        {
-
-                          totalProducts
-
-                        }
-
-                      </span>
-
-                    )}
+                      </span>)}
 
                   </Link>
 
                 </div>
 
-                {!sessionUser && (
-                  <Link
-                    href="/registro"
-                    className="mt-3 flex min-h-12 items-center justify-between rounded-xl border border-[#8b6d52]/20 bg-[#f7f2ec] px-4 text-sm font-medium !text-neutral-800 transition hover:bg-[#f1e9e0]"
-                  >
+                {!sessionUser && (<Link href="/registro" className="mt-3 flex min-h-12 items-center justify-between rounded-xl border border-[#8b6d52]/20 bg-[#f7f2ec] px-4 text-sm font-medium !text-neutral-800 transition hover:bg-[#f1e9e0]">
                     <span>
                       Crear una cuenta
                     </span>
@@ -3329,69 +1487,24 @@ export default function Navbar() {
                     <span className="text-[#8b6d52]">
                       →
                     </span>
-                  </Link>
-                )}
+                  </Link>)}
 
               </div>
 
-            </motion.div>
+            </div>)}
 
-          )}
-
-        </AnimatePresence>
+        </>
 
       </header>
 
       {/* FONDO AL ABRIR BUSCADOR */}
 
-      <AnimatePresence>
+      <>
 
-        {searchOpen && (
+        {searchOpen && (<button type="button" aria-label="Cerrar buscador" onClick={() => setSearchOpen(false)} className="fixed inset-0 z-40 bg-black/15 backdrop-blur-[1px]"/>)}
 
-          <motion.button
+      </>
 
-            type="button"
-
-            aria-label="Cerrar buscador"
-
-            onClick={() =>
-
-              setSearchOpen(
-
-                false
-
-              )
-
-            }
-
-            initial={{
-
-              opacity: 0,
-
-            }}
-
-            animate={{
-
-              opacity: 1,
-
-            }}
-
-            exit={{
-
-              opacity: 0,
-
-            }}
-
-            className="fixed inset-0 z-40 bg-black/15 backdrop-blur-[1px]"
-
-          />
-
-        )}
-
-      </AnimatePresence>
-
-    </>
-
-  );
-
+    </>);
 }
+

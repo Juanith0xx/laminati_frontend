@@ -191,7 +191,7 @@ function ContactRow({
       </span>
 
       <div className="min-w-0 pt-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
           {label}
         </p>
 
@@ -217,7 +217,7 @@ function FeatureCard({
           {title}
         </h3>
 
-        <p className="mt-1 text-xs leading-5 text-neutral-500">
+        <p className="mt-1 text-xs leading-5 text-neutral-700">
           {text}
         </p>
       </div>
@@ -227,7 +227,7 @@ function FeatureCard({
 
 export default function LocationSection() {
   return (
-    <section className="bg-[#f7f6f3] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+    <section style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }} className="bg-[#f7f6f3] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
       <div className="mx-auto max-w-[1440px]">
         <div className="overflow-hidden rounded-[32px] border border-black/[0.06] bg-white shadow-[0_16px_60px_rgba(0,0,0,.06)]">
           <div className="h-1 bg-gradient-to-r from-[#d8ad66] via-[#ead2a4] to-[#9f7e47]" />
@@ -242,7 +242,7 @@ export default function LocationSection() {
                 Nuestra ubicación
               </h2>
 
-              <p className="mt-5 max-w-xl text-sm leading-7 text-neutral-500 sm:text-base">
+              <p className="mt-5 max-w-xl text-sm leading-7 text-neutral-700 sm:text-base">
                 Visita nuestro showroom y recibe asesoría para elegir laminados, HPL y soluciones para arquitectura, diseño y mobiliario.
               </p>
 
@@ -257,7 +257,7 @@ export default function LocationSection() {
                     {ADDRESS}
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-neutral-400">
+                  <p className="mt-1 text-xs leading-5 text-neutral-600">
                     {ADDRESS_REFERENCE}
                   </p>
                 </ContactRow>
@@ -308,7 +308,6 @@ export default function LocationSection() {
 
                 <Link
                   href="/contacto"
-                  prefetch={false}
                   className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-black/10 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:border-black hover:bg-neutral-50"
                 >
                   Contactar
@@ -331,7 +330,7 @@ export default function LocationSection() {
 
               <div className="pointer-events-none absolute bottom-5 left-5 right-5 sm:left-7 sm:right-auto">
                 <div className="max-w-sm rounded-[22px] border border-white/70 bg-white/90 p-4 shadow-[0_15px_45px_rgba(0,0,0,.12)] backdrop-blur-md">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
                     Laminatiword · Showroom
                   </p>
 
@@ -339,7 +338,7 @@ export default function LocationSection() {
                     Av. Santa Rosa 5415
                   </p>
 
-                  <p className="mt-0.5 text-xs text-neutral-500">
+                  <p className="mt-0.5 text-xs text-neutral-700">
                     San Miguel, Santiago
                   </p>
                 </div>

@@ -141,7 +141,7 @@ export default function Footer() {
               </span>
             </Link>
 
-            <p className="mt-6 max-w-sm text-sm leading-6 text-neutral-500">
+            <p className="mt-6 max-w-sm text-sm leading-6 text-neutral-600">
               Representantes oficiales de Abet Laminati · Distribución Karikal.
             </p>
 
@@ -155,7 +155,7 @@ export default function Footer() {
                 </ContactIcon>
 
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
                     Correo
                   </p>
 
@@ -174,7 +174,7 @@ export default function Footer() {
                 </ContactIcon>
 
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
                     Teléfono
                   </p>
 
@@ -195,7 +195,7 @@ export default function Footer() {
                 </ContactIcon>
 
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
                     Showroom
                   </p>
 
@@ -203,7 +203,7 @@ export default function Footer() {
                     {CONTACT_ADDRESS}
                   </p>
 
-                  <p className="mt-0.5 text-xs leading-5 text-neutral-400">
+                  <p className="mt-0.5 text-xs leading-5 text-neutral-600">
                     {CONTACT_ADDRESS_REFERENCE}
                   </p>
                 </div>
@@ -215,7 +215,7 @@ export default function Footer() {
                 </ContactIcon>
 
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
                     Horario de atención
                   </p>
 
@@ -223,7 +223,7 @@ export default function Footer() {
                     {CONTACT_HOURS_DAYS}
                   </p>
 
-                  <p className="mt-0.5 text-xs leading-5 text-neutral-400">
+                  <p className="mt-0.5 text-xs leading-5 text-neutral-600">
                     {CONTACT_HOURS_TIME}
                   </p>
                 </div>
@@ -236,7 +236,7 @@ export default function Footer() {
               Productos
             </p>
 
-            <div className="mt-4 space-y-2.5 text-sm text-neutral-500">
+            <div className="mt-4 space-y-2.5 text-sm text-neutral-600">
               <Link
                 className="block transition hover:text-black"
                 href="/productos"
@@ -279,7 +279,7 @@ export default function Footer() {
               Empresa
             </p>
 
-            <div className="mt-4 space-y-2.5 text-sm text-neutral-500">
+            <div className="mt-4 space-y-2.5 text-sm text-neutral-600">
               <Link
                 className="block transition hover:text-black"
                 href="/proyectos"
@@ -309,7 +309,7 @@ export default function Footer() {
               Ayuda
             </p>
 
-            <div className="mt-4 space-y-2.5 text-sm text-neutral-500">
+            <div className="mt-4 space-y-2.5 text-sm text-neutral-600">
               <Link
                 className="block transition hover:text-black"
                 href="/mi-cuenta"
@@ -336,14 +336,14 @@ export default function Footer() {
                 </p>
               </div>
 
-              <p className="mt-2 max-w-[210px] text-xs leading-5 text-neutral-500">
+              <p className="mt-2 max-w-[210px] text-xs leading-5 text-neutral-600">
                 Protegemos tus datos durante todo el proceso de compra.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-neutral-100 pt-5 text-xs text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-3 border-t border-neutral-100 pt-5 text-xs text-neutral-600 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © 2026 Laminati Chile SPA.
           </p>

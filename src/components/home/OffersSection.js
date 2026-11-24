@@ -367,11 +367,11 @@ function getImageUrl(
   return (
     getStableProductImageUrl(
       product?.primary_image,
-      "card"
+      "thumbnail"
     ) ||
     getStableProductImageUrl(
       product?.images?.[0],
-      "card"
+      "thumbnail"
     ) ||
     product
       ?.primary_image
@@ -491,7 +491,7 @@ function OfferCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">
               Laminati
             </span>
           </div>
@@ -505,7 +505,7 @@ function OfferCard({
 
       <div className="flex flex-1 flex-col pt-4">
 
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-600">
           {product
             ?.collection ||
             product
@@ -571,7 +571,7 @@ function OfferCard({
               {offer
                 .basePrice !==
                 null && (
-                <p className="text-xs text-neutral-400 line-through">
+                <p className="text-xs text-neutral-600 line-through">
                   {formatPrice(
                     offer
                       .basePrice
@@ -600,7 +600,7 @@ function OfferCard({
               {offer
                 .basePrice !==
                 null && (
-                <p className="text-xs text-neutral-400 line-through">
+                <p className="text-xs text-neutral-600 line-through">
                   {formatPrice(
                     offer
                       .basePrice
@@ -617,7 +617,7 @@ function OfferCard({
           )}
 
           {validUntil && (
-            <p className="mt-1 text-[11px] font-medium text-neutral-400">
+            <p className="mt-1 text-[11px] font-medium text-neutral-600">
               Válido hasta{" "}
               {validUntil}
             </p>
@@ -760,7 +760,7 @@ export default async function OffersSection() {
   }
 
   return (
-    <section className="bg-[#f7faf8] py-16 sm:py-20 lg:py-28">
+    <section style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }} className="bg-[#f7faf8] py-16 sm:py-20 lg:py-28">
 
       <div className="site-container">
 
@@ -782,7 +782,7 @@ export default async function OffersSection() {
               Oportunidades seleccionadas.
             </h2>
 
-            <p className="mt-4 max-w-xl text-sm leading-6 text-neutral-500 sm:text-base sm:leading-7">
+            <p className="mt-4 max-w-xl text-sm leading-6 text-neutral-700 sm:text-base sm:leading-7">
               Láminas con precios especiales y promociones activas por tiempo limitado.
             </p>
 
