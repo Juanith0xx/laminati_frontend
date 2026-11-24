@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { getCatalogFilters } from "@/services/products.service";
+import { getPublicCatalogFilters } from "@/services/products.service";
 
 export default async function CategoriesSection() {
   let categories = [];
 
   try {
-    const response = await getCatalogFilters();
+    const response = await getPublicCatalogFilters();
 
     categories = response?.filters?.categories || [];
   } catch (error) {
@@ -33,6 +33,7 @@ export default async function CategoriesSection() {
 
           <Link
             href="/productos"
+            prefetch={false}
             className="group flex w-fit items-center gap-2 text-sm font-medium text-neutral-600 transition hover:text-black"
           >
             Ver todos los productos
@@ -49,6 +50,7 @@ export default async function CategoriesSection() {
             <Link
               key={category.id}
               href={`/productos?category=${category.slug}`}
+              prefetch={false}
               className="group relative min-h-[280px] overflow-hidden rounded-[1.5rem] bg-[#f3f1ec] p-6 sm:min-h-[340px] sm:p-8 lg:min-h-[390px]"
             >
               {/* DECORACIÓN */}

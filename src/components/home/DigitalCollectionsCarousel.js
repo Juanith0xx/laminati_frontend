@@ -600,6 +600,7 @@ export default function DigitalCollectionsCarousel() {
           <Link
 
             href="/productos/laminados"
+            prefetch={false}
 
             className="group inline-flex items-center gap-3 text-sm font-semibold text-black"
 
@@ -747,9 +748,46 @@ export default function DigitalCollectionsCarousel() {
 
                 }}
 
+                onKeyDown={(event) => {
+                  if (
+                    !visible ||
+                    isActive
+                  ) {
+                    return;
+                  }
+
+                  if (
+                    event.key === "Enter" ||
+                    event.key === " "
+                  ) {
+                    event.preventDefault();
+                    goTo(index);
+                  }
+                }}
+
+                role={
+                  visible &&
+                  !isActive
+                    ? "button"
+                    : undefined
+                }
+
+                tabIndex={
+                  visible &&
+                  !isActive
+                    ? 0
+                    : undefined
+                }
+
                 aria-hidden={!visible}
 
-                aria-label={visible ? `Colección ${collection.title}` : undefined}
+                aria-label={
+                  visible
+                    ? isActive
+                      ? `Colección ${collection.title}`
+                      : `Seleccionar colección ${collection.title}`
+                    : undefined
+                }
 
                 className={`absolute left-1/2 top-1/2 h-[255px] w-[82%] overflow-hidden rounded-[26px] bg-neutral-900 shadow-[0_24px_60px_rgba(0,0,0,0.14)] sm:h-[325px] sm:w-[68%] sm:rounded-[32px] lg:h-[390px] lg:w-[52%] lg:rounded-[38px] ${
 
@@ -759,19 +797,17 @@ export default function DigitalCollectionsCarousel() {
 
               >
 
-                <Image
-
-                  src={collection.image}
-
-                  alt={collection.title}
-
-                  fill
-
-                  sizes="(max-width: 640px) 82vw, (max-width: 1024px) 68vw, 52vw"
-
-                  className="object-cover"
-
-                />
+                {visible ? (
+                  <Image
+                    src={collection.image}
+                    alt={collection.title}
+                    fill
+                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 68vw, 52vw"
+                    loading="lazy"
+                    quality={75}
+                    className="object-cover"
+                  />
+                ) : null}
 
 
 
@@ -818,6 +854,7 @@ export default function DigitalCollectionsCarousel() {
                     <Link
 
                       href={collection.href}
+                      prefetch={false}
 
                       onClick={(event) => event.stopPropagation()}
 

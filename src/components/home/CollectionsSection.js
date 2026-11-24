@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 import {
-  getCatalogFilters,
-  getProducts,
+  getPublicCatalogFilters,
+  getPublicProducts,
 } from "@/services/products.service";
 
 import CollectionsCarousel from "./CollectionsCarousel";
@@ -28,8 +28,8 @@ function getProductImage(
   product
 ) {
   return (
-    product?.primary_image_url ||
     product?.primary_image?.card_url ||
+    product?.primary_image_url ||
     product?.primary_image?.image_url ||
     null
   );
@@ -40,8 +40,8 @@ function getSecondaryProductImage(
   product
 ) {
   return (
-    product?.secondary_image_url ||
     product?.secondary_image?.card_url ||
+    product?.secondary_image_url ||
     product?.secondary_image?.image_url ||
     null
   );
@@ -220,9 +220,9 @@ export default async function CollectionsSection() {
       productsResponse,
     ] =
       await Promise.all([
-        getCatalogFilters(),
+        getPublicCatalogFilters(),
 
-        getProducts({
+        getPublicProducts({
           category:
             "laminados",
           limit:
@@ -322,6 +322,7 @@ export default async function CollectionsSection() {
 
           <Link
             href="/colecciones"
+            prefetch={false}
             className="group flex w-fit items-center gap-2 text-sm font-medium text-neutral-400 transition hover:text-white"
           >
             Ver todas las colecciones

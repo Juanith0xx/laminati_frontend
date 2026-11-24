@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import {
-  getProducts,
+  getPublicProducts,
 } from "@/services/products.service";
 
 import HeroLaminateMotion from "./HeroLaminateMotion";
@@ -26,13 +26,13 @@ function getProductImage(
 ) {
   return (
     product
-      ?.primary_image_url ||
+      ?.primary_image
+      ?.card_url ||
     product
       ?.primary_image
       ?.detail_url ||
     product
-      ?.primary_image
-      ?.card_url ||
+      ?.primary_image_url ||
     null
   );
 }
@@ -375,11 +375,11 @@ async function loadProductBySku(
 ) {
   try {
     const response =
-      await getProducts({
+      await getPublicProducts({
         search:
           sku,
         limit:
-          12,
+          6,
         sort:
           "featured",
       });
@@ -430,7 +430,7 @@ async function loadAutomaticFallbackProducts() {
       newestResponse,
     ] =
       await Promise.all([
-        getProducts({
+        getPublicProducts({
           in_stock:
             true,
           limit:
@@ -439,7 +439,7 @@ async function loadAutomaticFallbackProducts() {
             "featured",
         }),
 
-        getProducts({
+        getPublicProducts({
           in_stock:
             true,
           limit:
@@ -627,6 +627,7 @@ export default async function Hero() {
 
             <Link
               href="/productos"
+              prefetch={false}
               style={{
                 color:
                   "#ffffff",
@@ -644,6 +645,7 @@ export default async function Hero() {
 
             <Link
               href="/colecciones"
+              prefetch={false}
               style={{
                 color:
                   "#171717",

@@ -308,6 +308,7 @@ export default function LocationSection() {
 
                 <Link
                   href="/contacto"
+                  prefetch={false}
                   className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-black/10 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:border-black hover:bg-neutral-50"
                 >
                   Contactar

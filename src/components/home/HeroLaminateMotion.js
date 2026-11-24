@@ -1,17 +1,13 @@
 "use client";
 
+import Image from "next/image";
+
 import {
   useEffect,
   useMemo,
   useRef,
 } from "react";
 
-import {
-  animate,
-  createScope,
-  stagger,
-  utils,
-} from "animejs";
 
 const FALLBACK_PANELS = [
   {
@@ -78,162 +74,212 @@ export default function HeroLaminateMotion({
 
   useEffect(
     () => {
-      const scope =
-        createScope({
-          root,
-          mediaQueries: {
-            reduceMotion:
-              "(prefers-reduced-motion: reduce)",
-            small:
-              "(max-width: 767px)",
-          },
-        }).add(
-          (
-            self
-          ) => {
-            const {
-              reduceMotion,
-              small,
-            } =
-              self.matches;
+      let cancelled = false;
+      let scope = null;
+      let frameId = null;
 
-            if (
-              reduceMotion
-            ) {
-              utils.set(
-                ".laminate-panel",
-                {
-                  opacity: 1,
-                  scale: 1,
-                  translateX: 0,
-                  translateY: 0,
-                }
-              );
+      const startMotion = async () => {
+        /*
+         * Anime.js no forma parte del JavaScript crítico del Hero.
+         * Las placas y sus imágenes se renderizan inmediatamente y
+         * la librería de animación se descarga después de la hidratación.
+         */
+        const {
+          animate,
+          createScope,
+          stagger,
+          utils,
+        } = await import("animejs");
 
-              return;
-            }
+        if (
+          cancelled ||
+          !root.current
+        ) {
+          return;
+        }
 
-            /*
-             * Entrada tipo abanico de muestrarios HPL.
-             * Se anima solo el transform interno para mantener
-             * la posición/rotación base de cada placa.
-             */
-            animate(
-              ".laminate-panel-inner",
-              {
-                opacity: [
-                  0,
-                  1,
-                ],
-                scale: [
-                  0.86,
-                  1,
-                ],
-                translateY:
-                  small
-                    ? [
-                        18,
-                        0,
-                      ]
-                    : [
-                        42,
-                        0,
-                      ],
-                delay:
-                  stagger(
-                    135
-                  ),
-                duration:
-                  1150,
-                ease:
-                  "out(4)",
+        frameId =
+          window.requestAnimationFrame(
+            () => {
+              if (
+                cancelled ||
+                !root.current
+              ) {
+                return;
               }
-            );
 
-            /*
-             * Respiración sutil: las placas parecen suspendidas.
-             */
-            animate(
-              ".laminate-float",
-              {
-                translateY:
-                  stagger(
-                    small
-                      ? [
-                          -2,
-                          2,
-                        ]
-                      : [
-                          -7,
-                          7,
-                        ]
-                  ),
-                delay:
-                  stagger(
-                    360
-                  ),
-                duration:
-                  5200,
-                loop: true,
-                alternate:
-                  true,
-                ease:
-                  "inOutSine",
-              }
-            );
+              scope =
+                createScope({
+                  root,
+                  mediaQueries: {
+                    reduceMotion:
+                      "(prefers-reduced-motion: reduce)",
+                    small:
+                      "(max-width: 767px)",
+                  },
+                }).add(
+                  (
+                    self
+                  ) => {
+                    const {
+                      reduceMotion,
+                      small,
+                    } =
+                      self.matches;
 
-            /*
-             * Reflejo sobre texturas reales.
-             */
-            animate(
-              ".laminate-sheen",
-              {
-                translateX:
-                  "520%",
-                delay:
-                  stagger(
-                    1100,
-                    {
-                      start:
-                        1000,
+                    if (
+                      reduceMotion
+                    ) {
+                      utils.set(
+                        ".laminate-panel",
+                        {
+                          opacity: 1,
+                          scale: 1,
+                          translateX: 0,
+                          translateY: 0,
+                        }
+                      );
+
+                      return;
                     }
-                  ),
-                duration:
-                  5200,
-                loop: true,
-                ease:
-                  "inOutSine",
-              }
-            );
 
-            /*
-             * Sombra de piso levemente pulsante.
-             */
-            animate(
-              ".laminate-ground-shadow",
-              {
-                scaleX: [
-                  0.94,
-                  1.03,
-                ],
-                opacity: [
-                  0.16,
-                  0.23,
-                ],
-                duration:
-                  5200,
-                loop: true,
-                alternate:
-                  true,
-                ease:
-                  "inOutSine",
-              }
+                    animate(
+                      ".laminate-panel-inner",
+                      {
+                        opacity: [
+                          0,
+                          1,
+                        ],
+                        scale: [
+                          0.86,
+                          1,
+                        ],
+                        translateY:
+                          small
+                            ? [
+                                18,
+                                0,
+                              ]
+                            : [
+                                42,
+                                0,
+                              ],
+                        delay:
+                          stagger(
+                            135
+                          ),
+                        duration:
+                          1150,
+                        ease:
+                          "out(4)",
+                      }
+                    );
+
+                    animate(
+                      ".laminate-float",
+                      {
+                        translateY:
+                          stagger(
+                            small
+                              ? [
+                                  -2,
+                                  2,
+                                ]
+                              : [
+                                  -7,
+                                  7,
+                                ]
+                          ),
+                        delay:
+                          stagger(
+                            360
+                          ),
+                        duration:
+                          5200,
+                        loop: true,
+                        alternate:
+                          true,
+                        ease:
+                          "inOutSine",
+                      }
+                    );
+
+                    animate(
+                      ".laminate-sheen",
+                      {
+                        translateX:
+                          "520%",
+                        delay:
+                          stagger(
+                            1100,
+                            {
+                              start:
+                                1000,
+                            }
+                          ),
+                        duration:
+                          5200,
+                        loop: true,
+                        ease:
+                          "inOutSine",
+                      }
+                    );
+
+                    animate(
+                      ".laminate-ground-shadow",
+                      {
+                        scaleX: [
+                          0.94,
+                          1.03,
+                        ],
+                        opacity: [
+                          0.16,
+                          0.23,
+                        ],
+                        duration:
+                          5200,
+                        loop: true,
+                        alternate:
+                          true,
+                        ease:
+                          "inOutSine",
+                      }
+                    );
+                  }
+                );
+            }
+          );
+      };
+
+      startMotion().catch(
+        (
+          error
+        ) => {
+          if (
+            process.env.NODE_ENV !==
+            "production"
+          ) {
+            console.warn(
+              "No fue posible iniciar la animación del Hero:",
+              error
             );
           }
-        );
+        }
+      );
 
-      return () =>
-        scope.revert();
+      return () => {
+        cancelled = true;
+
+        if (
+          frameId !== null
+        ) {
+          window.cancelAnimationFrame(
+            frameId
+          );
+        }
+
+        scope?.revert?.();
+      };
     },
     []
   );
@@ -298,12 +344,25 @@ export default function HeroLaminateMotion({
                   <div className="relative z-10 h-full w-full overflow-hidden rounded-[1.8rem] border border-black/[0.05] bg-[#d3cabf] shadow-[0_18px_45px_rgba(0,0,0,0.14),0_4px_12px_rgba(0,0,0,0.08)] sm:rounded-[2.2rem]">
 
                     {panel.imageUrl ? (
-                      <img
+                      <Image
                         src={
                           panel.imageUrl
                         }
                         alt=""
-                        className="absolute inset-0 h-full w-full object-cover"
+                        fill
+                        sizes="(max-width: 639px) 48vw, (max-width: 1023px) 36vw, 28vw"
+                        loading={
+                          index < 2
+                            ? "eager"
+                            : "lazy"
+                        }
+                        fetchPriority={
+                          index === 1
+                            ? "high"
+                            : "auto"
+                        }
+                        quality={75}
+                        className="object-cover"
                       />
                     ) : (
                       <div

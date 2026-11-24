@@ -65,6 +65,7 @@ export async function apiRequest(
     body,
     headers = {},
     cache = "no-store",
+    next,
     signal,
     keepalive = false,
   } = {}
@@ -89,6 +90,11 @@ export async function apiRequest(
     {
       method,
       cache,
+      ...(next
+        ? {
+            next,
+          }
+        : {}),
       signal,
       keepalive,
       credentials: "include",

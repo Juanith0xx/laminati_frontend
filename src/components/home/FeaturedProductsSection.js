@@ -1,7 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
-  getProducts,
+  getPublicProducts,
 } from "@/services/products.service";
 
 import TrackedProductLink from "@/components/analytics/TrackedProductLink";
@@ -54,13 +55,13 @@ function getImageUrl(
 ) {
   return (
     product
-      ?.primary_image_url ||
-    product
       ?.primary_image
       ?.card_url ||
     product
       ?.primary_image
       ?.detail_url ||
+    product
+      ?.primary_image_url ||
     null
   );
 }
@@ -188,7 +189,7 @@ function FeaturedCard({
       >
 
         {imageUrl ? (
-          <img
+          <Image
             src={
               imageUrl
             }
@@ -199,7 +200,11 @@ function FeaturedCard({
                 ?.name ||
               "Producto Laminati"
             }
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
+            fill
+            sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 25vw"
+            loading="lazy"
+            quality={75}
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.025]"
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center">
@@ -359,7 +364,7 @@ export default async function FeaturedProductsSection() {
      * uniforme de cuatro columnas en escritorio.
      */
     const featuredResponse =
-      await getProducts({
+      await getPublicProducts({
         featured: true,
         in_stock: true,
         limit: 4,
@@ -375,7 +380,7 @@ export default async function FeaturedProductsSection() {
       0
     ) {
       const fallbackResponse =
-        await getProducts({
+        await getPublicProducts({
           in_stock: true,
           limit: 4,
           sort: "newest",
@@ -425,6 +430,7 @@ export default async function FeaturedProductsSection() {
 
           <Link
             href="/productos"
+            prefetch={false}
             className="group flex w-fit items-center gap-2 text-sm font-medium text-neutral-600 transition hover:text-black"
           >
             Ver catálogo completo

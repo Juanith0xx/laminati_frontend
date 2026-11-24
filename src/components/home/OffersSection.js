@@ -1,7 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
-  getProducts,
+  getPublicProducts,
 } from "@/services/products.service";
 
 import TrackedProductLink from "@/components/analytics/TrackedProductLink";
@@ -346,10 +347,10 @@ function getImageUrl(
 ) {
   return (
     product
-      ?.primary_image_url ||
-    product
       ?.primary_image
       ?.card_url ||
+    product
+      ?.primary_image_url ||
     product
       ?.primary_image
       ?.detail_url ||
@@ -444,7 +445,7 @@ function OfferCard({
       >
 
         {imageUrl ? (
-          <img
+          <Image
             src={
               imageUrl
             }
@@ -455,7 +456,10 @@ function OfferCard({
                 ?.name ||
               "Producto Laminati"
             }
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
+            fill
+            sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 25vw"
+            loading="lazy"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.025]"
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center">
@@ -650,7 +654,7 @@ export default async function OffersSection() {
      * De esta forma no necesitamos cambiar el backend.
      */
     const response =
-      await getProducts({
+      await getPublicProducts({
         in_stock: true,
         limit: 60,
         sort: "featured",
@@ -758,6 +762,7 @@ export default async function OffersSection() {
 
           <Link
             href="/productos"
+            prefetch={false}
             className="group flex w-fit items-center gap-2 text-sm font-semibold text-emerald-800 transition hover:text-emerald-950"
           >
             Ver catálogo
