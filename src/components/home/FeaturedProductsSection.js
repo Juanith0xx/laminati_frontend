@@ -50,10 +50,37 @@ function formatPrice(
   ).format(number);
 }
 
+function getStableProductImageUrl(
+  image,
+  variant = "card"
+) {
+  const imageId =
+    String(
+      image?.id || ""
+    ).trim();
+
+  if (!imageId) {
+    return null;
+  }
+
+  return (
+    `/media/productos/${encodeURIComponent(imageId)}/` +
+    `${encodeURIComponent(variant)}`
+  );
+}
+
 function getImageUrl(
   product
 ) {
   return (
+    getStableProductImageUrl(
+      product?.primary_image,
+      "card"
+    ) ||
+    getStableProductImageUrl(
+      product?.images?.[0],
+      "card"
+    ) ||
     product
       ?.primary_image
       ?.card_url ||
@@ -203,7 +230,7 @@ function FeaturedCard({
             fill
             sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 25vw"
             loading="lazy"
-            quality={75}
+            unoptimized
             className="object-cover transition-transform duration-500 group-hover:scale-[1.025]"
           />
         ) : (

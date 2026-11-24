@@ -21,10 +21,37 @@ const HERO_TEXTURE_SKUS = [
   "6119L",   // placa 4
 ];
 
+function getStableProductImageUrl(
+  image,
+  variant = "card"
+) {
+  const imageId =
+    String(
+      image?.id || ""
+    ).trim();
+
+  if (!imageId) {
+    return null;
+  }
+
+  return (
+    `/media/productos/${encodeURIComponent(imageId)}/` +
+    `${encodeURIComponent(variant)}`
+  );
+}
+
 function getProductImage(
   product
 ) {
   return (
+    getStableProductImageUrl(
+      product?.primary_image,
+      "card"
+    ) ||
+    getStableProductImageUrl(
+      product?.images?.[0],
+      "card"
+    ) ||
     product
       ?.primary_image
       ?.card_url ||

@@ -24,10 +24,33 @@ function getCollectionImage(
 }
 
 
+function getStableProductImageUrl(
+  image,
+  variant = "card"
+) {
+  const imageId =
+    String(
+      image?.id || ""
+    ).trim();
+
+  if (!imageId) {
+    return null;
+  }
+
+  return (
+    `/media/productos/${encodeURIComponent(imageId)}/` +
+    `${encodeURIComponent(variant)}`
+  );
+}
+
 function getProductImage(
   product
 ) {
   return (
+    getStableProductImageUrl(
+      product?.primary_image,
+      "card"
+    ) ||
     product?.primary_image?.card_url ||
     product?.primary_image_url ||
     product?.primary_image?.image_url ||
@@ -40,6 +63,10 @@ function getSecondaryProductImage(
   product
 ) {
   return (
+    getStableProductImageUrl(
+      product?.secondary_image,
+      "card"
+    ) ||
     product?.secondary_image?.card_url ||
     product?.secondary_image_url ||
     product?.secondary_image?.image_url ||

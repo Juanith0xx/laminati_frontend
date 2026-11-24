@@ -352,16 +352,16 @@ export default function HeroLaminateMotion({
                         fill
                         sizes="(max-width: 639px) 48vw, (max-width: 1023px) 36vw, 28vw"
                         loading={
-                          index < 2
+                          index === 0
                             ? "eager"
                             : "lazy"
                         }
                         fetchPriority={
-                          index === 1
+                          index === 0
                             ? "high"
                             : "auto"
                         }
-                        quality={75}
+                        unoptimized
                         className="object-cover"
                       />
                     ) : (
