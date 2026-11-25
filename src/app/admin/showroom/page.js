@@ -11,6 +11,9 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+import ShowroomStepperHeader from "@/components/admin/quotations/showroom-stepper/ShowroomStepperHeader";
+import ShowroomStepperNavigation from "@/components/admin/quotations/showroom-stepper/ShowroomStepperNavigation";
+
 import {
   createPosSale,
   createQuotation,
@@ -1772,6 +1775,12 @@ export default function ShowroomPage() {
 
 function ShowroomContent() {
   const searchParams = useSearchParams();
+
+  const [
+    activeStep,
+    setActiveStep,
+  ] = useState(1);
+
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] =
@@ -3994,6 +4003,40 @@ function ShowroomContent() {
     }
   };
 
+  const goToNextStep = () => {
+    if (
+      activeStep === 2 &&
+      cart.length === 0
+    ) {
+      setSaleError(
+        "Agrega al menos un producto o servicio antes de continuar."
+      );
+      return;
+    }
+
+    setSaleError("");
+
+    setActiveStep(
+      (current) =>
+        Math.min(
+          current + 1,
+          4
+        )
+    );
+  };
+
+  const goToPreviousStep = () => {
+    setSaleError("");
+
+    setActiveStep(
+      (current) =>
+        Math.max(
+          current - 1,
+          1
+        )
+    );
+  };
+
   return (
     <main className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
       <div className="space-y-5">
@@ -4026,43 +4069,20 @@ function ShowroomContent() {
           </div>
         </section>
 
-        <div className="grid gap-2 sm:grid-cols-4">
-          {[
-            ["01", "Cliente", rutLookup.status === "FOUND"],
-            ["02", "Productos", cart.length > 0],
-            ["03", "Resumen", cart.length > 0],
-            ["04", quotationMode ? "Cotización" : "Pago", saleResult || quotationResult],
-          ].map(([number, label, complete]) => (
-            <div
-              key={number}
-              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
-                complete
-                  ? "border-emerald-200 bg-emerald-50"
-                  : "border-black/5 bg-white"
-              }`}
-            >
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-                  complete
-                    ? "bg-emerald-600 text-white"
-                    : "bg-neutral-100 text-neutral-500"
-                }`}
-              >
-                {complete ? "✓" : number}
-              </span>
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
-                  Paso {number}
-                </p>
-                <p className="text-sm font-semibold text-neutral-900">
-                  {label}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <ShowroomStepperHeader
+          activeStep={activeStep}
+          onStepChange={setActiveStep}
+          quotationMode={quotationMode}
+        />
 
         <div className="space-y-6">
+          <div
+            className={
+              activeStep === 1
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
@@ -4717,6 +4737,21 @@ function ShowroomContent() {
             )}
           </section>
 
+          <ShowroomStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+          />
+          </div>
+
+          <div
+            className={
+              activeStep === 2
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
@@ -5365,6 +5400,23 @@ function ShowroomContent() {
             </div>
           </section>
 
+          <ShowroomStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+            nextDisabled={cart.length === 0}
+            nextDisabledMessage="Agrega al menos un producto o servicio para continuar."
+          />
+          </div>
+
+          <div
+            className={
+              activeStep === 3
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           <section id="showroom-step-03" className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
@@ -5995,6 +6047,22 @@ function ShowroomContent() {
             )}
           </section>
 
+          <ShowroomStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+            nextDisabled={cart.length === 0}
+          />
+          </div>
+
+          <div
+            className={
+              activeStep === 4
+                ? "space-y-6"
+                : "hidden"
+            }
+          >
           <section className="rounded-[26px] border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_430px] xl:items-start">
               <div>
@@ -6914,6 +6982,15 @@ function ShowroomContent() {
               </div>
             )}
           </section>
+
+          <ShowroomStepperNavigation
+            activeStep={activeStep}
+            totalSteps={4}
+            onPrevious={goToPreviousStep}
+            onNext={goToNextStep}
+            hideNext
+          />
+          </div>
         </div>
       </div>
 
