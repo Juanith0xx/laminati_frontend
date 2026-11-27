@@ -422,7 +422,7 @@ export default function ProductSearch({
      IR A PRODUCTO
   ========================================= */
 
-  const goToProduct = (product) => {
+  const goToProduct = (product, position = null) => {
     if (!product?.slug) {
       return;
     }
@@ -477,6 +477,9 @@ export default function ProductSearch({
               : product?.collection
           ) ||
           null,
+        search_term:
+          normalizedQuery ||
+          null,
         metadata: {
           source:
             "search_suggestion",
@@ -489,6 +492,10 @@ export default function ProductSearch({
           product_slug:
             product?.slug ||
             null,
+          position:
+            Number.isInteger(position)
+              ? position + 1
+              : null,
         },
       }
     );
@@ -631,7 +638,8 @@ export default function ProductSearch({
         suggestions[selectedIndex]
       ) {
         goToProduct(
-          suggestions[selectedIndex]
+          suggestions[selectedIndex],
+          selectedIndex
         );
 
         return;
@@ -904,7 +912,8 @@ export default function ProductSearch({
                           }
                           onClick={() =>
                             goToProduct(
-                              product
+                              product,
+                              index
                             )
                           }
                           className={`flex w-full items-center gap-4 rounded-2xl p-3 text-left transition ${

@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { useCartStore } from "@/store/cartStore";
+import { trackEvent } from "@/services/analytics.service";
 
 /* =========================================
    FORMATEAR PRECIO CLP
@@ -141,6 +142,28 @@ export default function ProductCard({ product }) {
      AGREGAR AL CARRITO
   ========================================= */
 
+
+  const handleProductClick = () => {
+    void trackEvent("PRODUCT_CLICK", {
+      product_id: product?.id || null,
+      product_code:
+        product?.internal_code ||
+        product?.sku ||
+        null,
+      collection_slug:
+        product?.collection_slug ||
+        (typeof product?.collection === "object"
+          ? product?.collection?.slug
+          : product?.collection) ||
+        null,
+      metadata: {
+        source: "product_card",
+        product_name: product?.name || null,
+        product_slug: product?.slug || null,
+      },
+    });
+  };
+
   const handleAddToCart = () => {
     if (!canAdd) {
       return;
@@ -184,6 +207,7 @@ export default function ProductCard({ product }) {
 
         <Link
           href={`/productos/${product.slug}`}
+          onClick={handleProductClick}
           className="relative block aspect-[4/5] overflow-hidden"
         >
 
