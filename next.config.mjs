@@ -65,10 +65,6 @@ const nextConfig = {
   },
 
   async rewrites() {
-    if (!API_PROXY_TARGET) {
-      return [];
-    }
-
     return [
       {
         source: "/api/:path*",
