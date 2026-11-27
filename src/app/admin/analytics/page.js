@@ -1169,9 +1169,9 @@ function AnonymousVisitorsPanel({
   };
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
-      <div className="space-y-3">
-        {visitors.slice(0, 15).map((visitor) => {
+    <div className="grid gap-5 xl:grid-cols-[1.05fr_.95fr] xl:items-start">
+      <div className="max-h-[1120px] space-y-2 overflow-y-auto pr-2 scrollbar-thin">
+        {visitors.map((visitor) => {
           const sessionId = visitor.session_id;
           const active = sessionId === selectedVisitorId;
           const clickedProducts = Array.isArray(visitor.clicked_products)
@@ -1193,7 +1193,7 @@ function AnonymousVisitorsPanel({
               key={sessionId}
               type="button"
               onClick={() => onSelect(sessionId)}
-              className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+              className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                 active
                   ? "border-black bg-black text-white"
                   : "border-black/[0.06] bg-[#f7f6f4] text-neutral-900 hover:border-black/15"
@@ -1238,7 +1238,7 @@ function AnonymousVisitorsPanel({
                 </div>
               </div>
 
-              <div className={`mt-4 grid grid-cols-4 gap-2 border-t pt-3 ${active ? "border-white/10" : "border-black/[0.05]"}`}>
+              <div className={`mt-3 grid grid-cols-4 gap-2 border-t pt-2.5 ${active ? "border-white/10" : "border-black/[0.05]"}`}>
                 {[
                   ["Vistas", visitor.product_views],
                   ["Clicks", visitor.product_clicks],
@@ -1260,7 +1260,7 @@ function AnonymousVisitorsPanel({
         })}
       </div>
 
-      <div className="rounded-[22px] border border-black/[0.06] bg-white p-5">
+      <div className="rounded-[22px] border border-black/[0.06] bg-white p-5 xl:sticky xl:top-6 xl:self-start">
         {detailLoading ? (
           <div className="flex min-h-[320px] items-center justify-center text-xs text-neutral-400">
             Cargando recorrido…
