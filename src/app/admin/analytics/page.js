@@ -1146,15 +1146,15 @@ function AnonymousVisitorsPanel({
     }
 
     if (type === "PRODUCT_CLICK") {
-      return `Click en ${event?.product_code || "producto"}`;
+      return `Click en ${event?.product_code || "producto"}${event?.product_name && event?.product_name !== event?.product_code ? ` · ${event.product_name}` : ""}`;
     }
 
     if (type === "PRODUCT_VIEW") {
-      return `Vio ${event?.product_code || "producto"}`;
+      return `Vio ${event?.product_code || "producto"}${event?.product_name && event?.product_name !== event?.product_code ? ` · ${event.product_name}` : ""}`;
     }
 
     if (type === "WHATSAPP_CLICK") {
-      return `WhatsApp · ${event?.product_code || "producto"}`;
+      return `WhatsApp · ${event?.product_code || "producto"}${event?.product_name && event?.product_name !== event?.product_code ? ` · ${event.product_name}` : ""}`;
     }
 
     if (type === "COLLECTION_VIEW") {
@@ -1176,6 +1176,9 @@ function AnonymousVisitorsPanel({
           const active = sessionId === selectedVisitorId;
           const clickedProducts = Array.isArray(visitor.clicked_products)
             ? visitor.clicked_products.filter(Boolean)
+            : [];
+          const clickedProductDetails = Array.isArray(visitor.clicked_product_details)
+            ? visitor.clicked_product_details.filter(Boolean)
             : [];
 
           const location = [
@@ -1213,9 +1216,14 @@ function AnonymousVisitorsPanel({
                     {location || "Ubicación no disponible"}
                   </p>
 
-                  {clickedProducts.length ? (
+                  {clickedProductDetails.length || clickedProducts.length ? (
                     <p className={`mt-2 truncate text-[10px] ${active ? "text-white/70" : "text-neutral-500"}`}>
-                      Clicks: {clickedProducts.slice(0, 5).join(", ")}
+                      Clicks: {(clickedProductDetails.length
+                        ? clickedProductDetails.slice(0, 4).map((item) =>
+                            `${item.code}${item.name && item.name !== item.code ? ` · ${item.name}` : ""}`
+                          )
+                        : clickedProducts.slice(0, 5)
+                      ).join(", ")}
                     </p>
                   ) : null}
                 </div>
@@ -1284,7 +1292,7 @@ function AnonymousVisitorsPanel({
                       key={product.product_code}
                       className="rounded-full bg-[#f3f1ee] px-3 py-1.5 text-[10px] font-medium text-neutral-700"
                     >
-                      {product.product_code} · {formatCount(product.clicks)} clicks · {formatCount(product.views)} vistas
+                      {product.product_code}{product.product_name && product.product_name !== product.product_code ? ` · ${product.product_name}` : ""} · {formatCount(product.clicks)} clicks · {formatCount(product.views)} vistas
                     </span>
                   ))}
                 </div>
@@ -2047,6 +2055,25 @@ export default function AdminAnalyticsPage() {
       [products]
     );
 
+  const mostClickedProducts =
+    useMemo(
+      () =>
+        [...products]
+          .map((row) => ({
+            code: pick(row, ["product_code", "product_sku", "sku", "code"], "—"),
+            name: pick(row, ["product_name", "name"], "Producto"),
+            clicks: toNumber(pick(row, ["clicks", "product_clicks", "click_count"], 0)),
+            views: toNumber(pick(row, ["views", "product_views", "view_count"], 0)),
+            searchClicks: toNumber(pick(row, ["search_clicks", "searchClicks"], 0)),
+            whatsapp: toNumber(pick(row, ["whatsapp_clicks", "whatsapp"], 0)),
+            uniqueSessions: toNumber(pick(row, ["unique_sessions", "uniqueSessions"], 0)),
+          }))
+          .filter((row) => row.clicks > 0)
+          .sort((a, b) => b.clicks - a.clicks || b.views - a.views)
+          .slice(0, 10),
+      [products]
+    );
+
   const collectionRows =
     useMemo(
       () =>
@@ -2771,6 +2798,50 @@ export default function AdminAnalyticsPage() {
                 )}
               </DashboardCard>
             </section>
+
+            <div className="mt-6">
+              <DashboardCard
+                eyebrow="03B · Productos"
+                title="Productos más clickeados"
+                description="Ranking ordenado exclusivamente por clicks reales. Muestra código, nombre del producto y las señales asociadas."
+              >
+                {mostClickedProducts.length ? (
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    {mostClickedProducts.map((row, index) => (
+                      <div
+                        key={`${row.code}-${index}`}
+                        className="rounded-[20px] border border-black/[0.05] bg-[#f7f6f4] p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                              #{index + 1} · {row.code}
+                            </p>
+                            <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-neutral-900">
+                              {row.name}
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-2xl font-semibold tracking-[-0.05em] text-neutral-950">
+                            {formatCount(row.clicks)}
+                          </p>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-200 pt-3 text-[9px] text-neutral-500">
+                          <span>{formatCount(row.views)} vistas</span>
+                          <span>{formatCount(row.uniqueSessions)} sesiones</span>
+                          <span>{formatCount(row.searchClicks)} desde búsqueda</span>
+                          <span>{formatCount(row.whatsapp)} WhatsApp</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    message="Todavía no hay clicks de producto registrados para este período."
+                    compact
+                  />
+                )}
+              </DashboardCard>
+            </div>
 
             {/* ======================================
                 04 · COLECCIONES / BÚSQUEDAS
