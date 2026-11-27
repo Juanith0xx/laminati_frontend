@@ -596,37 +596,31 @@ const NAVIGATION = [
     ],
   },
   {
-    title:
-      "Administración",
-    items: [
-      {
-        label:
-          "Contactos",
-        href:
-          "/admin/contactos",
-        icon:
-          IconContacts,
-      },
-      {
-        label:
-          "Usuarios",
-        href:
-          "/admin/usuarios",
-        icon:
-          IconUsers,
-      },
-      {
-        label:
-          "Historial de Sesiones",
-        href:
-          "/admin/historial-sesiones",
-        exact:
-          true,
-        icon:
-          IconSessions,
-      },
-    ],
-  },
+  title: "Administración",
+  items: [
+    {
+      label: "Contactos",
+      href: "/admin/contactos",
+      icon: IconContacts,
+    },
+    {
+      label: "Mailing",
+      href: "/admin/mailing",
+      icon: IconContacts,
+    },
+    {
+      label: "Usuarios",
+      href: "/admin/usuarios",
+      icon: IconUsers,
+    },
+    {
+      label: "Historial de Sesiones",
+      href: "/admin/historial-sesiones",
+      exact: true,
+      icon: IconSessions,
+    },
+  ],
+},
 ];
 
 const SELLER_ALLOWED_PATHS = new Set([
