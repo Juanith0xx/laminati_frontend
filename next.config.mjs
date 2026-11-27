@@ -5,7 +5,8 @@ import {
 } from "./seo-redirects.mjs";
 
 const API_PROXY_TARGET =
-  process.env.API_PROXY_TARGET;
+  process.env.API_PROXY_TARGET ||
+  "https://laminatibackend-production.up.railway.app";
 
 const securityHeaders = [
   {
