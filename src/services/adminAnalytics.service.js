@@ -87,3 +87,24 @@ export const getAdminAnalyticsDevices = (
     days,
     signal
   );
+
+
+export const getAdminAnalyticsVisitors = (
+  days = 30,
+  signal
+) =>
+  get(
+    "/admin/analytics/visitors",
+    days,
+    signal
+  );
+
+export const getAdminAnalyticsVisitorDetail = (
+  sessionId,
+  days = 30,
+  signal
+) =>
+  apiRequest(
+    `/admin/analytics/visitors/${encodeURIComponent(sessionId)}?days=${normalizeDays(days)}`,
+    { signal }
+  );

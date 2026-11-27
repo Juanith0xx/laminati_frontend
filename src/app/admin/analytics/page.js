@@ -30,6 +30,8 @@ import {
   getAdminAnalyticsProducts,
   getAdminAnalyticsSearches,
   getAdminAnalyticsSources,
+  getAdminAnalyticsVisitors,
+  getAdminAnalyticsVisitorDetail,
 } from "@/services/adminAnalytics.service";
 
 const PERIOD_OPTIONS = [
@@ -1114,6 +1116,216 @@ function LocationList({
   );
 }
 
+
+function AnonymousVisitorsPanel({
+  visitors,
+  selectedVisitorId,
+  visitorDetail,
+  detailLoading,
+  onSelect,
+}) {
+  if (!visitors.length) {
+    return (
+      <EmptyState
+        message="Todavía no hay sesiones anónimas con interacción comercial para este período."
+        compact
+      />
+    );
+  }
+
+  const detail = unwrap(visitorDetail);
+  const session = detail?.session || null;
+  const detailProducts = Array.isArray(detail?.products) ? detail.products : [];
+  const detailEvents = Array.isArray(detail?.events) ? detail.events : [];
+
+  const formatEvent = (event) => {
+    const type = String(event?.event_type || "");
+
+    if (type === "SEARCH") {
+      return `Buscó “${event?.search_term || "—"}”`;
+    }
+
+    if (type === "PRODUCT_CLICK") {
+      return `Click en ${event?.product_code || "producto"}`;
+    }
+
+    if (type === "PRODUCT_VIEW") {
+      return `Vio ${event?.product_code || "producto"}`;
+    }
+
+    if (type === "WHATSAPP_CLICK") {
+      return `WhatsApp · ${event?.product_code || "producto"}`;
+    }
+
+    if (type === "COLLECTION_VIEW") {
+      return `Colección · ${humanizeSlug(event?.collection_slug)}`;
+    }
+
+    if (type === "PAGE_VIEW") {
+      return `Página · ${event?.page_path || "/"}`;
+    }
+
+    return type.replaceAll("_", " ");
+  };
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
+      <div className="space-y-3">
+        {visitors.slice(0, 15).map((visitor) => {
+          const sessionId = visitor.session_id;
+          const active = sessionId === selectedVisitorId;
+          const clickedProducts = Array.isArray(visitor.clicked_products)
+            ? visitor.clicked_products.filter(Boolean)
+            : [];
+
+          const location = [
+            visitor.commune || visitor.city,
+            visitor.country_code,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+
+          return (
+            <button
+              key={sessionId}
+              type="button"
+              onClick={() => onSelect(sessionId)}
+              className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                active
+                  ? "border-black bg-black text-white"
+                  : "border-black/[0.06] bg-[#f7f6f4] text-neutral-900 hover:border-black/15"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-xs font-semibold ${active ? "text-white" : "text-neutral-950"}`}>
+                      Visitante {visitor.visitor_label || "anónimo"}
+                    </span>
+                    <span className={`rounded-full px-2 py-1 text-[9px] font-semibold ${
+                      active ? "bg-white/10 text-white/70" : "bg-white text-neutral-400"
+                    }`}>
+                      {visitor.device_type || "dispositivo desconocido"}
+                    </span>
+                  </div>
+
+                  <p className={`mt-1 text-[10px] ${active ? "text-white/50" : "text-neutral-400"}`}>
+                    {location || "Ubicación no disponible"}
+                  </p>
+
+                  {clickedProducts.length ? (
+                    <p className={`mt-2 truncate text-[10px] ${active ? "text-white/70" : "text-neutral-500"}`}>
+                      Clicks: {clickedProducts.slice(0, 5).join(", ")}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="shrink-0 text-right">
+                  <p className={`text-[9px] uppercase tracking-[0.12em] ${active ? "text-white/45" : "text-neutral-400"}`}>
+                    Score
+                  </p>
+                  <p className={`mt-1 text-lg font-semibold ${active ? "text-white" : "text-neutral-950"}`}>
+                    {formatCount(visitor.engagement_score)}
+                  </p>
+                </div>
+              </div>
+
+              <div className={`mt-4 grid grid-cols-4 gap-2 border-t pt-3 ${active ? "border-white/10" : "border-black/[0.05]"}`}>
+                {[
+                  ["Vistas", visitor.product_views],
+                  ["Clicks", visitor.product_clicks],
+                  ["Búsquedas", visitor.searches],
+                  ["WhatsApp", visitor.whatsapp_clicks],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className={`text-[8px] uppercase tracking-[0.1em] ${active ? "text-white/40" : "text-neutral-400"}`}>
+                      {label}
+                    </p>
+                    <p className={`mt-1 text-xs font-semibold ${active ? "text-white" : "text-neutral-800"}`}>
+                      {formatCount(value)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="rounded-[22px] border border-black/[0.06] bg-white p-5">
+        {detailLoading ? (
+          <div className="flex min-h-[320px] items-center justify-center text-xs text-neutral-400">
+            Cargando recorrido…
+          </div>
+        ) : session ? (
+          <>
+            <div className="border-b border-neutral-100 pb-4">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                Recorrido del visitante
+              </p>
+              <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-neutral-950">
+                Visitante {session.visitor_label}
+              </h3>
+              <p className="mt-1 text-[10px] text-neutral-400">
+                {[session.commune || session.city, session.country_code, session.device_type]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+
+            {detailProducts.length ? (
+              <div className="mt-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                  Productos de interés
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {detailProducts.slice(0, 8).map((product) => (
+                    <span
+                      key={product.product_code}
+                      className="rounded-full bg-[#f3f1ee] px-3 py-1.5 text-[10px] font-medium text-neutral-700"
+                    >
+                      {product.product_code} · {formatCount(product.clicks)} clicks · {formatCount(product.views)} vistas
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-5 max-h-[360px] space-y-2 overflow-y-auto pr-1">
+              {detailEvents.length ? (
+                detailEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="grid grid-cols-[64px_1fr] gap-3 rounded-xl bg-[#f7f6f4] px-3 py-2.5"
+                  >
+                    <span className="text-[9px] font-medium text-neutral-400">
+                      {new Date(event.created_at).toLocaleTimeString("es-CL", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <span className="min-w-0 break-words text-[10px] font-medium text-neutral-700">
+                      {formatEvent(event)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="py-10 text-center text-xs text-neutral-400">
+                  No hay eventos disponibles para esta sesión.
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flex min-h-[320px] items-center justify-center px-6 text-center text-xs leading-5 text-neutral-400">
+            Selecciona un visitante para revisar qué buscó, qué productos abrió y en cuáles hizo click.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminAnalyticsPage() {
   const [
     days,
@@ -1135,6 +1347,11 @@ export default function AdminAnalyticsPage() {
     setUpdatedAt,
   ] = useState(null);
 
+
+  const [selectedVisitorId, setSelectedVisitorId] = useState(null);
+  const [visitorDetail, setVisitorDetail] = useState(null);
+  const [visitorDetailLoading, setVisitorDetailLoading] = useState(false);
+
   const [
     data,
     setData,
@@ -1146,6 +1363,7 @@ export default function AdminAnalyticsPage() {
     searches: null,
     sources: null,
     devices: null,
+    visitors: null,
   });
 
   const loadAnalytics =
@@ -1187,6 +1405,10 @@ export default function AdminAnalyticsPage() {
                 days,
                 signal
               ),
+              getAdminAnalyticsVisitors(
+                days,
+                signal
+              ),
             ]
           );
 
@@ -1204,6 +1426,7 @@ export default function AdminAnalyticsPage() {
           "searches",
           "sources",
           "devices",
+          "visitors",
         ];
 
         const nextData =
@@ -1259,6 +1482,8 @@ export default function AdminAnalyticsPage() {
           );
         }
 
+        setSelectedVisitorId(null);
+        setVisitorDetail(null);
         setLoading(false);
       },
       [days]
@@ -1388,6 +1613,39 @@ export default function AdminAnalyticsPage() {
       data.devices,
       ["devices"]
     );
+
+  const visitors =
+    rowsFrom(
+      data.visitors,
+      ["visitors"]
+    );
+
+
+  const handleSelectVisitor = useCallback(
+    async (sessionId) => {
+      if (!sessionId) return;
+
+      setSelectedVisitorId(sessionId);
+      setVisitorDetailLoading(true);
+
+      try {
+        const response = await getAdminAnalyticsVisitorDetail(
+          sessionId,
+          days
+        );
+        setVisitorDetail(response);
+      } catch (requestError) {
+        setVisitorDetail(null);
+        setError(
+          requestError?.message ||
+          "No fue posible cargar el recorrido del visitante."
+        );
+      } finally {
+        setVisitorDetailLoading(false);
+      }
+    },
+    [days]
+  );
 
   const metrics =
     useMemo(
@@ -2696,12 +2954,37 @@ export default function AdminAnalyticsPage() {
               </DashboardCard>
             </section>
 
+
             {/* ======================================
-                09 · INDICADORES DERIVADOS
+                12 · VISITANTES ANÓNIMOS
             ====================================== */}
             <div className="mt-6">
               <DashboardCard
-                eyebrow="12 · Lectura rápida"
+                eyebrow="12 · Intención por visitante"
+                title="Visitantes anónimos"
+                description="Sesiones técnicas anónimas ordenadas por interés. Permite saber qué productos fueron vistos o clickeados sin identificar personalmente al visitante."
+                action={
+                  <span className="rounded-full bg-neutral-100 px-3 py-2 text-[10px] font-semibold text-neutral-500">
+                    {formatCount(visitors.length)} sesiones
+                  </span>
+                }
+              >
+                <AnonymousVisitorsPanel
+                  visitors={visitors}
+                  selectedVisitorId={selectedVisitorId}
+                  visitorDetail={visitorDetail}
+                  detailLoading={visitorDetailLoading}
+                  onSelect={handleSelectVisitor}
+                />
+              </DashboardCard>
+            </div>
+
+            {/* ======================================
+                13 · INDICADORES DERIVADOS
+            ====================================== */}
+            <div className="mt-6">
+              <DashboardCard
+                eyebrow="13 · Lectura rápida"
                 title="Indicadores comerciales"
                 description="Relaciones útiles para interpretar el comportamiento del período."
               >
