@@ -269,6 +269,45 @@ const humanizeSlug = (
     .join(" ");
 };
 
+
+const CHILE_REGION_NAMES = {
+  RM: "Región Metropolitana",
+  AP: "Arica y Parinacota",
+  TA: "Tarapacá",
+  AN: "Antofagasta",
+  AT: "Atacama",
+  CO: "Coquimbo",
+  VS: "Valparaíso",
+  LI: "O’Higgins",
+  ML: "Maule",
+  NB: "Ñuble",
+  BI: "Biobío",
+  AR: "La Araucanía",
+  LR: "Los Ríos",
+  LL: "Los Lagos",
+  AI: "Aysén",
+  MA: "Magallanes",
+};
+
+const countryDisplayNames =
+  typeof Intl !== "undefined" && Intl.DisplayNames
+    ? new Intl.DisplayNames(["es-CL"], { type: "region" })
+    : null;
+
+const getCountryName = (code) => {
+  const normalized = String(code || "").trim().toUpperCase();
+
+  if (!normalized || normalized === "UNKNOWN") {
+    return "Sin identificar";
+  }
+
+  try {
+    return countryDisplayNames?.of(normalized) || normalized;
+  } catch {
+    return normalized;
+  }
+};
+
 function Icon({ type }) {
   const base = {
     viewBox: "0 0 24 24",
@@ -975,6 +1014,7 @@ function LocationList({
             pick(
               row,
               [
+                "location_label",
                 "commune",
                 "city",
                 "region",
@@ -1246,6 +1286,12 @@ export default function AdminAnalyticsPage() {
     overview ||
     {};
 
+  const audience =
+    overview?.audience || {};
+
+  const locationPayload =
+    unwrap(data.locations);
+
   const trafficRows =
     rowsFrom(
       overview,
@@ -1279,6 +1325,46 @@ export default function AdminAnalyticsPage() {
       ]
     );
 
+  const countries =
+    rowsFrom(
+      locationPayload,
+      ["countries"]
+    ).map((row) => ({
+      ...row,
+      label: getCountryName(
+        pick(row, ["country_code"], "UNKNOWN")
+      ),
+      value: toNumber(
+        pick(row, ["sessions", "count", "total"], 0)
+      ),
+    }));
+
+  const chileRegions =
+    rowsFrom(
+      locationPayload,
+      ["chile_regions"]
+    ).map((row) => {
+      const code = pick(row, ["region_code"], "UNKNOWN");
+
+      return {
+        ...row,
+        label:
+          CHILE_REGION_NAMES[code] ||
+          (code === "UNKNOWN"
+            ? "Región sin identificar"
+            : code),
+        value: toNumber(
+          pick(row, ["sessions", "count", "total"], 0)
+        ),
+      };
+    });
+
+  const chileLocations =
+    rowsFrom(
+      locationPayload,
+      ["chile_locations"]
+    );
+
   const searches =
     rowsFrom(
       data.searches,
@@ -1306,6 +1392,38 @@ export default function AdminAnalyticsPage() {
   const metrics =
     useMemo(
       () => ({
+        humanSessions:
+          toNumber(
+            pick(
+              audience,
+              ["human_sessions", "sessions"],
+              pick(summary, ["sessions", "total_sessions"], 0)
+            )
+          ),
+        chileSessions:
+          toNumber(
+            pick(
+              audience,
+              ["chile_sessions"],
+              0
+            )
+          ),
+        internationalSessions:
+          toNumber(
+            pick(
+              audience,
+              ["international_sessions"],
+              0
+            )
+          ),
+        suspectedBotSessions:
+          toNumber(
+            pick(
+              audience,
+              ["suspected_bot_sessions"],
+              0
+            )
+          ),
         sessions:
           toNumber(
             pick(
@@ -1430,7 +1548,7 @@ export default function AdminAnalyticsPage() {
             )
           ),
       }),
-      [summary]
+      [summary, audience]
     );
 
   const timeline =
@@ -1472,15 +1590,27 @@ export default function AdminAnalyticsPage() {
                     0
                   )
                 ),
-              pageViews:
+              chileSessions:
                 toNumber(
                   pick(
                     row,
-                    [
-                      "page_views",
-                      "pageViews",
-                      "views",
-                    ],
+                    ["chile_sessions"],
+                    0
+                  )
+                ),
+              internationalSessions:
+                toNumber(
+                  pick(
+                    row,
+                    ["international_sessions"],
+                    0
+                  )
+                ),
+              suspectedBotSessions:
+                toNumber(
+                  pick(
+                    row,
+                    ["suspected_bot_sessions"],
                     0
                   )
                 ),
@@ -1541,7 +1671,9 @@ export default function AdminAnalyticsPage() {
           byDate.get(key) ||
           {
             sessions: 0,
-            pageViews: 0,
+            chileSessions: 0,
+            internationalSessions: 0,
+            suspectedBotSessions: 0,
           };
 
         result.push({
@@ -1552,8 +1684,12 @@ export default function AdminAnalyticsPage() {
             ),
           sessions:
             existing.sessions,
-          pageViews:
-            existing.pageViews,
+          chileSessions:
+            existing.chileSessions,
+          internationalSessions:
+            existing.internationalSessions,
+          suspectedBotSessions:
+            existing.suspectedBotSessions,
         });
       }
 
@@ -1953,12 +2089,49 @@ export default function AdminAnalyticsPage() {
             ====================================== */}
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <KpiCard
-                label="Sesiones"
+                label="Visitas reales"
                 value={formatMetric(
-                  metrics.sessions
+                  metrics.humanSessions
                 )}
-                helper="Sesiones únicas del período."
+                helper="Sesiones no marcadas como automatizadas."
                 accent="#111111"
+              />
+
+              <KpiCard
+                label="Chile"
+                value={formatMetric(
+                  metrics.chileSessions
+                )}
+                helper={`${formatPercent(
+                  safePercent(
+                    metrics.chileSessions,
+                    metrics.humanSessions
+                  )
+                )} de las visitas reales.`}
+                accent="#7A1F8A"
+              />
+
+              <KpiCard
+                label="Internacional"
+                value={formatMetric(
+                  metrics.internationalSessions
+                )}
+                helper={`${formatPercent(
+                  safePercent(
+                    metrics.internationalSessions,
+                    metrics.humanSessions
+                  )
+                )} de las visitas reales.`}
+                accent="#55A9A3"
+              />
+
+              <KpiCard
+                label="Bots filtrados"
+                value={formatMetric(
+                  metrics.suspectedBotSessions
+                )}
+                helper="Sesiones detectadas como tráfico automatizado."
+                accent="#C7423A"
               />
 
               <KpiCard
@@ -1966,52 +2139,8 @@ export default function AdminAnalyticsPage() {
                 value={formatMetric(
                   metrics.pageViews
                 )}
-                helper="Navegación total del sitio."
-                badge={`${formatPercent(
-                  safePercent(
-                    metrics.pageViews,
-                    metrics.sessions
-                  )
-                )} / 100 sesiones`}
-                accent="#ef6262"
-              />
-
-              <KpiCard
-                label="Producto"
-                value={formatMetric(
-                  metrics.productClicks
-                )}
-                helper={`${formatCount(
-                  metrics.productViews
-                )} vistas de detalle.`}
-                badge={`CTR ${formatPercent(
-                  productCtr
-                )}`}
-                accent="#6d4bc3"
-              />
-
-              <KpiCard
-                label="Inicio checkout"
-                value={formatMetric(
-                  metrics.checkoutStarts
-                )}
-                helper="Usuarios que avanzaron desde el carrito."
-                badge={`${formatPercent(
-                  checkoutRate
-                )} sesiones`}
-                accent="#111111"
-              />
-
-              <KpiCard
-                label="Conversión"
-                value={formatPercent(
-                  metrics.conversion
-                )}
-                helper={`${formatCount(
-                  metrics.ordersCreated
-                )} pedidos creados.`}
-                badge="Pedido / sesión"
-                accent="#111111"
+                helper="Navegación de sesiones consideradas reales."
+                accent="#E4AA25"
               />
             </section>
 
@@ -2021,8 +2150,8 @@ export default function AdminAnalyticsPage() {
             <div className="mt-6">
               <DashboardCard
                 eyebrow="01 · Tráfico del sitio"
-                title="Evolución de actividad"
-                description="Sesiones y páginas vistas agrupadas por día durante el período seleccionado."
+                title="Visitas por día"
+                description="Sesiones reales separadas entre Chile e internacional, con bots filtrados como referencia."
                 action={
                   <span className="rounded-full bg-neutral-100 px-3 py-2 text-[10px] font-semibold text-neutral-500">
                     Diaria
@@ -2102,32 +2231,43 @@ export default function AdminAnalyticsPage() {
 
                       <Line
                         type="monotone"
-                        dataKey="pageViews"
-                        name="Páginas vistas"
-                        stroke="#6d4bc3"
-                        strokeWidth={
-                          2.4
-                        }
+                        dataKey="sessions"
+                        name="Visitas reales"
+                        stroke="#111111"
+                        strokeWidth={2.4}
                         dot={false}
-                        activeDot={{
-                          r: 4,
-                          fill: "#6d4bc3",
-                        }}
+                        activeDot={{ r: 4, fill: "#111111" }}
                       />
 
                       <Line
                         type="monotone"
-                        dataKey="sessions"
-                        name="Sesiones"
-                        stroke="#111111"
-                        strokeWidth={
-                          2
-                        }
+                        dataKey="chileSessions"
+                        name="Chile"
+                        stroke="#7A1F8A"
+                        strokeWidth={2}
                         dot={false}
-                        activeDot={{
-                          r: 4,
-                          fill: "#111111",
-                        }}
+                        activeDot={{ r: 4, fill: "#7A1F8A" }}
+                      />
+
+                      <Line
+                        type="monotone"
+                        dataKey="internationalSessions"
+                        name="Internacional"
+                        stroke="#55A9A3"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4, fill: "#55A9A3" }}
+                      />
+
+                      <Line
+                        type="monotone"
+                        dataKey="suspectedBotSessions"
+                        name="Bots filtrados"
+                        stroke="#C7423A"
+                        strokeWidth={1.6}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        activeDot={{ r: 4, fill: "#C7423A" }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -2135,13 +2275,23 @@ export default function AdminAnalyticsPage() {
 
                 <div className="mt-2 flex flex-wrap items-center gap-6 border-t border-neutral-100 pt-4">
                   <div className="flex items-center gap-2 text-[10px] text-neutral-500">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#6d4bc3]" />
-                    Páginas vistas
+                    <span className="h-2.5 w-2.5 rounded-full bg-neutral-950" />
+                    Visitas reales
                   </div>
 
                   <div className="flex items-center gap-2 text-[10px] text-neutral-500">
-                    <span className="h-2.5 w-2.5 rounded-full bg-neutral-950" />
-                    Sesiones
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#7A1F8A]" />
+                    Chile
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[10px] text-neutral-500">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#55A9A3]" />
+                    Internacional
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[10px] text-neutral-500">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#C7423A]" />
+                    Bots filtrados
                   </div>
                 </div>
               </DashboardCard>
@@ -2456,7 +2606,7 @@ export default function AdminAnalyticsPage() {
               <DashboardCard
                 eyebrow="06 · Audiencia"
                 title="Dispositivos"
-                description="Distribución de sesiones."
+                description="Distribución de sesiones reales."
               >
                 <DeviceDonut
                   rows={devices}
@@ -2469,31 +2619,79 @@ export default function AdminAnalyticsPage() {
                 description="Fuente detectada al iniciar la sesión."
               >
                 <RankingBars
-                  rows={
-                    sourceRows
-                  }
+                  rows={sourceRows}
                   labelKey="label"
                   valueKey="value"
                   emptyMessage="Todavía no hay fuentes de tráfico."
                   maxItems={6}
-                  colors={
-                    LAMINATI_CHART_COLORS
-                  }
+                  colors={LAMINATI_CHART_COLORS}
                 />
               </DashboardCard>
 
               <DashboardCard
                 eyebrow="08 · Geografía"
-                title="Ubicación"
-                description="Comuna o ciudad aproximada."
+                title="Chile vs internacional"
+                description="Distribución de las sesiones consideradas reales."
+              >
+                <RankingBars
+                  rows={[
+                    {
+                      label: "Chile",
+                      value: metrics.chileSessions,
+                    },
+                    {
+                      label: "Internacional",
+                      value: metrics.internationalSessions,
+                    },
+                  ]}
+                  labelKey="label"
+                  valueKey="value"
+                  emptyMessage="Todavía no hay información geográfica."
+                  maxItems={2}
+                  colors={["#7A1F8A", "#55A9A3"]}
+                />
+              </DashboardCard>
+            </section>
+
+            <section className="mt-6 grid gap-5 xl:grid-cols-3">
+              <DashboardCard
+                eyebrow="09 · Países"
+                title="Visitas por país"
+                description="País detectado para sesiones no marcadas como bot."
+              >
+                <RankingBars
+                  rows={countries}
+                  labelKey="label"
+                  valueKey="value"
+                  emptyMessage="Todavía no hay visitas por país."
+                  maxItems={8}
+                  colors={LAMINATI_CHART_COLORS}
+                />
+              </DashboardCard>
+
+              <DashboardCard
+                eyebrow="10 · Chile"
+                title="Visitas por región"
+                description="Distribución de las sesiones chilenas."
+              >
+                <RankingBars
+                  rows={chileRegions}
+                  labelKey="label"
+                  valueKey="value"
+                  emptyMessage="Todavía no hay visitas regionales."
+                  maxItems={8}
+                  colors={LAMINATI_CHART_COLORS}
+                />
+              </DashboardCard>
+
+              <DashboardCard
+                eyebrow="11 · Chile"
+                title="Comuna o ciudad"
+                description="Ubicación aproximada. Santiago puede representar una ubicación genérica de RM."
               >
                 <LocationList
-                  rows={
-                    locations
-                  }
-                  colors={
-                    LAMINATI_CHART_COLORS
-                  }
+                  rows={chileLocations}
+                  colors={LAMINATI_CHART_COLORS}
                 />
               </DashboardCard>
             </section>
@@ -2503,7 +2701,7 @@ export default function AdminAnalyticsPage() {
             ====================================== */}
             <div className="mt-6">
               <DashboardCard
-                eyebrow="09 · Lectura rápida"
+                eyebrow="12 · Lectura rápida"
                 title="Indicadores comerciales"
                 description="Relaciones útiles para interpretar el comportamiento del período."
               >
